@@ -43,8 +43,8 @@ export default function PatientDetail() {
                   <div>
                     <div className="flex items-center gap-2">
                       <StatusBadge
-                        label={p.status.toUpperCase()}
-                        color={STATUS_COLORS[p.status as ProtocolInstanceStatus]}
+                        label={p.status}
+                        color={STATUS_COLORS[p.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
                       />
                       <span className="text-sm font-semibold text-gray-900">{p.protocolCanonical}</span>
                     </div>
@@ -89,7 +89,7 @@ export default function PatientDetail() {
                   <tr key={s.stepInstanceId} className="hover:bg-gray-50">
                     <td className="py-2 pr-4 font-medium text-gray-900">{s.actionId}</td>
                     <td className="py-2 pr-4">
-                      <StatusBadge label={s.state} color={STATE_COLORS[s.state as StepState]} />
+                      <StatusBadge label={s.state} color={STATE_COLORS[s.state as StepState] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }} />
                     </td>
                     <td className="py-2 pr-4 text-gray-600">{s.dueDate ? formatDate(s.dueDate) : '—'}</td>
                     <td className="py-2 pr-4 text-gray-600">{s.completedAt ? formatDateTime(s.completedAt) : '—'}</td>
@@ -176,7 +176,7 @@ export default function PatientDetail() {
                     <td className="py-2">
                       <StatusBadge
                         label={e.processingStatus}
-                        color={PROCESSING_COLORS[e.processingStatus as ProcessingStatus]}
+                        color={PROCESSING_COLORS[e.processingStatus as ProcessingStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
                       />
                     </td>
                   </tr>

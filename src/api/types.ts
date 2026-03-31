@@ -80,7 +80,7 @@ export interface PatientCompliance {
   facilityId: string;
 }
 
-export type ProtocolInstanceStatus = 'active' | 'completed' | 'withdrawn' | 'expired';
+export type ProtocolInstanceStatus = 'ACTIVE' | 'COMPLETED' | 'WITHDRAWN' | 'EXPIRED';
 export type ComplianceCategory = 'on_track' | 'at_risk' | 'non_compliant';
 
 // ─── Patient Compliance ──────────────────────────────────────

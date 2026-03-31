@@ -33,10 +33,12 @@ function authHeaders(): Record<string, string> {
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
-    const body = await res.json().catch(() => ({
+    const raw = await res.json().catch(() => ({
       code: 'UNKNOWN',
       message: `HTTP ${res.status}`,
     }));
+    // API wraps errors as { error: { code, message } }
+    const body = raw.error ?? raw;
     throw new ApiError(res.status, body);
   }
   return res.json();

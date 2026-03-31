@@ -152,7 +152,7 @@ export default function ComplianceOverview() {
                         <td className="py-2 pr-4">
                           <StatusBadge
                             label={p.complianceCategory.replace(/_/g, ' ')}
-                            color={COMPLIANCE_COLORS[p.complianceCategory as ComplianceCategory]}
+                            color={COMPLIANCE_COLORS[p.complianceCategory as ComplianceCategory] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
                           />
                         </td>
                         <td className="py-2 pr-4">{formatPercentage(p.complianceRate)}</td>

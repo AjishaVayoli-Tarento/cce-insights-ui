@@ -16,10 +16,10 @@ export const COMPLIANCE_COLORS: Record<ComplianceCategory, { bg: string; text: s
 };
 
 export const STATUS_COLORS: Record<ProtocolInstanceStatus, { bg: string; text: string }> = {
-  active: { bg: 'bg-green-100', text: 'text-green-700' },
-  completed: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  withdrawn: { bg: 'bg-gray-100', text: 'text-gray-700' },
-  expired: { bg: 'bg-red-100', text: 'text-red-700' },
+  ACTIVE: { bg: 'bg-green-100', text: 'text-green-700' },
+  COMPLETED: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  WITHDRAWN: { bg: 'bg-gray-100', text: 'text-gray-700' },
+  EXPIRED: { bg: 'bg-red-100', text: 'text-red-700' },
 };
 
 export const PROCESSING_COLORS: Record<ProcessingStatus, { bg: string; text: string; chart: string }> = {

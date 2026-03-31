@@ -24,6 +24,16 @@ export function toUtcString(date: Date): string {
   return date.toISOString();
 }
 
+/** Convert a YYYY-MM-DD date to start-of-day ISO OffsetDateTime */
+export function toStartOfDayISO(date: string): string {
+  return `${date}T00:00:00Z`;
+}
+
+/** Convert a YYYY-MM-DD date to end-of-day ISO OffsetDateTime */
+export function toEndOfDayISO(date: string): string {
+  return `${date}T23:59:59Z`;
+}
+
 export function getDefaultDateRange(days: number): { startDate: string; endDate: string } {
   const end = new Date();
   const start = subDays(end, days);
