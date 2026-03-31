@@ -1,0 +1,66 @@
+import type { ErrorResponse, PaginatedResponse } from './types';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public body: ErrorResponse,
+  ) {
+    super(body.message);
+  }
+}
+
+function buildUrl(path: string, params?: Record<string, string | undefined>): string {
+  const raw = `${BASE_URL}/v1/insights${path}`;
+  const url = BASE_URL ? new URL(raw) : new URL(raw, window.location.origin);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== '') url.searchParams.set(k, v);
+    }
+  }
+  return url.toString();
+}
+
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
+    const token = sessionStorage.getItem('access_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({
+      code: 'UNKNOWN',
+      message: `HTTP ${res.status}`,
+    }));
+    throw new ApiError(res.status, body);
+  }
+  return res.json();
+}
+
+export async function apiGet<T>(
+  path: string,
+  params?: Record<string, string | undefined>,
+): Promise<T> {
+  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const json = await handleResponse(res);
+  return json.data !== undefined ? json.data : json;
+}
+
+export async function apiGetPaginated<T>(
+  path: string,
+  params?: Record<string, string | undefined>,
+): Promise<PaginatedResponse<T>> {
+  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const json = await handleResponse(res);
+  return {
+    data: json.data,
+    pagination: json.pagination ?? { limit: 50, next_cursor: null, has_more: false },
+  };
+}
+
+export { buildUrl };

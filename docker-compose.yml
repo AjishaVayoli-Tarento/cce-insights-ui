@@ -1,0 +1,21 @@
+services:
+  cce-insights-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cce-insights-ui
+    ports:
+      - "3001:3001"
+    networks:
+      - cce-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  cce-net:
+    external: true
+    name: deploy-scripts_cce-net
