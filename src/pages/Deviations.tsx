@@ -47,8 +47,8 @@ export default function Deviations() {
           <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} />
           <MetricCard
             title="Resolution Rate"
-            value={resolution.data ? formatPercentage(resolution.data.resolved.percentage) : '—'}
-            subtitle={resolution.data ? `Avg ${resolution.data.resolved.avgDaysToResolve.toFixed(1)} days` : undefined}
+            value={resolution.data?.resolved ? formatPercentage(resolution.data.resolved.percentage) : '—'}
+            subtitle={resolution.data?.resolved?.avgDaysToResolve != null ? `Avg ${resolution.data.resolved.avgDaysToResolve.toFixed(1)} days` : undefined}
           />
         </div>
       ) : null}
@@ -123,7 +123,7 @@ export default function Deviations() {
                 </span>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                Average days to resolve: {resolution.data.resolved.avgDaysToResolve.toFixed(1)}
+                Average days to resolve: {resolution.data.resolved.avgDaysToResolve?.toFixed(1) ?? '—'}
               </p>
             </div>
           ) : null}

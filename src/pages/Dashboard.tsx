@@ -62,7 +62,7 @@ export default function Dashboard() {
         <MetricCard
           title="Active Deviations"
           value={intel ? formatNumber(intel.totalDeviations) : '—'}
-          subtitle={intel ? `${intel.recentActivity.last24Hours} new in 24h` : undefined}
+          subtitle={intel?.recentActivity ? `${intel.recentActivity.last24Hours} new in 24h` : undefined}
           icon={<ExclamationTriangleIcon className="h-5 w-5" />}
         />
         <MetricCard
