@@ -43,8 +43,8 @@ export default function Deviations() {
       {intel.isLoading ? <LoadingSpinner /> : intel.error ? <ErrorAlert error={intel.error} /> : intel.data ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <MetricCard title="Total Deviations" value={formatNumber(intel.data.totalDeviations)} />
-          <MetricCard title="Overdue" value={formatNumber(intel.data.byType.overdue)} />
-          <MetricCard title="Missed" value={formatNumber(intel.data.byType.missed)} />
+          <MetricCard title="Overdue" value={formatNumber(intel.data.byType?.overdue ?? 0)} />
+          <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} />
           <MetricCard
             title="Resolution Rate"
             value={resolution.data ? formatPercentage(resolution.data.resolved.percentage) : '—'}

@@ -38,7 +38,7 @@ export default function Dashboard() {
   const intel = intelligence.data;
   const loss = pipelineLoss.data;
 
-  const matchRate = events
+  const matchRate = events?.processingStatusBreakdown
     ? (events.processingStatusBreakdown.matched / events.totalEvents) * 100
     : 0;
 

@@ -109,7 +109,7 @@ export default function SourceComparison() {
             </Card>
           </div>
 
-          {data.overlap.byResourceType.length > 0 && (
+          {data.overlap?.byResourceType?.length > 0 && (
             <Card title="Overlap by Resource Type" className="mt-6">
               <ResourceTypeBarChart
                 data={data.overlap.byResourceType.map((r) => ({
