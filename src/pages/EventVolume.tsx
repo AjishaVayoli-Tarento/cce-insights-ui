@@ -208,8 +208,10 @@ export default function EventVolume() {
 
           {activeTab === 'processing-quality' && (
             <Card>
-              {quality.isLoading ? <LoadingSpinner /> : quality.error ? <ErrorAlert error={quality.error} /> : quality.data ? (
+              {quality.isLoading ? <LoadingSpinner /> : quality.error ? <ErrorAlert error={quality.error} /> : quality.data?.bySource?.length ? (
                 <ProcessingQualityChart data={quality.data.bySource} />
+              ) : quality.data ? (
+                <p className="py-8 text-center text-sm text-gray-500">No processing quality data available</p>
               ) : null}
             </Card>
           )}

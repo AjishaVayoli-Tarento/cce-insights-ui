@@ -392,19 +392,26 @@ export type SortOrder = 'asc' | 'desc';
 
 // ─── Processing Quality ──────────────────────────────────────
 
+export interface ProcessingStatusBucket {
+  count: number;
+  percentage: number;
+}
+
 export interface ProcessingQuality {
   totalEvents: number;
   overall: {
-    matched: { count: number; percentage: number };
-    zeroMatch: { count: number; percentage: number };
-    duplicate: { count: number; percentage: number };
+    matched?: ProcessingStatusBucket;
+    zero_match?: ProcessingStatusBucket;
+    duplicate?: ProcessingStatusBucket;
   };
   bySource: {
     source: string;
     totalEvents: number;
-    matched: { count: number; percentage: number };
-    zeroMatch: { count: number; percentage: number };
-    duplicate: { count: number; percentage: number };
+    breakdown: {
+      matched?: ProcessingStatusBucket;
+      zero_match?: ProcessingStatusBucket;
+      duplicate?: ProcessingStatusBucket;
+    };
   }[];
 }
 

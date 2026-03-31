@@ -1,22 +1,17 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import type { ProcessingQuality } from '../../api/types';
 
 interface ProcessingQualityChartProps {
-  data: {
-    source: string;
-    totalEvents: number;
-    matched: { count: number; percentage: number };
-    zeroMatch: { count: number; percentage: number };
-    duplicate: { count: number; percentage: number };
-  }[];
+  data: ProcessingQuality['bySource'];
   height?: number;
 }
 
 export function ProcessingQualityChart({ data, height = 300 }: ProcessingQualityChartProps) {
   const chartData = data.map((d) => ({
     source: d.source,
-    Matched: d.matched.count,
-    'Zero Match': d.zeroMatch.count,
-    Duplicate: d.duplicate.count,
+    Matched: d.breakdown?.matched?.count ?? 0,
+    'Zero Match': d.breakdown?.zero_match?.count ?? 0,
+    Duplicate: d.breakdown?.duplicate?.count ?? 0,
   }));
 
   return (
