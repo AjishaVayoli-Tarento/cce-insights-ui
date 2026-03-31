@@ -151,26 +151,33 @@ export default defineConfig({
 ```
 cce-insights-ui/
 ├── public/
-│   └── favicon.ico
 ├── src/
 │   ├── api/                    # Typed API client (10 modules)
+│   │   ├── client.ts           # buildUrl, authHeaders, handleResponse, apiGet, apiGetPaginated
+│   │   ├── types.ts            # All TypeScript types
+│   │   ├── compliance.ts       # Protocol/facility compliance + patients
+│   │   ├── deviations.ts       # Deviations + intelligence
+│   │   ├── events.ts           # Event volume, trends, processing quality
+│   │   ├── exports.ts          # Export URL builder
+│   │   ├── facilities.ts       # Facility ranking
+│   │   ├── ingestion.ts        # Ingestion funnel, rejections, quality, loss
+│   │   ├── patients.ts         # Patient timeline, tracking, events, deviations, risk
+│   │   └── protocols.ts        # Step analytics, funnel, outcomes, enrollment
 │   ├── components/
-│   │   ├── layout/             # AppLayout, Sidebar, Header, FilterBar
-│   │   ├── common/             # MetricCard, Badges, DataTable, Pagination
-│   │   ├── charts/             # 10 Recharts wrapper components
-│   │   └── patient/            # Timeline, Tracking, Steps, Deviations
-│   ├── pages/                  # 11 page components
+│   │   ├── layout/             # Sidebar
+│   │   ├── shared/             # Card, MetricCard, StatusBadge, DateRangeFilter, etc.
+│   │   └── charts/             # 10 Recharts wrapper components
+│   ├── pages/                  # 11 page components (lazy-loaded)
 │   ├── hooks/                  # 10 TanStack Query hooks
 │   ├── context/                # FilterContext (global date range + facility)
-│   ├── utils/                  # dates, colors, formatters, compliance, pagination
+│   ├── utils/                  # dates, colors, formatters, compliance, pagination, errors
 │   ├── config.ts               # Constants and defaults
-│   ├── App.tsx                 # Router + providers
-│   ├── main.tsx                # Entry point
+│   ├── App.tsx                 # Router + layout shell
+│   ├── main.tsx                # Entry point (React 18 + providers)
 │   ├── index.css               # Tailwind imports
 │   └── vite-env.d.ts
-├── .env
 ├── .env.example
-├── .gitignore
+├── .dockerignore
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -298,13 +305,19 @@ CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
 
 ```caddyfile
 :3001 {
-    root * /srv
     encode zstd gzip
 
-    reverse_proxy /v1/insights/* cce-insights-service:8084
+    handle /v1/insights/* {
+        reverse_proxy cce-insights-service:8084
+    }
 
-    try_files {path} /index.html
-    file_server
+    handle {
+        root * /srv
+        @assets path /assets/*
+        header @assets Cache-Control "public, max-age=31536000, immutable"
+        try_files {path} /index.html
+        file_server
+    }
 
     header {
         X-Frame-Options "SAMEORIGIN"
@@ -319,26 +332,30 @@ CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
 ```yaml
 # docker-compose.yml
 services:
-  insights-ui:
-    build: .
+  cce-insights-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cce-insights-ui
     ports:
       - "3001:3001"
-    depends_on:
-      - insights-service
-    environment:
-      - XDG_DATA_HOME=/data
+    networks:
+      - cce-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  insights-service:
-    image: cce-insights-service:latest
-    ports:
-      - "8084:8084"
-    environment:
-      - DB_HOST=cce-db
-      - DB_PORT=5432
-      - DB_NAME=cce_collector
-      - DB_USERNAME=cce_user
-      - DB_PASSWORD=cce_pass
+networks:
+  cce-net:
+    external: true
+    name: deploy-scripts_cce-net
 ```
+
+> **Note:** The UI container joins the existing `deploy-scripts_cce-net` Docker network where
+> `cce-insights-service` is already running. No gateway required for local development.
 
 ### Build & Run
 

@@ -22,7 +22,7 @@
 
 ```typescript
 // src/api/client.ts
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8084';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export class ApiError extends Error {
   constructor(
@@ -33,37 +33,45 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(
-  path: string,
-  params?: Record<string, string | undefined>,
-): Promise<T> {
-  const url = new URL(`${BASE_URL}/v1/insights${path}`);
+function buildUrl(path: string, params?: Record<string, string | undefined>): string {
+  const raw = `${BASE_URL}/v1/insights${path}`;
+  const url = BASE_URL ? new URL(raw) : new URL(raw, window.location.origin);
   if (params) {
-    Object.entries(params).forEach(([k, v]) => {
+    for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== '') url.searchParams.set(k, v);
-    });
+    }
   }
+  return url.toString();
+}
 
+function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-
-  // Add OAuth token if auth is enabled
   if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
     const token = sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
+  return headers;
+}
 
-  const res = await fetch(url.toString(), { headers });
-
+async function handleResponse(res: Response) {
   if (!res.ok) {
-    const body = await res.json().catch(() => ({
+    const raw = await res.json().catch(() => ({
       code: 'UNKNOWN',
       message: `HTTP ${res.status}`,
     }));
+    // API wraps errors as { error: { code, message } }
+    const body = raw.error ?? raw;
     throw new ApiError(res.status, body);
   }
+  return res.json();
+}
 
-  const json = await res.json();
-  // Unwrap { "data": ... } envelope — Insights Service wraps all responses
+export async function apiGet<T>(
+  path: string,
+  params?: Record<string, string | undefined>,
+): Promise<T> {
+  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const json = await handleResponse(res);
   return json.data !== undefined ? json.data : json;
 }
 
@@ -74,34 +82,15 @@ export async function apiGetPaginated<T>(
   path: string,
   params?: Record<string, string | undefined>,
 ): Promise<PaginatedResponse<T>> {
-  const url = new URL(`${BASE_URL}/v1/insights${path}`);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== '') url.searchParams.set(k, v);
-    });
-  }
-
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token = sessionStorage.getItem('access_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url.toString(), { headers });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({
-      code: 'UNKNOWN',
-      message: `HTTP ${res.status}`,
-    }));
-    throw new ApiError(res.status, body);
-  }
-
-  const json = await res.json();
+  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const json = await handleResponse(res);
   return {
     data: json.data,
     pagination: json.pagination ?? { limit: 50, next_cursor: null, has_more: false },
   };
 }
+
+export { buildUrl };
 ```
 
 ---
@@ -193,7 +182,7 @@ export interface PatientCompliance {
   facilityId: string;
 }
 
-export type ProtocolInstanceStatus = 'active' | 'completed' | 'withdrawn' | 'expired';
+export type ProtocolInstanceStatus = 'ACTIVE' | 'COMPLETED' | 'WITHDRAWN' | 'EXPIRED';
 export type ComplianceCategory = 'on_track' | 'at_risk' | 'non_compliant';
 
 // ─── Patient Compliance ──────────────────────────────────────
@@ -515,9 +504,11 @@ export interface ProcessingQuality {
   bySource: {
     source: string;
     totalEvents: number;
-    matched: { count: number; percentage: number };
-    zeroMatch: { count: number; percentage: number };
-    duplicate: { count: number; percentage: number };
+    breakdown: {
+      matched: { count: number; percentage: number };
+      zero_match: { count: number; percentage: number };
+      duplicate: { count: number; percentage: number };
+    };
   }[];
 }
 
@@ -1105,8 +1096,7 @@ export function getPipelineLoss(params?: {
 
 ```typescript
 // src/api/exports.ts
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8084';
+import { buildUrl } from './client';
 
 export function getExportUrl(params: {
   format: 'json' | 'csv';
@@ -1115,11 +1105,13 @@ export function getExportUrl(params: {
   startDate?: string;
   endDate?: string;
 }): string {
-  const url = new URL(`${BASE_URL}/v1/insights/exports/compliance-report`);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== '') url.searchParams.set(k, v);
+  return buildUrl('/exports/compliance-report', {
+    format: params.format,
+    protocolDefinitionId: params.protocolDefinitionId,
+    facilityId: params.facilityId,
+    startDate: params.startDate,
+    endDate: params.endDate,
   });
-  return url.toString();
 }
 ```
 
@@ -1238,19 +1230,23 @@ export function useEventsByResourceType() {
 
 ```typescript
 // src/hooks/useGlobalFilters.ts
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { FilterContext } from '../context/FilterContext';
+import { toStartOfDayISO, toEndOfDayISO } from '../utils/dates';
 import type { GlobalFilters } from '../api/types';
 
 export function useGlobalFilters(): GlobalFilters {
   const ctx = useContext(FilterContext);
-  return {
-    startDate: ctx.startDate,
-    endDate: ctx.endDate,
+  return useMemo(() => ({
+    startDate: toStartOfDayISO(ctx.startDate),
+    endDate: toEndOfDayISO(ctx.endDate),
     facilityId: ctx.facilityId,
-  };
+  }), [ctx.startDate, ctx.endDate, ctx.facilityId]);
 }
 ```
+
+> **Note:** The hook converts YYYY-MM-DD date strings from the FilterContext to ISO 8601 OffsetDateTime
+> format (`2026-03-01T00:00:00Z` / `2026-03-31T23:59:59Z`) required by the Insights Service.
 
 ---
 
@@ -1284,8 +1280,7 @@ export function getErrorMessage(error: unknown): string {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      retry: 1,
       staleTime: 30_000,
       refetchOnWindowFocus: false,
     },

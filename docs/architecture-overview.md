@@ -55,8 +55,10 @@ graph LR
 ### Demo Mode Flow (No Gateway)
 
 ```
-Browser (port 3001) ──REST──▶ Insights Service (port 8084) ──▶ PostgreSQL (read-only)
+Browser (port 3001) ──REST──▶ Caddy (reverse proxy) ──▶ Insights Service (port 8084) ──▶ PostgreSQL (read-only)
 ```
+
+In Docker, Caddy serves the SPA and proxies `/v1/insights/*` requests directly to `cce-insights-service:8084` on the shared Docker network.
 
 ### Production Flow (With Gateway)
 
@@ -534,12 +536,24 @@ EXPOSE 3001
 
 ```caddyfile
 :3001 {
-    root * /srv
     encode zstd gzip
 
-    reverse_proxy /v1/insights/* cce-insights-service:8084
+    handle /v1/insights/* {
+        reverse_proxy cce-insights-service:8084
+    }
 
-    try_files {path} /index.html
-    file_server
+    handle {
+        root * /srv
+        @assets path /assets/*
+        header @assets Cache-Control "public, max-age=31536000, immutable"
+        try_files {path} /index.html
+        file_server
+    }
+
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 }
 ```

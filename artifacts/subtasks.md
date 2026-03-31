@@ -5,9 +5,11 @@
 **Sprint Target:** Release 1.0.0  
 **Total Subtasks:** 12  
 **Total Story Points:** 45  
-**Total Pages:** 11 | **Total Insights Service Endpoints Consumed:** 33
+**Total Pages:** 11 | **Total Insights Service Endpoints Consumed:** 33  
+**Status:** ✅ All subtasks implemented and deployed
 
-> Each subtask is a single PR-able unit. Execute in listed order — each depends on the prior one being merged. Subtasks S4–S9 can be parallelized after S3 is merged.
+> All subtasks have been implemented. The UI is deployed as a Docker container (`cce-insights-ui`)
+> on the `deploy-scripts_cce-net` network, directly proxying API calls to `cce-insights-service:8084` via Caddy.
 
 ---
 
@@ -22,11 +24,11 @@
 Create comprehensive technical documentation covering architecture, page wireframes, API integration reference, developer setup, and AI agent instructions for the Insights UI — an analytics dashboard consuming 33 Insights Service endpoints.
 
 **Acceptance Criteria:**
-- [ ] `copilot-instructions-insights-ui.md` — AI agent instructions: architecture, tech stack, 11 pages, ~60 file structure, 33 API endpoints, design patterns, global filters, color conventions
-- [ ] `architecture-overview.md` — System context, tech stack, application architecture layers, page hierarchy, data flow with TanStack Query + global filter context, state management, routing (11 routes), styling (compliance/step/processing palettes), error handling, performance, deployment
-- [ ] `pages-and-wireframes.md` — ASCII wireframes for all 11 pages: Dashboard, Compliance Overview, Protocol Analytics, Patient List, Patient Detail, Deviations, Event Volume, Source Comparison, Facility Analytics, Ingestion Pipeline, Exports; shared component specs (MetricCard, badges, DateRangePicker, IntervalSelector, CursorPagination, DataTable)
-- [ ] `api-integration.md` — Base API client with envelope unwrapping, ~30 TypeScript interfaces, 10 API modules (compliance, patients, deviations, events, protocols, facilities, ingestion, exports), TanStack Query hooks with global filter integration, error handling, CORS options
-- [ ] `developer-setup.md` — Prerequisites, backend dependency chain, quick start, env variables, project initialization, npm scripts, testing (Vitest + MSW), Docker build, demo workflow (10-step sequence)
+- [x] `copilot-instructions-insights-ui.md` — AI agent instructions: architecture, tech stack, 11 pages, ~60 file structure, 33 API endpoints, design patterns, global filters, color conventions
+- [x] `architecture-overview.md` — System context, tech stack, application architecture layers, page hierarchy, data flow with TanStack Query + global filter context, state management, routing (11 routes), styling (compliance/step/processing palettes), error handling, performance, deployment
+- [x] `pages-and-wireframes.md` — ASCII wireframes for all 11 pages: Dashboard, Compliance Overview, Protocol Analytics, Patient List, Patient Detail, Deviations, Event Volume, Source Comparison, Facility Analytics, Ingestion Pipeline, Exports; shared component specs (MetricCard, badges, DateRangePicker, IntervalSelector, CursorPagination, DataTable)
+- [x] `api-integration.md` — Base API client with envelope unwrapping, ~30 TypeScript interfaces, 10 API modules (compliance, patients, deviations, events, protocols, facilities, ingestion, exports), TanStack Query hooks with global filter integration, error handling, CORS options
+- [x] `developer-setup.md` — Prerequisites, backend dependency chain, quick start, env variables, project initialization, npm scripts, testing (Vitest + MSW), Docker build, demo workflow (10-step sequence)
 
 **Files:**
 - `copilot-instructions-insights-ui.md`
@@ -48,15 +50,15 @@ Create comprehensive technical documentation covering architecture, page wirefra
 Initialize the React project with Vite, TypeScript, Tailwind CSS, and all required dependencies. Configure build tooling, linting, and dev server proxy for the Insights Service.
 
 **Acceptance Criteria:**
-- [ ] `npm create vite@latest` with `react-ts` template
-- [ ] Install dependencies: `react-router-dom`, `@tanstack/react-query`, `recharts`, `date-fns`, `@heroicons/react`
-- [ ] Install dev dependencies: `tailwindcss`, `@tailwindcss/vite`, `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `msw`
-- [ ] `vite.config.ts` with React plugin, Tailwind plugin, port 3001, proxy for `/v1` → `http://localhost:8084`
-- [ ] `src/index.css` with Tailwind import
-- [ ] `.env` + `.env.example` with `VITE_API_BASE_URL=http://localhost:8084`, `VITE_AUTH_ENABLED=false`, `VITE_POLLING_INTERVAL=60000`, `VITE_DEFAULT_DATE_RANGE_DAYS=30`
-- [ ] `.gitignore` for node_modules, dist, .env.local
-- [ ] `npm run dev` starts on port 3001
-- [ ] `npm run build` produces `dist/` with no errors
+- [x] `npm create vite@latest` with `react-ts` template
+- [x] Install dependencies: `react-router-dom`, `@tanstack/react-query`, `recharts`, `date-fns`, `@heroicons/react`
+- [x] Install dev dependencies: `tailwindcss`, `@tailwindcss/vite`, `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`, `msw`
+- [x] `vite.config.ts` with React plugin, Tailwind plugin, port 3001, proxy for `/v1` → `http://localhost:8084`
+- [x] `src/index.css` with Tailwind import
+- [x] `.env` + `.env.example` with `VITE_API_BASE_URL=http://localhost:8084`, `VITE_AUTH_ENABLED=false`, `VITE_POLLING_INTERVAL=60000`, `VITE_DEFAULT_DATE_RANGE_DAYS=30`
+- [x] `.gitignore` for node_modules, dist, .env.local
+- [x] `npm run dev` starts on port 3001
+- [x] `npm run build` produces `dist/` with no errors
 
 **Files:**
 - `package.json`, `package-lock.json`
@@ -77,18 +79,18 @@ Initialize the React project with Vite, TypeScript, Tailwind CSS, and all requir
 Implement the typed API client layer — all TypeScript interfaces matching the 33 Insights Service response schemas, base fetch wrapper with `{ data }` envelope unwrapping, per-resource API functions (10 modules), and TanStack Query hooks (10 hooks) with global filter integration.
 
 **Acceptance Criteria:**
-- [ ] `src/api/types.ts` — ~30 interfaces covering all 33 endpoint responses: `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
-- [ ] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, optional OAuth header
-- [ ] `src/api/compliance.ts` — 3 functions: protocol summary, facility summary, protocol patients
-- [ ] `src/api/patients.ts` — 7 functions: timeline, tracking list, tracking detail, events, deviations, at-risk hotspots, repeat deviations
-- [ ] `src/api/deviations.ts` — 5 functions: list, trends, by-action, resolution-rate, intelligence summary
-- [ ] `src/api/events.ts` — 8 functions: summary, trends, by-resource-type, by-facility, by-practitioner, by-source, source-comparison, processing-quality
-- [ ] `src/api/protocols.ts` — 4 functions: step-analytics, completion-funnel, outcome-distribution, enrollment-trends
-- [ ] `src/api/facilities.ts` — 1 function: ranking
-- [ ] `src/api/ingestion.ts` — 4 functions: funnel, rejections, source-quality, pipeline-loss
-- [ ] `src/api/exports.ts` — 1 function: export URL builder
-- [ ] `src/hooks/` — 10 hook files with TanStack Query wrappers, global filter integration
-- [ ] Unit tests for `apiGet` envelope unwrapping, error handling (404, 500, network error)
+- [x] `src/api/types.ts` — ~30 interfaces covering all 33 endpoint responses: `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
+- [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, optional OAuth header
+- [x] `src/api/compliance.ts` — 3 functions: protocol summary, facility summary, protocol patients
+- [x] `src/api/patients.ts` — 7 functions: timeline, tracking list, tracking detail, events, deviations, at-risk hotspots, repeat deviations
+- [x] `src/api/deviations.ts` — 5 functions: list, trends, by-action, resolution-rate, intelligence summary
+- [x] `src/api/events.ts` — 8 functions: summary, trends, by-resource-type, by-facility, by-practitioner, by-source, source-comparison, processing-quality
+- [x] `src/api/protocols.ts` — 4 functions: step-analytics, completion-funnel, outcome-distribution, enrollment-trends
+- [x] `src/api/facilities.ts` — 1 function: ranking
+- [x] `src/api/ingestion.ts` — 4 functions: funnel, rejections, source-quality, pipeline-loss
+- [x] `src/api/exports.ts` — 1 function: export URL builder
+- [x] `src/hooks/` — 10 hook files with TanStack Query wrappers, global filter integration
+- [x] Unit tests for `apiGet` envelope unwrapping, error handling (404, 500, network error)
 
 **Files:**
 - `src/api/types.ts`, `src/api/client.ts`
@@ -114,14 +116,14 @@ Implement the typed API client layer — all TypeScript interfaces matching the 
 Implement pure utility functions, the global filter context (date range + facility), and configuration constants. The filter context persists across page navigation and drives all API calls.
 
 **Acceptance Criteria:**
-- [ ] `src/context/FilterContext.tsx` — React context providing `{ startDate, endDate, facilityId, setDateRange, setFacilityId }`. Default date range: last N days (from `VITE_DEFAULT_DATE_RANGE_DAYS`). Synced with URL search params for shareability.
-- [ ] `src/utils/colors.ts` — `STATE_COLORS` (6 step states), `COMPLIANCE_COLORS` (3 categories), `STATUS_COLORS` (4 protocol statuses), `PROCESSING_COLORS` (3 statuses), `COMPLETION_COLORS` (3 timeliness), `CHART_COLORS` (theme palette)
-- [ ] `src/utils/dates.ts` — `formatDate()`, `formatDateTime()`, `formatRelative()`, `daysUntil()`, `daysSince()`, `toUtcString()`, `getDefaultDateRange(days)`
-- [ ] `src/utils/formatters.ts` — `formatNumber()` (locale-aware), `formatPercentage()`, `formatRate()` (0.72 → "72%")
-- [ ] `src/utils/compliance.ts` — `parseCanonicalUrl(canonical)` → `{ url, version, name }`, `classifyComplianceCategory(steps)`
-- [ ] `src/utils/pagination.ts` — `buildCursorParams()` helper
-- [ ] `src/config.ts` — `DEFAULT_PAGE_SIZE`, `INTERVAL_OPTIONS`, `RANK_BY_OPTIONS`, `SORT_ORDER_OPTIONS`, `DEVIATION_TYPE_OPTIONS`, `COMPLIANCE_STATUS_OPTIONS`
-- [ ] Unit tests for all utility functions and filter context behavior
+- [x] `src/context/FilterContext.tsx` — React context providing `{ startDate, endDate, facilityId, setDateRange, setFacilityId }`. Default date range: last N days (from `VITE_DEFAULT_DATE_RANGE_DAYS`). Synced with URL search params for shareability.
+- [x] `src/utils/colors.ts` — `STATE_COLORS` (6 step states), `COMPLIANCE_COLORS` (3 categories), `STATUS_COLORS` (4 protocol statuses), `PROCESSING_COLORS` (3 statuses), `COMPLETION_COLORS` (3 timeliness), `CHART_COLORS` (theme palette)
+- [x] `src/utils/dates.ts` — `formatDate()`, `formatDateTime()`, `formatRelative()`, `daysUntil()`, `daysSince()`, `toUtcString()`, `getDefaultDateRange(days)`
+- [x] `src/utils/formatters.ts` — `formatNumber()` (locale-aware), `formatPercentage()`, `formatRate()` (0.72 → "72%")
+- [x] `src/utils/compliance.ts` — `parseCanonicalUrl(canonical)` → `{ url, version, name }`, `classifyComplianceCategory(steps)`
+- [x] `src/utils/pagination.ts` — `buildCursorParams()` helper
+- [x] `src/config.ts` — `DEFAULT_PAGE_SIZE`, `INTERVAL_OPTIONS`, `RANK_BY_OPTIONS`, `SORT_ORDER_OPTIONS`, `DEVIATION_TYPE_OPTIONS`, `COMPLIANCE_STATUS_OPTIONS`
+- [x] Unit tests for all utility functions and filter context behavior
 
 **Files:**
 - `src/context/FilterContext.tsx`
@@ -143,23 +145,23 @@ Implement pure utility functions, the global filter context (date range + facili
 Build the application shell (sidebar with navigation groups, header with global filters, content area) and all shared/reusable components used across the 11 pages.
 
 **Acceptance Criteria:**
-- [ ] `AppLayout.tsx` — Sidebar + Header + `<Outlet/>`, responsive: sidebar collapsible
-- [ ] `Sidebar.tsx` — Navigation groups: Overview, Compliance, Events & Activity, Deviations, Facilities, Operations, Exports. Active route highlighting.
-- [ ] `Header.tsx` — Page title, global `DateRangePicker`, global `FacilitySelector` (dropdown)
-- [ ] `FilterBar.tsx` — Wires `DateRangePicker` + facility selector to `FilterContext`
-- [ ] `DateRangePicker.tsx` — Presets (7d, 30d, 90d, custom) + custom date inputs
-- [ ] `MetricCard.tsx` — Label, value, icon, optional trend indicator (↑/↓/−)
-- [ ] `StateBadge.tsx` — Step state color pill (6 states)
-- [ ] `ComplianceBadge.tsx` — Compliance category badge (on_track/at_risk/non_compliant)
-- [ ] `DeviationTypeBadge.tsx` — OVERDUE (amber) / MISSED (red) badge
-- [ ] `ProcessingStatusBadge.tsx` — MATCHED/ZERO_MATCH/DUPLICATE badge
-- [ ] `PercentageBar.tsx` — Horizontal stacked percentage bar
-- [ ] `DataTable.tsx` — Generic table with sort headers, loading skeleton, empty state
-- [ ] `CursorPagination.tsx` — Previous/Next with cursor management
-- [ ] `EmptyState.tsx` — No data placeholder
-- [ ] `LoadingSpinner.tsx` — Tailwind spinner
-- [ ] React Router configured in `App.tsx` with `QueryClientProvider` + `FilterProvider`
-- [ ] Component tests for badges (all variants), MetricCard, DateRangePicker
+- [x] `AppLayout.tsx` — Sidebar + Header + `<Outlet/>`, responsive: sidebar collapsible
+- [x] `Sidebar.tsx` — Navigation groups: Overview, Compliance, Events & Activity, Deviations, Facilities, Operations, Exports. Active route highlighting.
+- [x] `Header.tsx` — Page title, global `DateRangePicker`, global `FacilitySelector` (dropdown)
+- [x] `FilterBar.tsx` — Wires `DateRangePicker` + facility selector to `FilterContext`
+- [x] `DateRangePicker.tsx` — Presets (7d, 30d, 90d, custom) + custom date inputs
+- [x] `MetricCard.tsx` — Label, value, icon, optional trend indicator (↑/↓/−)
+- [x] `StateBadge.tsx` — Step state color pill (6 states)
+- [x] `ComplianceBadge.tsx` — Compliance category badge (on_track/at_risk/non_compliant)
+- [x] `DeviationTypeBadge.tsx` — OVERDUE (amber) / MISSED (red) badge
+- [x] `ProcessingStatusBadge.tsx` — MATCHED/ZERO_MATCH/DUPLICATE badge
+- [x] `PercentageBar.tsx` — Horizontal stacked percentage bar
+- [x] `DataTable.tsx` — Generic table with sort headers, loading skeleton, empty state
+- [x] `CursorPagination.tsx` — Previous/Next with cursor management
+- [x] `EmptyState.tsx` — No data placeholder
+- [x] `LoadingSpinner.tsx` — Tailwind spinner
+- [x] React Router configured in `App.tsx` with `QueryClientProvider` + `FilterProvider`
+- [x] Component tests for badges (all variants), MetricCard, DateRangePicker
 
 **Files:**
 - `src/components/layout/AppLayout.tsx`, `Sidebar.tsx`, `Header.tsx`, `FilterBar.tsx`
@@ -182,19 +184,19 @@ Build the application shell (sidebar with navigation groups, header with global 
 Implement all Recharts wrapper components. Each chart accepts processed data arrays as props and renders with consistent styling, tooltips, and color scheme.
 
 **Acceptance Criteria:**
-- [ ] `ComplianceRateChart.tsx` — Horizontal bar chart: protocols by compliance rate
-- [ ] `DeviationTrendChart.tsx` — Stacked area chart: overdue + missed over time periods
-- [ ] `EventVolumeTrendChart.tsx` — Stacked area chart: event volume by resource type over time
-- [ ] `CompletionFunnelChart.tsx` — Funnel/waterfall chart: patient drop-off per step
-- [ ] `OutcomeDistributionChart.tsx` — Pie/donut chart: ACTIVE/COMPLETED/WITHDRAWN/EXPIRED
-- [ ] `FacilityRankingChart.tsx` — Horizontal bar chart: facility leaderboard by selected metric
-- [ ] `ProcessingQualityChart.tsx` — Stacked bar chart: MATCHED/ZERO_MATCH/DUPLICATE per source
-- [ ] `IngestionFunnelChart.tsx` — Funnel chart: ACCEPTED/REJECTED/DUPLICATE pipeline
-- [ ] `RiskHeatmapChart.tsx` — Stacked horizontal bar: on_track/at_risk/non_compliant per facility
-- [ ] `EnrollmentTrendChart.tsx` — Line chart: enrollments over time
-- [ ] All charts use `CHART_COLORS` from `utils/colors.ts`
-- [ ] All charts include tooltips and responsive containers
-- [ ] Component tests for at least 3 charts with mock data
+- [x] `ComplianceRateChart.tsx` — Horizontal bar chart: protocols by compliance rate
+- [x] `DeviationTrendChart.tsx` — Stacked area chart: overdue + missed over time periods
+- [x] `EventVolumeTrendChart.tsx` — Stacked area chart: event volume by resource type over time
+- [x] `CompletionFunnelChart.tsx` — Funnel/waterfall chart: patient drop-off per step
+- [x] `OutcomeDistributionChart.tsx` — Pie/donut chart: ACTIVE/COMPLETED/WITHDRAWN/EXPIRED
+- [x] `FacilityRankingChart.tsx` — Horizontal bar chart: facility leaderboard by selected metric
+- [x] `ProcessingQualityChart.tsx` — Stacked bar chart: MATCHED/ZERO_MATCH/DUPLICATE per source
+- [x] `IngestionFunnelChart.tsx` — Funnel chart: ACCEPTED/REJECTED/DUPLICATE pipeline
+- [x] `RiskHeatmapChart.tsx` — Stacked horizontal bar: on_track/at_risk/non_compliant per facility
+- [x] `EnrollmentTrendChart.tsx` — Line chart: enrollments over time
+- [x] All charts use `CHART_COLORS` from `utils/colors.ts`
+- [x] All charts include tooltips and responsive containers
+- [x] Component tests for at least 3 charts with mock data
 
 **Files:**
 - `src/components/charts/ComplianceRateChart.tsx`
@@ -221,14 +223,14 @@ Implement all Recharts wrapper components. Each chart accepts processed data arr
 Implement the Dashboard landing page with 6 metric cards, deviation trend sparkline, event volume sparkline, and quick navigation links to all major sections.
 
 **Acceptance Criteria:**
-- [ ] `DashboardPage.tsx` with 6 MetricCards: Total Events, Active Deviations, Facilities Tracked, Pipeline Loss Rate, Match Rate, At-Risk Patients
-- [ ] DeviationTrendChart — mini area chart (last 30 days from `deviations/trends`)
-- [ ] EventVolumeTrendChart — mini stacked area (last 30 days from `events/trends`)
-- [ ] Quick Navigation cards linking to: Compliance, Facilities, Ingestion, Exports
-- [ ] Auto-refresh with `refetchInterval` from env
-- [ ] Loading skeletons while data loads
-- [ ] Error states with retry
-- [ ] Component tests with MSW mocks
+- [x] `DashboardPage.tsx` with 6 MetricCards: Total Events, Active Deviations, Facilities Tracked, Pipeline Loss Rate, Match Rate, At-Risk Patients
+- [x] DeviationTrendChart — mini area chart (last 30 days from `deviations/trends`)
+- [x] EventVolumeTrendChart — mini stacked area (last 30 days from `events/trends`)
+- [x] Quick Navigation cards linking to: Compliance, Facilities, Ingestion, Exports
+- [x] Auto-refresh with `refetchInterval` from env
+- [x] Loading skeletons while data loads
+- [x] Error states with retry
+- [x] Component tests with MSW mocks
 
 **Files:**
 - `src/pages/DashboardPage.tsx`
@@ -246,14 +248,14 @@ Implement the Dashboard landing page with 6 metric cards, deviation trend sparkl
 Implement the 4 compliance-focused pages: Compliance Overview (protocol/facility summaries + patient table), Protocol Analytics (step analytics, funnel, outcomes, enrollment trends), Patient List (compliance categories + risk hotspots), and Patient Detail (timeline, tracking, events, deviations).
 
 **Acceptance Criteria:**
-- [ ] **ComplianceOverviewPage.tsx** — Protocol selector dropdown, compliance summary card (metrics + step breakdown), patient compliance table with category filter + cursor pagination, "View Protocol Analytics →" navigation
-- [ ] **ProtocolAnalyticsPage.tsx** — Step analytics table (per-action rates, timeliness, avg/median days), CompletionFunnelChart, OutcomeDistributionChart, EnrollmentTrendChart with interval selector
-- [ ] **PatientListPage.tsx** — RiskHeatmapChart (at-risk hotspots by facility), patient table with compliance category filter + repeat deviations threshold, cursor pagination, row click → patient detail
-- [ ] **PatientDetailPage.tsx** — Protocol tracking cards (enrollment summaries), compliance timeline (chronological events + steps), deviation list panel, event history table with filters
-- [ ] Patient components: `ComplianceTimeline.tsx`, `ProtocolTrackingCard.tsx`, `StepInstanceTable.tsx`, `PatientDeviationList.tsx`
-- [ ] Global filters (date range + facility) applied to all queries
-- [ ] Loading, error, and empty states on all pages
-- [ ] Component tests for ComplianceOverviewPage and PatientDetailPage
+- [x] **ComplianceOverviewPage.tsx** — Protocol selector dropdown, compliance summary card (metrics + step breakdown), patient compliance table with category filter + cursor pagination, "View Protocol Analytics →" navigation
+- [x] **ProtocolAnalyticsPage.tsx** — Step analytics table (per-action rates, timeliness, avg/median days), CompletionFunnelChart, OutcomeDistributionChart, EnrollmentTrendChart with interval selector
+- [x] **PatientListPage.tsx** — RiskHeatmapChart (at-risk hotspots by facility), patient table with compliance category filter + repeat deviations threshold, cursor pagination, row click → patient detail
+- [x] **PatientDetailPage.tsx** — Protocol tracking cards (enrollment summaries), compliance timeline (chronological events + steps), deviation list panel, event history table with filters
+- [x] Patient components: `ComplianceTimeline.tsx`, `ProtocolTrackingCard.tsx`, `StepInstanceTable.tsx`, `PatientDeviationList.tsx`
+- [x] Global filters (date range + facility) applied to all queries
+- [x] Loading, error, and empty states on all pages
+- [x] Component tests for ComplianceOverviewPage and PatientDetailPage
 
 **Files:**
 - `src/pages/ComplianceOverviewPage.tsx`
@@ -278,14 +280,14 @@ Implement the 4 compliance-focused pages: Compliance Overview (protocol/facility
 Implement the Deviations page — deviation trends, most-deviated steps, resolution rate, intelligence summary, and paginated deviation list.
 
 **Acceptance Criteria:**
-- [ ] **DeviationsPage.tsx** — 4 metric cards (total deviations, overdue, missed, resolution rate)
-- [ ] DeviationTrendChart with interval selector (daily/weekly/monthly)
-- [ ] Most Deviated Steps table (by-action): action, total, overdue, missed, affected patients
-- [ ] Resolution Rate card: resolved % vs escalated %, avg days to resolve, by-protocol breakdown
-- [ ] Deviation list table with filters (type, protocol, facility) + sort + cursor pagination
-- [ ] Global filters applied
-- [ ] Loading, error, and empty states
-- [ ] Component tests
+- [x] **DeviationsPage.tsx** — 4 metric cards (total deviations, overdue, missed, resolution rate)
+- [x] DeviationTrendChart with interval selector (daily/weekly/monthly)
+- [x] Most Deviated Steps table (by-action): action, total, overdue, missed, affected patients
+- [x] Resolution Rate card: resolved % vs escalated %, avg days to resolve, by-protocol breakdown
+- [x] Deviation list table with filters (type, protocol, facility) + sort + cursor pagination
+- [x] Global filters applied
+- [x] Loading, error, and empty states
+- [x] Component tests
 
 **Files:**
 - `src/pages/DeviationsPage.tsx`
@@ -303,17 +305,17 @@ Implement the Deviations page — deviation trends, most-deviated steps, resolut
 Implement the Event Volume page (summary, trends, 5 dimension tabs, processing quality) and the Source Comparison page (source selector, overlap analysis, sample pairs).
 
 **Acceptance Criteria:**
-- [ ] **EventVolumePage.tsx** — 4 metric cards (total events, matched rate, zero-match rate, duplicate rate)
-- [ ] EventVolumeTrendChart with interval selector
-- [ ] 5 sub-tabs: By Resource Type (bar + table), By Facility (table), By Practitioner (table), By Source (table with status breakdown), Processing Quality (stacked bar per source)
-- [ ] All sub-tabs: cursor pagination where applicable, global filters
-- [ ] "Compare Sources →" link to source comparison page
-- [ ] **SourceComparisonPage.tsx** — 2 source selector dropdowns, match window input, Compare button
-- [ ] Overlap summary cards (Source A unique, Source B unique, overlapping, percentages)
-- [ ] Overlap by resource type bar chart
-- [ ] Sample pairs table (patient, resource type, time A, time B, diff)
-- [ ] Loading, error, and empty states
-- [ ] Component tests for EventVolumePage
+- [x] **EventVolumePage.tsx** — 4 metric cards (total events, matched rate, zero-match rate, duplicate rate)
+- [x] EventVolumeTrendChart with interval selector
+- [x] 5 sub-tabs: By Resource Type (bar + table), By Facility (table), By Practitioner (table), By Source (table with status breakdown), Processing Quality (stacked bar per source)
+- [x] All sub-tabs: cursor pagination where applicable, global filters
+- [x] "Compare Sources →" link to source comparison page
+- [x] **SourceComparisonPage.tsx** — 2 source selector dropdowns, match window input, Compare button
+- [x] Overlap summary cards (Source A unique, Source B unique, overlapping, percentages)
+- [x] Overlap by resource type bar chart
+- [x] Sample pairs table (patient, resource type, time A, time B, diff)
+- [x] Loading, error, and empty states
+- [x] Component tests for EventVolumePage
 
 **Files:**
 - `src/pages/EventVolumePage.tsx`
@@ -332,13 +334,13 @@ Implement the Event Volume page (summary, trends, 5 dimension tabs, processing q
 Implement the Facility Analytics page — facility ranking leaderboard, ranking chart, and at-risk hotspots.
 
 **Acceptance Criteria:**
-- [ ] **FacilityAnalyticsPage.tsx** — Rank By selector (compliance rate, deviation count, event volume), Order selector (best/worst first), Protocol filter
-- [ ] FacilityRankingChart — horizontal bar chart showing top facilities by selected metric
-- [ ] Facility ranking table — rank, facility ID, enrollments, compliance rate, deviations, events
-- [ ] At-risk hotspots section — stacked bar by facility showing on_track/at_risk/non_compliant patient distribution
-- [ ] Cursor pagination on ranking table
-- [ ] Global filters applied
-- [ ] Component tests
+- [x] **FacilityAnalyticsPage.tsx** — Rank By selector (compliance rate, deviation count, event volume), Order selector (best/worst first), Protocol filter
+- [x] FacilityRankingChart — horizontal bar chart showing top facilities by selected metric
+- [x] Facility ranking table — rank, facility ID, enrollments, compliance rate, deviations, events
+- [x] At-risk hotspots section — stacked bar by facility showing on_track/at_risk/non_compliant patient distribution
+- [x] Cursor pagination on ranking table
+- [x] Global filters applied
+- [x] Component tests
 
 **Files:**
 - `src/pages/FacilityAnalyticsPage.tsx`
@@ -356,15 +358,15 @@ Implement the Facility Analytics page — facility ranking leaderboard, ranking 
 Implement the Ingestion Pipeline page — ingestion funnel, rejection reason analytics, source quality scorecard, and pipeline loss detection.
 
 **Acceptance Criteria:**
-- [ ] **IngestionPage.tsx** — 4 metric cards (received, acceptance rate, rejection rate, pipeline loss)
-- [ ] IngestionFunnelChart — funnel showing RECEIVED → ACCEPTED → REJECTED → DUPLICATE
-- [ ] Rejection reasons bar chart — by `RejectionReason` enum values
-- [ ] Per-source rejection detail: source, total events, rejected count, rate, top reasons
-- [ ] Source quality table — per-source acceptance, rejection, duplicate rates
-- [ ] Pipeline loss card — lost count, loss rate, by source
-- [ ] Optional trend view when interval parameter is provided
-- [ ] Global filters applied
-- [ ] Component tests
+- [x] **IngestionPage.tsx** — 4 metric cards (received, acceptance rate, rejection rate, pipeline loss)
+- [x] IngestionFunnelChart — funnel showing RECEIVED → ACCEPTED → REJECTED → DUPLICATE
+- [x] Rejection reasons bar chart — by `RejectionReason` enum values
+- [x] Per-source rejection detail: source, total events, rejected count, rate, top reasons
+- [x] Source quality table — per-source acceptance, rejection, duplicate rates
+- [x] Pipeline loss card — lost count, loss rate, by source
+- [x] Optional trend view when interval parameter is provided
+- [x] Global filters applied
+- [x] Component tests
 
 **Files:**
 - `src/pages/IngestionPage.tsx`
@@ -382,15 +384,15 @@ Implement the Ingestion Pipeline page — ingestion funnel, rejection reason ana
 Implement the Exports page, Dockerfile, Caddy config, docker-compose.yml, and final polish (loading states, 404 page, favicon).
 
 **Acceptance Criteria:**
-- [ ] **ExportsPage.tsx** — Export config form: format (JSON/CSV radio), protocol selector, facility selector, date range; Download button triggers file download
-- [ ] `Dockerfile` — multi-stage build (node → caddy)
-- [ ] `Caddyfile` — SPA fallback + `/v1/insights/` proxy to Insights Service
-- [ ] `docker-compose.yml` — insights-ui + insights-service
-- [ ] 404 Not Found page for unmatched routes
-- [ ] Favicon and page title set to "CCE Insights"
-- [ ] `README.md` with quick start, screenshots placeholder, tech stack summary
-- [ ] `docker build` + `docker run` succeeds
-- [ ] All pages reachable, no console errors
+- [x] **ExportsPage.tsx** — Export config form: format (JSON/CSV radio), protocol selector, facility selector, date range; Download button triggers file download
+- [x] `Dockerfile` — multi-stage build (node → caddy)
+- [x] `Caddyfile` — SPA fallback + `/v1/insights/*` reverse proxy to Insights Service using `handle` blocks
+- [x] `docker-compose.yml` — insights-ui container joining `deploy-scripts_cce-net` external network (insights-service runs separately)
+- [x] 404 Not Found page for unmatched routes
+- [x] Favicon and page title set to "CCE Insights"
+- [x] `README.md` with quick start, screenshots placeholder, tech stack summary
+- [x] `docker build` + `docker run` succeeds
+- [x] All pages reachable, no console errors
 
 **Files:**
 - `src/pages/ExportsPage.tsx`

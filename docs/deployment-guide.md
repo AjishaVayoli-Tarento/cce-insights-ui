@@ -85,12 +85,12 @@ Set in `.env` before `npm run build` or `docker compose build`:
 
 ### Caddy Configuration
 
-The `Caddyfile` configures:
-- Listening on port 3001
+The `Caddyfile` uses `handle` blocks for proper directive ordering:
+- Listens on port 3001
+- `handle /v1/insights/*` — reverse proxies API calls to `cce-insights-service:8084`
+- `handle` (default) — serves the React SPA from `/srv` with `try_files` fallback to `index.html`
 - Gzip/zstd compression via `encode`
-- Aggressive caching for `/assets/` (hashed filenames)
-- API reverse proxy to `cce-insights-service:8084`
-- SPA fallback (`try_files` → `index.html`)
+- Aggressive caching for `/assets/*` (Vite hashed filenames)
 - Security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
 
 ### Docker Network
@@ -107,7 +107,9 @@ networks:
 And update the upstream hostname in `Caddyfile` if the container name differs:
 
 ```caddyfile
-reverse_proxy /v1/insights/* your-insights-container:8084
+handle /v1/insights/* {
+    reverse_proxy your-insights-container:8084
+}
 ```
 
 ## Troubleshooting

@@ -51,3 +51,28 @@ docker compose up -d --build
 - Protocol and Facility IDs are entered as free text (no dropdown selection from API)
 - OAuth/gateway integration is stubbed (`VITE_AUTH_ENABLED=false`) — no gateway deployed locally
 - No unit tests shipped in v1.0.0 (test infrastructure is in place with Vitest + Testing Library + MSW)
+
+---
+
+## Bug Fixes (post-release)
+
+### Date format mismatch (Invalid request: undefined)
+All API calls failed with `Invalid request: undefined` because the UI sent dates as `YYYY-MM-DD` but the Insights Service expects ISO 8601 `OffsetDateTime` (`2026-03-01T00:00:00Z`). The `useGlobalFilters` hook now converts dates via `toStartOfDayISO()` / `toEndOfDayISO()`.
+
+### Error body unwrapping
+The API returns errors as `{ error: { code, message } }` but `handleResponse` passed the outer object — so `body.message` was `undefined`. Fixed to unwrap `raw.error ?? raw`.
+
+### ProtocolInstanceStatus casing (blank Patient Detail page)
+The API returns `status: "ACTIVE"` (uppercase) but `STATUS_COLORS` had lowercase keys (`active`). Lookup returned `undefined`, then `color.bg` in `StatusBadge` crashed React. Changed `ProtocolInstanceStatus` type and `STATUS_COLORS` to uppercase (`ACTIVE`, `COMPLETED`, `WITHDRAWN`, `EXPIRED`). Added fallback colors for all badge lookups.
+
+### Null-safe numeric rendering (toFixed / toLocaleString on null)
+Several API fields return `null` instead of a number (`processingStatusBreakdown`, `avgDaysToResolve`, `lossRate`, etc.). All formatter functions (`formatNumber`, `formatPercentage`, `formatRate`) now accept `null | undefined` and return `'—'`. All pages guard nullable nested objects before accessing properties.
+
+### ProcessingQuality data shape mismatch
+The `processing-quality` API nests status counts under a `breakdown` object per source (`bySource[].breakdown.matched.count`) and uses `zero_match` (snake_case). The chart component now reads `d.breakdown?.matched?.count ?? 0` and handles missing fields gracefully.
+
+### API client refactoring
+Extracted shared `buildUrl()`, `authHeaders()`, and `handleResponse()` helpers from duplicated code in `apiGet` and `apiGetPaginated`. Changed default `BASE_URL` from `http://localhost:8084` to empty string (relative URLs) so Caddy proxy works in Docker. The exports module now reuses `buildUrl()` from the client.
+
+### Caddy directive ordering
+Initial Caddyfile used `try_files` and `reverse_proxy` at the same level, causing `try_files` to run before the proxy. Fixed by using `handle` blocks for proper routing precedence.

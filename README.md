@@ -5,7 +5,13 @@
 ## Architecture
 
 ```
-Insights UI (React 18) → CCE Gateway (OAuth) → Insights Service (port 8084) → PostgreSQL (read-only)
+# Demo (local Docker — no gateway)
+Browser → :3001 → Caddy (cce-insights-ui container)
+                    ├── static assets (React SPA)
+                    └── /v1/insights/* → proxy → cce-insights-service:8084 → PostgreSQL (read-only)
+
+# Production (with gateway)
+Browser → :3001 → CCE Gateway (OAuth, :8060) → Insights Service (:8084) → PostgreSQL (read-only)
 ```
 
 | Component | Technology |
@@ -62,18 +68,17 @@ npm run dev          # http://localhost:3001
 
 | Document | Description |
 |----------|-------------|
-| [Copilot Instructions](copilot-instructions-insights-ui.md) | AI agent instructions |
-| [Architecture Overview](architecture-overview.md) | System context, tech stack, data flow, routing |
-| [Pages & Wireframes](pages-and-wireframes.md) | ASCII wireframes for all 11 pages |
-| [API Integration](api-integration.md) | TypeScript types, API modules, TanStack Query hooks |
-| [Developer Setup](developer-setup.md) | Prerequisites, quick start, Docker, testing |
-| [Subtasks](subtasks.md) | JIRA subtasks for implementation (12 subtasks, 45 story points) |
+| [Architecture Overview](docs/architecture-overview.md) | System context, tech stack, data flow, routing |
+| [Pages & Wireframes](docs/pages-and-wireframes.md) | ASCII wireframes for all 11 pages |
+| [API Integration](docs/api-integration.md) | TypeScript types, API modules, TanStack Query hooks |
+| [Developer Setup](docs/developer-setup.md) | Prerequisites, quick start, Docker, testing |
+| [Deployment Guide](docs/deployment-guide.md) | Docker build, Caddy config, network, troubleshooting |
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_API_BASE_URL` | `http://localhost:8084` | Insights Service base URL |
+| `VITE_API_BASE_URL` | _(empty — relative)_ | Insights Service base URL. Empty = relative URLs (Caddy proxy). Set `http://localhost:8084` for local dev without Docker. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth (demo mode = false) |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval (ms) |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default dashboard date range |
@@ -81,8 +86,11 @@ npm run dev          # http://localhost:3001
 ## Build & Deploy
 
 ```bash
-npm run build        # Production build → dist/
-npm run preview      # Preview production build
-docker build -t cce-insights-ui .
-docker run -p 3001:3001 cce-insights-ui
+npm run build                       # Production build → dist/
+npm run preview                     # Preview production build locally
+
+# Docker (requires cce-insights-service on deploy-scripts_cce-net)
+docker compose up -d --build        # Build + deploy → http://localhost:3001
+docker compose down                 # Stop
+docker compose up -d --build --force-recreate  # Rebuild after code changes
 ```
