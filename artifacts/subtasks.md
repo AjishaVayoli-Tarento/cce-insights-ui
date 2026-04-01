@@ -5,11 +5,13 @@
 **Sprint Target:** Release 1.0.0  
 **Total Subtasks:** 12  
 **Total Story Points:** 45  
-**Total Pages:** 11 | **Total Insights Service Endpoints Consumed:** 33  
+**Total Pages:** 11 | **Total Insights Service Endpoints Consumed:** 38 (33 analytics + 5 lookup)  
 **Status:** ✅ All subtasks implemented and deployed
 
 > All subtasks have been implemented. The UI is deployed as a Docker container (`cce-insights-ui`)
 > on the `deploy-scripts_cce-net` network, directly proxying API calls to `cce-insights-service:8084` via Caddy.
+> Post-release fixes include: ISO date format, error unwrapping, status casing, null-safe rendering,
+> ingestion chart colors, `VITE_AUTH_TOKEN` config, and lookup API integration.
 
 ---
 
@@ -79,8 +81,8 @@ Initialize the React project with Vite, TypeScript, Tailwind CSS, and all requir
 Implement the typed API client layer — all TypeScript interfaces matching the 33 Insights Service response schemas, base fetch wrapper with `{ data }` envelope unwrapping, per-resource API functions (10 modules), and TanStack Query hooks (10 hooks) with global filter integration.
 
 **Acceptance Criteria:**
-- [x] `src/api/types.ts` — ~30 interfaces covering all 33 endpoint responses: `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
-- [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, optional OAuth header
+- [x] `src/api/types.ts` — ~30 interfaces covering all 38 endpoint responses: `ProtocolLookup`, `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
+- [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, optional OAuth header (`VITE_AUTH_TOKEN` or sessionStorage)
 - [x] `src/api/compliance.ts` — 3 functions: protocol summary, facility summary, protocol patients
 - [x] `src/api/patients.ts` — 7 functions: timeline, tracking list, tracking detail, events, deviations, at-risk hotspots, repeat deviations
 - [x] `src/api/deviations.ts` — 5 functions: list, trends, by-action, resolution-rate, intelligence summary
@@ -89,19 +91,20 @@ Implement the typed API client layer — all TypeScript interfaces matching the 
 - [x] `src/api/facilities.ts` — 1 function: ranking
 - [x] `src/api/ingestion.ts` — 4 functions: funnel, rejections, source-quality, pipeline-loss
 - [x] `src/api/exports.ts` — 1 function: export URL builder
-- [x] `src/hooks/` — 10 hook files with TanStack Query wrappers, global filter integration
+- [x] `src/api/lookups.ts` — 5 functions: protocols, facilities, practitioners, sources, patients
+- [x] `src/hooks/` — 10 hook files with TanStack Query wrappers, global filter integration (incl. `useLookups.ts`)
 - [x] Unit tests for `apiGet` envelope unwrapping, error handling (404, 500, network error)
 
 **Files:**
 - `src/api/types.ts`, `src/api/client.ts`
 - `src/api/compliance.ts`, `src/api/patients.ts`, `src/api/deviations.ts`
 - `src/api/events.ts`, `src/api/protocols.ts`, `src/api/facilities.ts`
-- `src/api/ingestion.ts`, `src/api/exports.ts`
-- `src/hooks/useComplianceSummary.ts`, `src/hooks/useProtocolAnalytics.ts`
-- `src/hooks/usePatientCompliance.ts`, `src/hooks/useDeviations.ts`
-- `src/hooks/useEventVolume.ts`, `src/hooks/useFacilityRanking.ts`
-- `src/hooks/useIngestionAnalytics.ts`, `src/hooks/usePatientRisk.ts`
-- `src/hooks/useExport.ts`, `src/hooks/useGlobalFilters.ts`
+- `src/api/ingestion.ts`, `src/api/exports.ts`, `src/api/lookups.ts`
+- `src/hooks/useComplianceSummary.ts`, `src/hooks/useProtocols.ts`
+- `src/hooks/usePatients.ts`, `src/hooks/useDeviations.ts`
+- `src/hooks/useEventVolume.ts`, `src/hooks/useFacilities.ts`
+- `src/hooks/useIngestion.ts`, `src/hooks/useLookups.ts`
+- `src/hooks/useSourceComparison.ts`, `src/hooks/useGlobalFilters.ts`
 
 ---
 
