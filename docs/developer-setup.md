@@ -95,7 +95,10 @@ The dashboard should load metrics from the Insights Service. If you see "Cannot 
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://localhost:8084` | Insights Service URL. Set to empty string `""` when using Vite proxy. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth token injection. `false` for demo mode. |
-| `VITE_AUTH_TOKEN` | _(empty)_ | Gateway bearer token. Falls back to `sessionStorage('access_token')` if not set. Only used when `VITE_AUTH_ENABLED=true`. |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Static bearer token override. Falls back to Keycloak token or `sessionStorage('access_token')`. |
+| `VITE_KEYCLOAK_URL` | _(empty)_ | Keycloak server URL (e.g. `https://keycloak.example.com`). Enables OIDC flow when set with `VITE_AUTH_ENABLED=true`. |
+| `VITE_KEYCLOAK_REALM` | _(empty)_ | Keycloak realm name (e.g. `cce`). |
+| `VITE_KEYCLOAK_CLIENT_ID` | _(empty)_ | Keycloak client ID (e.g. `cce-insights-ui`). Must be a public client with PKCE. |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval in milliseconds. `0` to disable. |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default date range for dashboard (days back from today). |
 
@@ -110,7 +113,7 @@ npm create vite@latest cce-insights-ui -- --template react-ts
 cd cce-insights-ui
 
 # Core dependencies
-npm install react-router-dom @tanstack/react-query recharts date-fns @heroicons/react
+npm install react-router-dom @tanstack/react-query recharts date-fns @heroicons/react keycloak-js
 
 # Dev dependencies
 npm install -D tailwindcss @tailwindcss/vite vitest jsdom @testing-library/react @testing-library/jest-dom msw
@@ -154,7 +157,7 @@ cce-insights-ui/
 ├── public/
 ├── src/
 │   ├── api/                    # Typed API client (11 modules)
-│   │   ├── client.ts           # buildUrl, authHeaders, handleResponse, apiGet, apiGetPaginated
+│   │   ├── client.ts           # buildUrl, authHeaders (Keycloak token), handleResponse, apiGet, apiGetPaginated
 │   │   ├── types.ts            # All TypeScript types (incl. ProtocolLookup)
 │   │   ├── compliance.ts       # Protocol/facility compliance + patients
 │   │   ├── deviations.ts       # Deviations + intelligence
@@ -165,6 +168,8 @@ cce-insights-ui/
 │   │   ├── lookups.ts          # Protocol, facility, practitioner, source, patient lookups
 │   │   ├── patients.ts         # Patient timeline, tracking, events, deviations, risk
 │   │   └── protocols.ts        # Step analytics, funnel, outcomes, enrollment
+│   ├── auth/
+│   │   └── keycloak.ts         # Keycloak OIDC init (PKCE), auto-refresh token
 │   ├── components/
 │   │   ├── layout/             # Sidebar
 │   │   ├── shared/             # Card, MetricCard, StatusBadge, PageHeader, ErrorAlert,

@@ -11,7 +11,7 @@
 > All subtasks have been implemented. The UI is deployed as a Docker container (`cce-insights-ui`)
 > on the `deploy-scripts_cce-net` network, directly proxying API calls to `cce-insights-service:8084` via Caddy.
 > Post-release fixes include: ISO date format, error unwrapping, status casing, null-safe rendering,
-> ingestion chart colors, `VITE_AUTH_TOKEN` config, and lookup API integration.
+> ingestion chart colors, `VITE_AUTH_TOKEN` config, lookup API integration, and Keycloak OIDC authentication.
 
 ---
 
@@ -82,7 +82,8 @@ Implement the typed API client layer — all TypeScript interfaces matching the 
 
 **Acceptance Criteria:**
 - [x] `src/api/types.ts` — ~30 interfaces covering all 38 endpoint responses: `ProtocolLookup`, `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
-- [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, optional OAuth header (`VITE_AUTH_TOKEN` or sessionStorage)
+- [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, Keycloak OIDC token injection (`VITE_AUTH_TOKEN` → `keycloak.token` → sessionStorage)
+- [x] `src/auth/keycloak.ts` — Keycloak OIDC init with PKCE (`S256`), `login-required` mode, auto-refresh token every 30s
 - [x] `src/api/compliance.ts` — 3 functions: protocol summary, facility summary, protocol patients
 - [x] `src/api/patients.ts` — 7 functions: timeline, tracking list, tracking detail, events, deviations, at-risk hotspots, repeat deviations
 - [x] `src/api/deviations.ts` — 5 functions: list, trends, by-action, resolution-rate, intelligence summary

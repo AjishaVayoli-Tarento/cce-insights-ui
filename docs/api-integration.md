@@ -22,6 +22,8 @@
 
 ```typescript
 // src/api/client.ts
+import { keycloak } from '../auth/keycloak';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export class ApiError extends Error {
@@ -47,7 +49,10 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token = import.meta.env.VITE_AUTH_TOKEN || sessionStorage.getItem('access_token');
+    const token =
+      import.meta.env.VITE_AUTH_TOKEN ||
+      keycloak.token ||
+      sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;

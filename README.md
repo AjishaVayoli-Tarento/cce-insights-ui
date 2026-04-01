@@ -24,6 +24,7 @@ Browser → :3001 → CCE Gateway (OAuth, :8060) → Insights Service (:8084) �
 | Charts | Recharts 2 |
 | Icons | Heroicons 2 |
 | Dates | date-fns 4 |
+| Auth | keycloak-js (OIDC + PKCE) |
 | Testing | Vitest + Testing Library + MSW |
 
 ## Quick Start
@@ -81,7 +82,10 @@ npm run dev          # http://localhost:3001
 |----------|---------|-------------|
 | `VITE_API_BASE_URL` | _(empty — relative)_ | Insights Service base URL. Empty = relative URLs (Caddy proxy). Set `http://localhost:8084` for local dev without Docker. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth (demo mode = false) |
-| `VITE_AUTH_TOKEN` | _(empty)_ | Gateway bearer token. Falls back to `sessionStorage('access_token')` if not set |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Static bearer token override. Falls back to Keycloak or sessionStorage |
+| `VITE_KEYCLOAK_URL` | _(empty)_ | Keycloak server URL. Enables OIDC when set with AUTH_ENABLED=true |
+| `VITE_KEYCLOAK_REALM` | _(empty)_ | Keycloak realm name |
+| `VITE_KEYCLOAK_CLIENT_ID` | _(empty)_ | Keycloak public client ID (PKCE) |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval (ms) |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default dashboard date range |
 

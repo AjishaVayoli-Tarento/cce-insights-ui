@@ -91,6 +91,7 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 | **Icons** | Heroicons | 2.x | Consistent icon set |
 | **Charts** | Recharts | 2.x | Bar, line, area, pie, funnel charts |
 | **Dates** | date-fns | 4.x | Date formatting, diff calculation |
+| **Auth** | keycloak-js | 26.x | Keycloak OIDC authentication (PKCE) |
 | **Testing** | Vitest + Testing Library | latest | Component + hook tests |
 | **API Mocking** | MSW | 2.x | Mock Service Worker for tests |
 | **Linting** | ESLint + Prettier | latest | Code quality |
@@ -138,6 +139,7 @@ flowchart TD
         CTX[Context<br/>FilterContext]
         H[Hooks (10)<br/>useComplianceSummary,<br/>useDeviations, useLookups, etc.]
         A[API Client (11 modules)<br/>compliance, deviations, events,<br/>ingestion, lookups, etc.]
+        AUTH[Auth<br/>keycloak.ts<br/>OIDC + PKCE + auto-refresh]
     end
 
     subgraph "Utilities"
@@ -153,6 +155,7 @@ flowchart TD
     P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 --> H
     H --> A
     H --> CTX
+    A --> AUTH
     CH --> U
     C --> U
 ```
@@ -166,6 +169,7 @@ flowchart TD
 | **Charts** | Recharts wrappers; receive processed data arrays | No data fetching; pure render |
 | **Hooks** | TanStack Query wrappers; return `{ data, isLoading, error }` | One hook per API endpoint group; receive global filters from context |
 | **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (11 modules incl. lookups) | No React dependencies; pure TypeScript |
+| **Auth** | Keycloak OIDC init with PKCE; auto-refresh token every 30s; token injected into API headers | `src/auth/keycloak.ts`; skipped when `VITE_AUTH_ENABLED=false` or `VITE_KEYCLOAK_URL` not set |
 | **Context** | Global filter state (date range, facility) shared across pages | Persisted in URL search params for shareability |
 | **Utils** | Pure functions for formatting, computation, color mapping | No side effects |
 

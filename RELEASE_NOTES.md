@@ -28,6 +28,7 @@ Initial release of the CCE Insights UI — an analytics dashboard for the Clinic
 - **TanStack Query 5** for server state with auto-polling on key dashboards
 - **Tailwind CSS 4** for utility-first styling
 - **Recharts 2** for charts (area, bar, pie, funnel)
+- **keycloak-js** for Keycloak OIDC authentication (PKCE, auto-refresh)
 - **Cursor-based pagination** throughout all paginated views
 - **Global filters** (date range + facility) applied across all data queries via React Context
 - **Docker deployment** — multi-stage build (node:20 → caddy:2-alpine), Caddy reverse proxy to insights-service
@@ -83,6 +84,9 @@ Both ACCEPTED and REJECTED bars rendered in black because the chart used raw `<r
 
 ### Auth token configuration
 Added `VITE_AUTH_TOKEN` build-time environment variable for providing a gateway bearer token. When `VITE_AUTH_ENABLED=true`, the token is read from `VITE_AUTH_TOKEN` first, falling back to `sessionStorage('access_token')`.
+
+### Keycloak OIDC integration
+Added full Keycloak authentication support via `keycloak-js`. When `VITE_AUTH_ENABLED=true` and `VITE_KEYCLOAK_URL` is set, the app initializes Keycloak with Authorization Code flow + PKCE before rendering. The token is auto-refreshed every 30 seconds. Token priority: `VITE_AUTH_TOKEN` (static override) → `keycloak.token` (OIDC) → `sessionStorage('access_token')` (manual). New env variables: `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID`. When Keycloak is not configured, the app renders normally (demo mode).
 
 ### Lookup API integration
 Added `src/api/lookups.ts` module with 5 lookup endpoints (`/lookups/protocols`, `/lookups/facilities`, `/lookups/practitioners`, `/lookups/sources`, `/lookups/patients`) and corresponding `useLookups.ts` hook with 5-minute `staleTime` for populating protocol/facility/source selectors.
