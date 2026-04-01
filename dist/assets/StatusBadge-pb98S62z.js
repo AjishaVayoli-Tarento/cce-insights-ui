@@ -1,1 +1,0 @@
-import{j as t}from"./index-DQh0yWHM.js";function a({label:s,color:e}){return t.jsxs("span",{className:`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${e.bg} ${e.text}`,children:[e.dot&&t.jsx("span",{className:`h-1.5 w-1.5 rounded-full ${e.dot}`}),s]})}export{a as S};

@@ -1,3 +1,13 @@
+// ─── Lookups ─────────────────────────────────────────────────
+
+export interface ProtocolLookup {
+  id: string;
+  url: string;
+  version: string;
+  canonical: string;
+  status: string;
+}
+
 // ─── Response Envelopes ──────────────────────────────────────
 
 export interface ErrorResponse {

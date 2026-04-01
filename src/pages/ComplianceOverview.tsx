@@ -8,6 +8,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolComplianceSummary, useProtocolPatients } from '../hooks/useComplianceSummary';
+import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
 import type { ComplianceCategory } from '../api/types';
@@ -18,6 +19,7 @@ export default function ComplianceOverview() {
   const [cursor, setCursor] = useState<string | undefined>();
   const [page, setPage] = useState(1);
 
+  const protocols = useProtocols();
   const summary = useProtocolComplianceSummary(protocolId);
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
@@ -33,21 +35,26 @@ export default function ComplianceOverview() {
       <Card title="Protocol Compliance">
         <div className="mb-4">
           <label className="mb-1 block text-xs font-medium text-gray-500">Select Protocol</label>
-          <input
-            type="text"
+          <select
             value={protocolId}
             onChange={(e) => {
               setProtocolId(e.target.value);
               setCursor(undefined);
               setPage(1);
             }}
-            placeholder="Enter Protocol Definition ID"
-            className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          />
+            className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Select a protocol...</option>
+            {protocols.data?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.url.split('/').pop()} v{p.version} — {p.status}
+              </option>
+            ))}
+          </select>
         </div>
 
         {!protocolId && (
-          <p className="py-6 text-center text-sm text-gray-400">Enter a Protocol Definition ID to view compliance.</p>
+          <p className="py-6 text-center text-sm text-gray-400">Select a protocol to view compliance.</p>
         )}
 
         {summary.isLoading && <LoadingSpinner />}

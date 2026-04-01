@@ -9,6 +9,7 @@ import { CursorPagination } from '../components/shared/CursorPagination';
 import { RiskHotspotChart } from '../components/charts/RiskHotspotChart';
 import { useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useAtRiskHotspots, useRepeatDeviations } from '../hooks/usePatients';
+import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
 import type { ComplianceCategory } from '../api/types';
@@ -20,6 +21,7 @@ export default function PatientList() {
   const [page, setPage] = useState(1);
   const [minDeviations, setMinDeviations] = useState(3);
 
+  const protocols = useProtocols();
   const hotspots = useAtRiskHotspots({ limit: 10 });
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
@@ -41,13 +43,18 @@ export default function PatientList() {
         <div className="mb-4 flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
-            <input
-              type="text"
+            <select
               value={protocolId}
               onChange={(e) => { setProtocolId(e.target.value); setCursor(undefined); setPage(1); }}
-              placeholder="Protocol Definition ID"
-              className="w-56 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
+              className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select a protocol...</option>
+              {protocols.data?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.url.split('/').pop()} v{p.version}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex gap-2">
             {['', 'on_track', 'at_risk', 'non_compliant'].map((s) => (
@@ -77,7 +84,7 @@ export default function PatientList() {
         </div>
 
         {!protocolId && (
-          <p className="py-4 text-center text-sm text-gray-400">Enter a Protocol Definition ID to view patients.</p>
+          <p className="py-4 text-center text-sm text-gray-400">Select a protocol to view patients.</p>
         )}
 
         {patients.isLoading && <LoadingSpinner />}

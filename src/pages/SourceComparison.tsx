@@ -6,7 +6,7 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
 import { useSourceComparison } from '../hooks/useSourceComparison';
-import { useEventsBySource } from '../hooks/useEventVolume';
+import { useSourcesLookup } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 
 export default function SourceComparison() {
@@ -15,7 +15,7 @@ export default function SourceComparison() {
   const [windowSeconds, setWindowSeconds] = useState(300);
   const [submitted, setSubmitted] = useState(false);
 
-  const sources = useEventsBySource();
+  const sources = useSourcesLookup();
   const comparison = useSourceComparison({
     sourceA: submitted ? sourceA : '',
     sourceB: submitted ? sourceB : '',
@@ -42,11 +42,11 @@ export default function SourceComparison() {
             <select
               value={sourceA}
               onChange={(e) => { setSourceA(e.target.value); setSubmitted(false); }}
-              className="w-56 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select source...</option>
               {sources.data?.map((s) => (
-                <option key={s.source} value={s.source}>{s.source}</option>
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
@@ -55,11 +55,11 @@ export default function SourceComparison() {
             <select
               value={sourceB}
               onChange={(e) => { setSourceB(e.target.value); setSubmitted(false); }}
-              className="w-56 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select source...</option>
               {sources.data?.map((s) => (
-                <option key={s.source} value={s.source}>{s.source}</option>
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
