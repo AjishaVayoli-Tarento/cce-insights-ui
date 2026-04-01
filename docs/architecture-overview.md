@@ -1,7 +1,7 @@
 # Architecture Overview
 
 > **CCE Insights UI** — Analytics dashboard for compliance intelligence  
-> **Version**: 1.0.0 | **Last Updated**: 2026-03-31
+> **Version**: 1.0.0 | **Last Updated**: 2026-04-01
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 1. System Context
 
-The Insights UI is a **read-only** React SPA that visualizes compliance analytics by consuming the CCE Insights Service's 33 REST endpoints. It provides protocol adherence dashboards, deviation trend analysis, event volume metrics, facility leaderboards, patient risk hotspots, and ingestion pipeline monitoring.
+The Insights UI is a **read-only** React SPA that visualizes compliance analytics by consuming the CCE Insights Service's 38 REST endpoints (33 analytics + 5 lookup). It provides protocol adherence dashboards, deviation trend analysis, event volume metrics, facility leaderboards, patient risk hotspots, and ingestion pipeline monitoring.
 
 ```mermaid
 graph LR
@@ -73,7 +73,7 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 | **Focus** | Individual patient journey demo | Aggregate analytics & operational intelligence |
 | **Backend** | Compliance Service (port 8080) | Insights Service (port 8084) |
 | **Port** | 3000 | 3001 |
-| **Endpoints used** | ~12 (patient-centric) | 33 (analytics-centric) |
+| **Endpoints used** | ~12 (patient-centric) | 38 (33 analytics + 5 lookup) |
 | **Primary users** | Demo audience, clinical staff | Operations managers, facility supervisors, data analysts |
 
 ---
@@ -129,16 +129,15 @@ flowchart TD
 
     subgraph "Components"
         direction LR
-        L[Layout<br/>AppLayout, Sidebar,<br/>Header, FilterBar]
-        C[Common<br/>MetricCard, DataTable,<br/>Badges, DatePicker]
+        L[Layout<br/>Sidebar]
+        C[Shared<br/>Card, MetricCard, StatusBadge,<br/>PageHeader, ErrorAlert,<br/>DateRangeFilter, FacilityFilter,<br/>CursorPagination, EmptyState,<br/>LoadingSpinner]
         CH[Charts<br/>10 chart components:<br/>trends, funnels, heatmaps]
-        PT[Patient<br/>Timeline, Tracking,<br/>Steps, Deviations]
     end
 
     subgraph "Data Layer"
         CTX[Context<br/>FilterContext]
-        H[Hooks (10)<br/>useComplianceSummary,<br/>useProtocolAnalytics, etc.]
-        A[API Client (10 modules)<br/>compliance, deviations,<br/>events, ingestion, etc.]
+        H[Hooks (10)<br/>useComplianceSummary,<br/>useDeviations, useLookups, etc.]
+        A[API Client (11 modules)<br/>compliance, deviations, events,<br/>ingestion, lookups, etc.]
     end
 
     subgraph "Utilities"
@@ -150,14 +149,12 @@ flowchart TD
     app --> CTX
     L --> P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11
     P1 & P2 & P3 & P6 & P7 & P9 --> CH
-    P4 & P5 --> PT
     P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 --> C
     P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 --> H
     H --> A
     H --> CTX
     CH --> U
     C --> U
-    PT --> U
 ```
 
 ### Layer Responsibilities
@@ -168,7 +165,7 @@ flowchart TD
 | **Components** | Visual rendering; receive data via props | Stateless where possible; no API calls |
 | **Charts** | Recharts wrappers; receive processed data arrays | No data fetching; pure render |
 | **Hooks** | TanStack Query wrappers; return `{ data, isLoading, error }` | One hook per API endpoint group; receive global filters from context |
-| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping | No React dependencies; pure TypeScript |
+| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (11 modules incl. lookups) | No React dependencies; pure TypeScript |
 | **Context** | Global filter state (date range, facility) shared across pages | Persisted in URL search params for shareability |
 | **Utils** | Pure functions for formatting, computation, color mapping | No side effects |
 
@@ -196,57 +193,56 @@ App (QueryClientProvider + FilterProvider)
 │   ├── FacilitySummaryCard (facility-level metrics)
 │   └── PatientComplianceTable (paginated patient list by status)
 │
-├── /compliance/protocols/:id → ProtocolAnalyticsPage
+├── /compliance/protocols/:id → ProtocolAnalytics
 │   ├── StepAnalyticsTable (per-step rates, timeliness, avg/median)
 │   ├── CompletionFunnelChart (funnel — drop-off per step)
 │   ├── OutcomeDistributionChart (pie — ACTIVE/COMPLETED/WITHDRAWN/EXPIRED)
 │   └── EnrollmentTrendChart (line — enrollments over time)
 │
-├── /compliance/patients → PatientListPage
+├── /compliance/patients → PatientList
 │   ├── ComplianceCategoryFilter (on_track / at_risk / non_compliant)
 │   ├── PatientComplianceTable (paginated, filterable)
-│   └── RiskHeatmapChart (at-risk hotspots by facility)
+│   └── RiskHotspotChart (at-risk hotspots by facility)
 │
-├── /compliance/patients/:patientId → PatientDetailPage
+├── /compliance/patients/:id → PatientDetail
 │   ├── ComplianceTimeline (chronological events & steps)
 │   ├── ProtocolTrackingCard × N (protocol instances)
 │   ├── StepInstanceTable (step details for selected protocol)
 │   └── PatientDeviationList (cross-protocol deviations)
 │
-├── /deviations → DeviationsPage
+├── /deviations → Deviations
 │   ├── DeviationTrendChart (area — overdue vs missed over time)
 │   ├── DeviationByActionTable (most-deviated steps)
 │   ├── ResolutionRateCard (resolved vs escalated)
 │   └── DeviationListTable (paginated, filterable)
 │
-├── /events → EventVolumePage
+├── /events → EventVolume
 │   ├── EventSummaryCards (total, by status)
-│   ├── EventVolumeTrendChart (stacked area by resource type)
-│   ├── ResourceTypeBreakdownChart (bar/pie)
+│   ├── EventTrendChart (stacked area by resource type)
+│   ├── ResourceTypeBarChart (bar)
 │   ├── FacilityEventTable (events per facility)
 │   ├── PractitionerEventTable (events per practitioner)
 │   ├── SourceSystemTable (events per source)
 │   └── ProcessingQualityChart (MATCHED/ZERO_MATCH/DUPLICATE per source)
 │
-├── /events/source-comparison → SourceComparisonPage
-│   ├── SourceSelector × 2 (sourceA, sourceB dropdowns)
+├── /events/source-comparison → SourceComparison
+│   ├── SourceSelector × 2 (sourceA, sourceB dropdowns via useLookups)
 │   ├── OverlapSummaryCards (unique, overlapping, percentages)
-│   ├── OverlapByResourceTypeChart (bar)
+│   ├── SourceTimelineChart (overlap visualization)
 │   └── SamplePairsTable (sample overlapping events)
 │
-├── /facilities → FacilityAnalyticsPage
+├── /facilities → FacilityAnalytics
 │   ├── RankingSelector (by: complianceRate, deviationCount, eventVolume)
-│   ├── FacilityRankingChart (horizontal bar)
 │   ├── FacilityRankingTable (detailed leaderboard)
-│   └── RiskHeatmapChart (at-risk patients per facility)
+│   └── RiskHotspotChart (at-risk patients per facility)
 │
-├── /ingestion → IngestionPage
+├── /ingestion → IngestionPipeline
 │   ├── IngestionFunnelChart (ACCEPTED/REJECTED/DUPLICATE)
 │   ├── RejectionReasonChart (bar — by rejection reason)
 │   ├── SourceQualityTable (per-source acceptance/rejection rates)
 │   └── PipelineLossCard (lost events count & rate)
 │
-└── /exports → ExportsPage
+└── /exports → Exports
     ├── ExportConfigForm (format, protocol, facility, date range)
     └── DownloadButton
 ```
@@ -366,54 +362,39 @@ useQuery({
 
 ## 7. Routing
 
-```typescript
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'compliance', element: <ComplianceOverviewPage /> },
-      { path: 'compliance/protocols/:protocolDefinitionId', element: <ProtocolAnalyticsPage /> },
-      { path: 'compliance/patients', element: <PatientListPage /> },
-      { path: 'compliance/patients/:patientId', element: <PatientDetailPage /> },
-      { path: 'deviations', element: <DeviationsPage /> },
-      { path: 'events', element: <EventVolumePage /> },
-      { path: 'events/source-comparison', element: <SourceComparisonPage /> },
-      { path: 'facilities', element: <FacilityAnalyticsPage /> },
-      { path: 'ingestion', element: <IngestionPage /> },
-      { path: 'exports', element: <ExportsPage /> },
-    ],
-  },
-]);
+```tsx
+// src/App.tsx — uses Routes/Route from react-router-dom with lazy-loaded pages
+<Routes>
+  <Route path="/" element={<Dashboard />} />
+  <Route path="/compliance" element={<ComplianceOverview />} />
+  <Route path="/compliance/protocols/:id" element={<ProtocolAnalytics />} />
+  <Route path="/compliance/patients" element={<PatientList />} />
+  <Route path="/compliance/patients/:id" element={<PatientDetail />} />
+  <Route path="/deviations" element={<Deviations />} />
+  <Route path="/events" element={<EventVolume />} />
+  <Route path="/events/source-comparison" element={<SourceComparison />} />
+  <Route path="/facilities" element={<FacilityAnalytics />} />
+  <Route path="/ingestion" element={<IngestionPipeline />} />
+  <Route path="/exports" element={<Exports />} />
+</Routes>
 ```
 
-### Sidebar Navigation Groups
+### Sidebar Navigation
+
+The sidebar uses a flat navigation list (no groups):
 
 ```
-📊 Overview
-  ├── Dashboard (/)
-
-📋 Compliance
-  ├── Compliance Overview (/compliance)
-  ├── Patients (/compliance/patients)
-
-📈 Events & Activity
-  ├── Event Volume (/events)
-  ├── Source Comparison (/events/source-comparison)
-
-⚠️ Deviations
-  ├── Deviation Analytics (/deviations)
-
-🏥 Facilities
-  ├── Facility Rankings (/facilities)
-
-🔧 Operations
-  ├── Ingestion Pipeline (/ingestion)
-
-📥 Exports
-  ├── Export Data (/exports)
+Dashboard       → /
+Compliance      → /compliance
+Patients        → /compliance/patients
+Deviations      → /deviations
+Events          → /events
+Facilities      → /facilities
+Ingestion       → /ingestion
+Exports         → /exports
 ```
+
+Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `ExclamationTriangleIcon`, `SignalIcon`, `BuildingOffice2Icon`, `CogIcon`, `ArrowDownTrayIcon`.
 
 ---
 

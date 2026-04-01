@@ -1,7 +1,7 @@
 # API Integration Reference
 
 > **CCE Insights UI** — Complete mapping of UI features to Insights Service APIs  
-> All endpoints consumed from the Insights Service (`port 8084`) or via the CCE Gateway (`port 8060`).
+> All 38 endpoints (33 analytics + 5 lookup) consumed from the Insights Service (`port 8084`) or via the CCE Gateway (`port 8060`).
 
 ---
 
@@ -47,7 +47,7 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token = sessionStorage.getItem('access_token');
+    const token = import.meta.env.VITE_AUTH_TOKEN || sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
@@ -1115,6 +1115,34 @@ export function getExportUrl(params: {
 }
 ```
 
+### 3.10 Lookups
+
+```typescript
+// src/api/lookups.ts
+import { apiGet } from './client';
+import type { ProtocolLookup } from './types';
+
+export function getProtocols() {
+  return apiGet<ProtocolLookup[]>('/lookups/protocols');
+}
+
+export function getFacilities() {
+  return apiGet<string[]>('/lookups/facilities');
+}
+
+export function getPractitioners() {
+  return apiGet<string[]>('/lookups/practitioners');
+}
+
+export function getSources() {
+  return apiGet<string[]>('/lookups/sources');
+}
+
+export function getPatients() {
+  return apiGet<string[]>('/lookups/patients');
+}
+```
+
 ---
 
 ## 4. TanStack Query Hooks
@@ -1226,7 +1254,42 @@ export function useEventsByResourceType() {
 }
 ```
 
-### 4.4 Global Filters Hook
+### 4.4 Lookups
+
+```typescript
+// src/hooks/useLookups.ts
+import { useQuery } from '@tanstack/react-query';
+import { getProtocols, getFacilities, getPractitioners, getSources, getPatients } from '../api/lookups';
+
+export function useProtocols() {
+  return useQuery({
+    queryKey: ['lookups', 'protocols'],
+    queryFn: getProtocols,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useFacilityLookup() {
+  return useQuery({
+    queryKey: ['lookups', 'facilities'],
+    queryFn: getFacilities,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSourcesLookup() {
+  return useQuery({
+    queryKey: ['lookups', 'sources'],
+    queryFn: getSources,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+```
+
+> **Note:** Lookup hooks use a 5-minute `staleTime` since this reference data changes infrequently.
+> They power protocol/facility/source selectors in Compliance, Export, Facility, and Source Comparison pages.
+
+### 4.5 Global Filters Hook
 
 ```typescript
 // src/hooks/useGlobalFilters.ts

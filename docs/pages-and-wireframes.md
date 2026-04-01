@@ -1,7 +1,7 @@
 # UI Pages & Wireframes
 
 > **CCE Insights UI** — Page-by-page design reference with ASCII wireframes  
-> Each page maps to one or more Insights Service API endpoints (33 total).
+> Each page maps to one or more Insights Service API endpoints (38 total: 33 analytics + 5 lookup).
 
 ---
 
@@ -30,13 +30,15 @@
 ### APIs Used
 
 | Endpoint | Purpose |
-|----------|---------|
+|----------|---------|  
 | `GET /v1/insights/events/summary` | Total events, processing status, top resource types |
 | `GET /v1/insights/intelligence/summary` | Deviation counts by type, recent activity |
 | `GET /v1/insights/deviations/trends` | Deviation trend for sparkline (last 30 days) |
 | `GET /v1/insights/events/trends` | Event volume trend for sparkline |
 | `GET /v1/insights/ingestion/pipeline-loss` | Pipeline loss rate |
 | `GET /v1/insights/patients/at-risk-hotspots` | At-risk patient count (top facility) |
+| `GET /v1/insights/lookups/protocols` | Protocol list for selectors |
+| `GET /v1/insights/lookups/facilities` | Facility list for global filter |
 
 ### Wireframe
 
@@ -663,29 +665,21 @@
 
 Props: `label`, `value`, `icon`, `trend?` (up/down/neutral), `trendLabel?`
 
-### ComplianceBadge
+### StatusBadge
 
-Color-coded pill: `on_track` (green), `at_risk` (amber), `non_compliant` (red)
+Unified badge component (`StatusBadge.tsx`) for compliance categories, step states, deviation types, processing status, and protocol statuses. Color-coded pills with consistent styling:
+- Compliance: `on_track` (green), `at_risk` (amber), `non_compliant` (red)
+- Step states: PENDING (gray), DUE (blue), OVERDUE (amber), MISSED (red), COMPLETED (green), SKIPPED (slate)
+- Deviation types: `OVERDUE` (amber), `MISSED` (red)
+- Processing: `MATCHED` (green), `ZERO_MATCH` (amber), `DUPLICATE` (gray)
 
-### StateBadge
+### DateRangeFilter
 
-Color-coded pill for step states (6 states, matching `STATE_COLORS`)
+Global date range filter (`DateRangeFilter.tsx`). Two date inputs (From/To) in the sticky header. Updates `FilterContext`.
 
-### DeviationTypeBadge
+### FacilityFilter
 
-`OVERDUE` → amber with ⚠ icon, `MISSED` → red with 🔴 icon
-
-### ProcessingStatusBadge
-
-`MATCHED` → green, `ZERO_MATCH` → amber, `DUPLICATE` → gray
-
-### DateRangePicker
-
-Presets: Last 7 days, Last 30 days, Last 90 days, Custom range. Updates `FilterContext`.
-
-### IntervalSelector
-
-Toggle: `[Daily] [Weekly] [Monthly]`. Updates the `interval` query parameter.
+Global facility selector (`FacilityFilter.tsx`). Dropdown powered by `useFacilityLookup()` from lookups API. Updates `FilterContext`.
 
 ### CursorPagination
 
@@ -703,6 +697,14 @@ Horizontal stacked bar showing proportions. Used for status breakdown, complianc
 ████████████████░░░░░░░░
 78.7% matched    20.4% zero-match   0.9% dup
 ```
+
+### Additional Shared Components
+
+- **Card** (`Card.tsx`) — Wrapper with white background, border, rounded corners
+- **PageHeader** (`PageHeader.tsx`) — Page title + subtitle
+- **ErrorAlert** (`ErrorAlert.tsx`) — Error message display with optional retry
+- **EmptyState** (`EmptyState.tsx`) — No data placeholder
+- **LoadingSpinner** (`LoadingSpinner.tsx`) — Tailwind spinner
 
 ### DataTable
 

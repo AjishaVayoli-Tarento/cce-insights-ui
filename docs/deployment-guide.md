@@ -80,6 +80,7 @@ Set in `.env` before `npm run build` or `docker compose build`:
 |----------|---------|-------------|
 | `VITE_API_BASE_URL` | _(empty)_ | API base URL. Empty = relative (Caddy proxy). Set to `http://localhost:8084` for local dev |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth bearer token |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Gateway bearer token. Falls back to `sessionStorage('access_token')` if not set |
 | `VITE_POLLING_INTERVAL` | `60000` | Dashboard auto-refresh interval (ms) |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default date range filter |
 

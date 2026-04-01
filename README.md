@@ -1,6 +1,6 @@
 # CCE Insights UI
 
-**Analytics dashboard** for the Clinical Care Engine (CCE) platform. Consumes 33 REST endpoints from the CCE Insights Service to provide compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring.
+**Analytics dashboard** for the Clinical Care Engine (CCE) platform. Consumes 38 REST endpoints (33 analytics + 5 lookup) from the CCE Insights Service to provide compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring.
 
 ## Architecture
 
@@ -50,7 +50,7 @@ npm run dev          # http://localhost:3001
 | `/ingestion` | Ingestion Pipeline | Funnel, rejections, source quality, pipeline loss |
 | `/exports` | Exports | Download compliance data as CSV/JSON |
 
-## Insights Service Endpoints Consumed (33)
+## Insights Service Endpoints Consumed (38)
 
 | Group | Endpoints | Path Prefix |
 |-------|-----------|-------------|
@@ -62,6 +62,7 @@ npm run dev          # http://localhost:3001
 | Facility Analytics | 1 | `/v1/insights/facilities/ranking` |
 | Patient Risk | 2 | `/v1/insights/patients/` |
 | Ingestion Analytics | 4 | `/v1/insights/ingestion/` |
+| Lookups | 5 | `/v1/insights/lookups/` |
 | Export | 1 | `/v1/insights/exports/` |
 
 ## Documentation
@@ -80,6 +81,7 @@ npm run dev          # http://localhost:3001
 |----------|---------|-------------|
 | `VITE_API_BASE_URL` | _(empty — relative)_ | Insights Service base URL. Empty = relative URLs (Caddy proxy). Set `http://localhost:8084` for local dev without Docker. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth (demo mode = false) |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Gateway bearer token. Falls back to `sessionStorage('access_token')` if not set |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval (ms) |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default dashboard date range |
 

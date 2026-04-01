@@ -25,7 +25,7 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token = sessionStorage.getItem('access_token');
+    const token = import.meta.env.VITE_AUTH_TOKEN || sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;

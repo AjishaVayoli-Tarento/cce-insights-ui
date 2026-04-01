@@ -4,7 +4,7 @@
 
 ## Overview
 
-Initial release of the CCE Insights UI — an analytics dashboard for the Clinical Care Engine platform. Provides compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring by consuming 33 REST endpoints from the CCE Insights Service.
+Initial release of the CCE Insights UI — an analytics dashboard for the Clinical Care Engine platform. Provides compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring by consuming 38 REST endpoints (33 analytics + 5 lookup) from the CCE Insights Service.
 
 ## Features
 
@@ -34,8 +34,9 @@ Initial release of the CCE Insights UI — an analytics dashboard for the Clinic
 
 ### API Integration
 
-- 33 endpoints consumed across 9 API groups
-- Centralized API client with shared URL builder, auth header injection, and error handling
+- 38 endpoints consumed across 10 API groups (9 analytics + 1 lookups)
+- Centralized API client with shared URL builder, auth header injection (`VITE_AUTH_TOKEN` or `sessionStorage`), and error handling
+- Lookups API (`/lookups/protocols`, `/lookups/facilities`, `/lookups/practitioners`, `/lookups/sources`, `/lookups/patients`) for populating selectors
 - Relative URL support for Docker (Caddy proxy) and absolute URL support for local development
 
 ## Docker Deployment
@@ -49,7 +50,7 @@ docker compose up -d --build
 ## Known Limitations
 
 - Protocol and Facility IDs are entered as free text (no dropdown selection from API)
-- OAuth/gateway integration is stubbed (`VITE_AUTH_ENABLED=false`) — no gateway deployed locally
+- OAuth/gateway integration is configurable (`VITE_AUTH_ENABLED=true` + `VITE_AUTH_TOKEN`) — no gateway deployed locally
 - No unit tests shipped in v1.0.0 (test infrastructure is in place with Vitest + Testing Library + MSW)
 
 ---
@@ -76,3 +77,12 @@ Extracted shared `buildUrl()`, `authHeaders()`, and `handleResponse()` helpers f
 
 ### Caddy directive ordering
 Initial Caddyfile used `try_files` and `reverse_proxy` at the same level, causing `try_files` to run before the proxy. Fixed by using `handle` blocks for proper routing precedence.
+
+### Ingestion funnel chart colors
+Both ACCEPTED and REJECTED bars rendered in black because the chart used raw `<rect>` elements instead of Recharts `<Cell>` components. Fixed to use `<Cell>` with proper color mapping: ACCEPTED (green `#22c55e`), REJECTED (red `#ef4444`).
+
+### Auth token configuration
+Added `VITE_AUTH_TOKEN` build-time environment variable for providing a gateway bearer token. When `VITE_AUTH_ENABLED=true`, the token is read from `VITE_AUTH_TOKEN` first, falling back to `sessionStorage('access_token')`.
+
+### Lookup API integration
+Added `src/api/lookups.ts` module with 5 lookup endpoints (`/lookups/protocols`, `/lookups/facilities`, `/lookups/practitioners`, `/lookups/sources`, `/lookups/patients`) and corresponding `useLookups.ts` hook with 5-minute `staleTime` for populating protocol/facility/source selectors.

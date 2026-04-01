@@ -1,7 +1,7 @@
 # Developer Setup & Configuration
 
 > **CCE Insights UI** — Local development guide  
-> **Version**: 1.0.0 | **Last Updated**: 2026-03-31
+> **Version**: 1.0.0 | **Last Updated**: 2026-04-01
 
 ---
 
@@ -95,6 +95,7 @@ The dashboard should load metrics from the Insights Service. If you see "Cannot 
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://localhost:8084` | Insights Service URL. Set to empty string `""` when using Vite proxy. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth token injection. `false` for demo mode. |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Gateway bearer token. Falls back to `sessionStorage('access_token')` if not set. Only used when `VITE_AUTH_ENABLED=true`. |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval in milliseconds. `0` to disable. |
 | `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default date range for dashboard (days back from today). |
 
@@ -152,25 +153,28 @@ export default defineConfig({
 cce-insights-ui/
 ├── public/
 ├── src/
-│   ├── api/                    # Typed API client (10 modules)
+│   ├── api/                    # Typed API client (11 modules)
 │   │   ├── client.ts           # buildUrl, authHeaders, handleResponse, apiGet, apiGetPaginated
-│   │   ├── types.ts            # All TypeScript types
+│   │   ├── types.ts            # All TypeScript types (incl. ProtocolLookup)
 │   │   ├── compliance.ts       # Protocol/facility compliance + patients
 │   │   ├── deviations.ts       # Deviations + intelligence
 │   │   ├── events.ts           # Event volume, trends, processing quality
 │   │   ├── exports.ts          # Export URL builder
 │   │   ├── facilities.ts       # Facility ranking
 │   │   ├── ingestion.ts        # Ingestion funnel, rejections, quality, loss
+│   │   ├── lookups.ts          # Protocol, facility, practitioner, source, patient lookups
 │   │   ├── patients.ts         # Patient timeline, tracking, events, deviations, risk
 │   │   └── protocols.ts        # Step analytics, funnel, outcomes, enrollment
 │   ├── components/
 │   │   ├── layout/             # Sidebar
-│   │   ├── shared/             # Card, MetricCard, StatusBadge, DateRangeFilter, etc.
+│   │   ├── shared/             # Card, MetricCard, StatusBadge, PageHeader, ErrorAlert,
+│   │   │                       # DateRangeFilter, FacilityFilter, CursorPagination,
+│   │   │                       # EmptyState, LoadingSpinner
 │   │   └── charts/             # 10 Recharts wrapper components
 │   ├── pages/                  # 11 page components (lazy-loaded)
 │   ├── hooks/                  # 10 TanStack Query hooks
 │   ├── context/                # FilterContext (global date range + facility)
-│   ├── utils/                  # dates, colors, formatters, compliance, pagination, errors
+│   ├── utils/                  # dates, colors, formatters, compliance, pagination, errors, errors
 │   ├── config.ts               # Constants and defaults
 │   ├── App.tsx                 # Router + layout shell
 │   ├── main.tsx                # Entry point (React 18 + providers)
