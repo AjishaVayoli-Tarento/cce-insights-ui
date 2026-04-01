@@ -167,11 +167,12 @@ Build the application shell (sidebar with navigation groups, header with global 
 - [x] Component tests for badges (all variants), MetricCard, DateRangePicker
 
 **Files:**
-- `src/components/layout/AppLayout.tsx`, `Sidebar.tsx`, `Header.tsx`, `FilterBar.tsx`
-- `src/components/common/DateRangePicker.tsx`, `MetricCard.tsx`, `StateBadge.tsx`
-- `src/components/common/ComplianceBadge.tsx`, `DeviationTypeBadge.tsx`, `ProcessingStatusBadge.tsx`
-- `src/components/common/PercentageBar.tsx`, `DataTable.tsx`, `CursorPagination.tsx`
-- `src/components/common/EmptyState.tsx`, `LoadingSpinner.tsx`
+- `src/components/layout/Sidebar.tsx`
+- `src/components/shared/DateRangeFilter.tsx`, `src/components/shared/FacilityFilter.tsx`
+- `src/components/shared/MetricCard.tsx`, `src/components/shared/StatusBadge.tsx`
+- `src/components/shared/Card.tsx`, `src/components/shared/PageHeader.tsx`
+- `src/components/shared/ErrorAlert.tsx`, `src/components/shared/CursorPagination.tsx`
+- `src/components/shared/EmptyState.tsx`, `src/components/shared/LoadingSpinner.tsx`
 - Updated `src/App.tsx`
 
 ---
@@ -187,31 +188,33 @@ Build the application shell (sidebar with navigation groups, header with global 
 Implement all Recharts wrapper components. Each chart accepts processed data arrays as props and renders with consistent styling, tooltips, and color scheme.
 
 **Acceptance Criteria:**
-- [x] `ComplianceRateChart.tsx` — Horizontal bar chart: protocols by compliance rate
+- [x] `ComplianceRateChart.tsx` — (removed; compliance data shown in metric cards)
 - [x] `DeviationTrendChart.tsx` — Stacked area chart: overdue + missed over time periods
-- [x] `EventVolumeTrendChart.tsx` — Stacked area chart: event volume by resource type over time
+- [x] `EventTrendChart.tsx` — Stacked area chart: event volume by resource type over time
 - [x] `CompletionFunnelChart.tsx` — Funnel/waterfall chart: patient drop-off per step
 - [x] `OutcomeDistributionChart.tsx` — Pie/donut chart: ACTIVE/COMPLETED/WITHDRAWN/EXPIRED
-- [x] `FacilityRankingChart.tsx` — Horizontal bar chart: facility leaderboard by selected metric
+- [x] `ResourceTypeBarChart.tsx` — Bar chart: event counts by resource type
 - [x] `ProcessingQualityChart.tsx` — Stacked bar chart: MATCHED/ZERO_MATCH/DUPLICATE per source
-- [x] `IngestionFunnelChart.tsx` — Funnel chart: ACCEPTED/REJECTED/DUPLICATE pipeline
-- [x] `RiskHeatmapChart.tsx` — Stacked horizontal bar: on_track/at_risk/non_compliant per facility
+- [x] `IngestionFunnelChart.tsx` — Funnel chart: ACCEPTED/REJECTED/DUPLICATE pipeline (with colored Cell components)
+- [x] `RiskHotspotChart.tsx` — Stacked horizontal bar: on_track/at_risk/non_compliant per facility
 - [x] `EnrollmentTrendChart.tsx` — Line chart: enrollments over time
+- [x] `SourceTimelineChart.tsx` — Timeline chart: source system comparison
 - [x] All charts use `CHART_COLORS` from `utils/colors.ts`
 - [x] All charts include tooltips and responsive containers
 - [x] Component tests for at least 3 charts with mock data
 
 **Files:**
-- `src/components/charts/ComplianceRateChart.tsx`
+- `src/components/charts/ComplianceRateChart.tsx` (removed)
 - `src/components/charts/DeviationTrendChart.tsx`
-- `src/components/charts/EventVolumeTrendChart.tsx`
+- `src/components/charts/EventTrendChart.tsx`
 - `src/components/charts/CompletionFunnelChart.tsx`
 - `src/components/charts/OutcomeDistributionChart.tsx`
-- `src/components/charts/FacilityRankingChart.tsx`
+- `src/components/charts/ResourceTypeBarChart.tsx`
 - `src/components/charts/ProcessingQualityChart.tsx`
 - `src/components/charts/IngestionFunnelChart.tsx`
-- `src/components/charts/RiskHeatmapChart.tsx`
+- `src/components/charts/RiskHotspotChart.tsx`
 - `src/components/charts/EnrollmentTrendChart.tsx`
+- `src/components/charts/SourceTimelineChart.tsx`
 
 ---
 
@@ -228,7 +231,7 @@ Implement the Dashboard landing page with 6 metric cards, deviation trend sparkl
 **Acceptance Criteria:**
 - [x] `DashboardPage.tsx` with 6 MetricCards: Total Events, Active Deviations, Facilities Tracked, Pipeline Loss Rate, Match Rate, At-Risk Patients
 - [x] DeviationTrendChart — mini area chart (last 30 days from `deviations/trends`)
-- [x] EventVolumeTrendChart — mini stacked area (last 30 days from `events/trends`)
+- [x] EventTrendChart — mini stacked area (last 30 days from `events/trends`)
 - [x] Quick Navigation cards linking to: Compliance, Facilities, Ingestion, Exports
 - [x] Auto-refresh with `refetchInterval` from env
 - [x] Loading skeletons while data loads
@@ -261,14 +264,11 @@ Implement the 4 compliance-focused pages: Compliance Overview (protocol/facility
 - [x] Component tests for ComplianceOverviewPage and PatientDetailPage
 
 **Files:**
-- `src/pages/ComplianceOverviewPage.tsx`
-- `src/pages/ProtocolAnalyticsPage.tsx`
-- `src/pages/PatientListPage.tsx`
-- `src/pages/PatientDetailPage.tsx`
-- `src/components/patient/ComplianceTimeline.tsx`
-- `src/components/patient/ProtocolTrackingCard.tsx`
-- `src/components/patient/StepInstanceTable.tsx`
-- `src/components/patient/PatientDeviationList.tsx`
+- `src/pages/ComplianceOverview.tsx`
+- `src/pages/ProtocolAnalytics.tsx`
+- `src/pages/PatientList.tsx`
+- `src/pages/PatientDetail.tsx`
+- Patient sub-components are inline within `PatientDetail.tsx` (timeline, tracking, steps, deviations)
 
 ---
 
@@ -293,7 +293,7 @@ Implement the Deviations page — deviation trends, most-deviated steps, resolut
 - [x] Component tests
 
 **Files:**
-- `src/pages/DeviationsPage.tsx`
+- `src/pages/Deviations.tsx`
 
 ---
 
@@ -309,7 +309,7 @@ Implement the Event Volume page (summary, trends, 5 dimension tabs, processing q
 
 **Acceptance Criteria:**
 - [x] **EventVolumePage.tsx** — 4 metric cards (total events, matched rate, zero-match rate, duplicate rate)
-- [x] EventVolumeTrendChart with interval selector
+- [x] EventTrendChart with interval selector
 - [x] 5 sub-tabs: By Resource Type (bar + table), By Facility (table), By Practitioner (table), By Source (table with status breakdown), Processing Quality (stacked bar per source)
 - [x] All sub-tabs: cursor pagination where applicable, global filters
 - [x] "Compare Sources →" link to source comparison page
@@ -321,8 +321,8 @@ Implement the Event Volume page (summary, trends, 5 dimension tabs, processing q
 - [x] Component tests for EventVolumePage
 
 **Files:**
-- `src/pages/EventVolumePage.tsx`
-- `src/pages/SourceComparisonPage.tsx`
+- `src/pages/EventVolume.tsx`
+- `src/pages/SourceComparison.tsx`
 
 ---
 
@@ -338,7 +338,7 @@ Implement the Facility Analytics page — facility ranking leaderboard, ranking 
 
 **Acceptance Criteria:**
 - [x] **FacilityAnalyticsPage.tsx** — Rank By selector (compliance rate, deviation count, event volume), Order selector (best/worst first), Protocol filter
-- [x] FacilityRankingChart — horizontal bar chart showing top facilities by selected metric
+- [x] FacilityRankingTable — horizontal bar chart showing top facilities by selected metric
 - [x] Facility ranking table — rank, facility ID, enrollments, compliance rate, deviations, events
 - [x] At-risk hotspots section — stacked bar by facility showing on_track/at_risk/non_compliant patient distribution
 - [x] Cursor pagination on ranking table
@@ -346,7 +346,7 @@ Implement the Facility Analytics page — facility ranking leaderboard, ranking 
 - [x] Component tests
 
 **Files:**
-- `src/pages/FacilityAnalyticsPage.tsx`
+- `src/pages/FacilityAnalytics.tsx`
 
 ---
 
@@ -372,7 +372,7 @@ Implement the Ingestion Pipeline page — ingestion funnel, rejection reason ana
 - [x] Component tests
 
 **Files:**
-- `src/pages/IngestionPage.tsx`
+- `src/pages/IngestionPipeline.tsx`
 
 ---
 
@@ -398,7 +398,7 @@ Implement the Exports page, Dockerfile, Caddy config, docker-compose.yml, and fi
 - [x] All pages reachable, no console errors
 
 **Files:**
-- `src/pages/ExportsPage.tsx`
+- `src/pages/Exports.tsx`
 - `Dockerfile`, `Caddyfile`, `docker-compose.yml`, `.dockerignore`
-- `src/pages/NotFoundPage.tsx`
+- `src/pages/NotFoundPage.tsx` (not implemented — unmatched routes fall through to Dashboard)
 - `README.md`
