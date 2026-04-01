@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 
 interface IngestionFunnelChartProps {
   data: { status: string; count: number; percentage: number }[];
@@ -21,7 +21,7 @@ export function IngestionFunnelChart({ data, height = 260 }: IngestionFunnelChar
         <Legend />
         <Bar dataKey="count" name="Count" radius={[4, 4, 0, 0]}>
           {data.map((entry, i) => (
-            <rect key={i} fill={STATUS_COLORS[entry.status] || '#6366f1'} />
+            <Cell key={i} fill={STATUS_COLORS[entry.status.toLowerCase()] || '#6366f1'} />
           ))}
         </Bar>
       </BarChart>
