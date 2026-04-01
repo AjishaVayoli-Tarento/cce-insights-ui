@@ -60,3 +60,12 @@ export function useProcessingQuality() {
     queryFn: () => getProcessingQuality(filters),
   });
 }
+
+export function useEventTrendsBySource(source: string, interval = 'daily') {
+  const filters = useGlobalFilters();
+  return useQuery({
+    queryKey: ['events', 'trends', { interval, source, ...filters }],
+    queryFn: () => getEventTrends({ interval, source, ...filters }),
+    enabled: !!source,
+  });
+}

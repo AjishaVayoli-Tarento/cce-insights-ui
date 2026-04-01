@@ -251,10 +251,10 @@ export interface IntelligenceSummary {
 export interface EventVolumeSummary {
   totalEvents: number;
   processingStatusBreakdown: {
-    matched: number;
-    zeroMatch: number;
-    duplicate: number;
-  };
+    matched?: { count: number; percentage: number };
+    zeroMatch?: { count: number; percentage: number };
+    duplicate?: { count: number; percentage: number };
+  } | null;
   byResourceType: { resourceType: string; count: number }[];
   byFacility: { facilityId: string; count: number }[];
   bySource: { source: string; count: number }[];

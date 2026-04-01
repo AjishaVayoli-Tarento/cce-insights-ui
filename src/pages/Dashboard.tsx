@@ -38,8 +38,8 @@ export default function Dashboard() {
   const intel = intelligence.data;
   const loss = pipelineLoss.data;
 
-  const matchRate = events?.processingStatusBreakdown
-    ? (events.processingStatusBreakdown.matched / events.totalEvents) * 100
+  const matchRate = events?.processingStatusBreakdown?.matched
+    ? events.processingStatusBreakdown.matched.percentage
     : 0;
 
   const atRiskTotal = hotspots.data?.data?.reduce(

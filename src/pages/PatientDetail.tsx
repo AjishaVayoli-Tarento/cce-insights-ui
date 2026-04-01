@@ -137,9 +137,14 @@ export default function PatientDetail() {
             <div className="space-y-3">
               {deviations.data.map((d) => (
                 <div key={d.deviationId} className="rounded-lg border border-gray-200 p-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : 'text-red-600'}`}>
-                      {d.deviationType === 'OVERDUE' ? '⚠' : '🔴'} {d.deviationType}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : 'text-red-600'}`}>
+                        {d.deviationType === 'OVERDUE' ? '⚠' : '🔴'} {d.deviationType}
+                      </span>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                      ✓ Notification Sent
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-gray-700">{d.protocolCanonical}</p>

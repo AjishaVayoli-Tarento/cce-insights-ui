@@ -4,9 +4,10 @@ import { PageHeader } from '../components/shared/PageHeader';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
-import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
 import { useSourceComparison } from '../hooks/useSourceComparison';
+import { useEventTrendsBySource } from '../hooks/useEventVolume';
 import { useSourcesLookup } from '../hooks/useLookups';
+import { SourceTimelineChart } from '../components/charts/SourceTimelineChart';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 
 export default function SourceComparison() {
@@ -21,6 +22,9 @@ export default function SourceComparison() {
     sourceB: submitted ? sourceB : '',
     windowSeconds,
   });
+
+  const trendsA = useEventTrendsBySource(submitted ? sourceA : '');
+  const trendsB = useEventTrendsBySource(submitted ? sourceB : '');
 
   const data = comparison.data;
 
@@ -64,7 +68,7 @@ export default function SourceComparison() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Match Window (seconds)</label>
+            <label className="mb-1 block text-xs font-medium text-gray-500" title="Max time difference (seconds) to consider two events from different sources as the same event">Match Window (seconds)</label>
             <input
               type="number"
               value={windowSeconds}
@@ -109,46 +113,21 @@ export default function SourceComparison() {
             </Card>
           </div>
 
-          {data.overlap?.byResourceType?.length > 0 && (
-            <Card title="Overlap by Resource Type" className="mt-6">
-              <ResourceTypeBarChart
-                data={data.overlap.byResourceType.map((r) => ({
-                  resourceType: r.resourceType,
-                  count: r.count,
-                  percentage: (r.count / data.overlap.totalOverlappingEvents) * 100,
-                }))}
+          {trendsA.data && trendsB.data && (
+            <Card title="Event Timeline by Source" className="mt-6">
+              <p className="mb-4 text-sm text-gray-500">
+                Daily event volume for each source — gaps between lines indicate missed or delayed events.
+              </p>
+              <SourceTimelineChart
+                sourceA={data.sourceA}
+                sourceB={data.sourceB}
+                trendsA={trendsA.data.trends}
+                trendsB={trendsB.data.trends}
               />
             </Card>
           )}
 
-          {data.samples.length > 0 && (
-            <Card title="Sample Pairs" className="mt-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                      <th className="pb-2 pr-4">Patient</th>
-                      <th className="pb-2 pr-4">Resource Type</th>
-                      <th className="pb-2 pr-4">Time A</th>
-                      <th className="pb-2 pr-4">Time B</th>
-                      <th className="pb-2">Diff (s)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.samples.map((s) => (
-                      <tr key={`${s.eventAId}-${s.eventBId}`} className="hover:bg-gray-50">
-                        <td className="py-2 pr-4 text-gray-900">{s.subject}</td>
-                        <td className="py-2 pr-4">{s.resourceType}</td>
-                        <td className="py-2 pr-4 text-gray-600">{new Date(s.eventTimeA).toLocaleString()}</td>
-                        <td className="py-2 pr-4 text-gray-600">{new Date(s.eventTimeB).toLocaleString()}</td>
-                        <td className="py-2">{s.timeDiffSeconds}s</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
+
         </>
       )}
     </>
