@@ -132,17 +132,17 @@ export default function Deviations() {
 
       <Card title="Deviation List" className="mt-6">
         <div className="mb-4 flex gap-2">
-          {['', 'overdue', 'missed'].map((t) => (
+          {[{ value: '', label: 'All Types' }, { value: 'OVERDUE', label: 'Overdue' }, { value: 'MISSED', label: 'Missed' }].map((t) => (
             <button
-              key={t}
-              onClick={() => { setDeviationType(t); setCursor(undefined); setPage(1); }}
+              key={t.value}
+              onClick={() => { setDeviationType(t.value); setCursor(undefined); setPage(1); }}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                deviationType === t
+                deviationType === t.value
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {t === '' ? 'All Types' : t}
+              {t.label}
             </button>
           ))}
         </div>
