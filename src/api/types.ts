@@ -108,9 +108,11 @@ export interface PatientTimeline {
 
 export interface TimelineEntry {
   timestamp: string;
-  type: 'enrollment' | 'step_completed' | 'step_overdue' | 'step_missed' | 'step_due';
+  type: 'enrollment' | 'step_completed' | 'step_overdue' | 'step_missed' | 'step_due' | 'step_pending' | 'step_skipped';
   description?: string;
   actionId?: string;
+  stepName?: string;
+  state?: StepState | 'ENROLLED';
   completionStatus?: CompletionStatus;
   source?: string;
   daysOverdue?: number;
