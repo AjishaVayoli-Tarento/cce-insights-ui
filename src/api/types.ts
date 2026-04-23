@@ -102,8 +102,19 @@ export interface PatientTimeline {
     protocolCanonical: string;
     status: ProtocolInstanceStatus;
     complianceRate: number;
+    journey: JourneyStep[];
     timeline: TimelineEntry[];
   }[];
+}
+
+export interface JourneyStep {
+  actionId: string;
+  stepName: string;
+  status: 'COMPLETED' | 'PENDING' | 'NOT_STARTED' | 'OVERDUE' | 'MISSED' | 'SKIPPED' | 'DUE';
+  completionCount: number;
+  effectiveDateTime?: string;
+  completionStatus?: CompletionStatus;
+  source?: string;
 }
 
 export interface TimelineEntry {
@@ -116,6 +127,7 @@ export interface TimelineEntry {
   completionStatus?: CompletionStatus;
   source?: string;
   daysOverdue?: number;
+  effectiveDateTime?: string;
 }
 
 export interface ProtocolTracking {
