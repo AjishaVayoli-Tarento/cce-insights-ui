@@ -8,8 +8,8 @@ import { StatusBadge } from '../components/shared/StatusBadge';
 import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientEvents, usePatientDeviations } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
-import { STATUS_COLORS, STATE_COLORS, PROCESSING_COLORS } from '../utils/colors';
-import type { ProtocolInstanceStatus, StepState, ProcessingStatus } from '../api/types';
+import { STATUS_COLORS, STATE_COLORS, PROCESSING_COLORS, COMPLETION_COLORS } from '../utils/colors';
+import type { ProtocolInstanceStatus, StepState, ProcessingStatus, CompletionStatus } from '../api/types';
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -105,29 +105,69 @@ export default function PatientDetail() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Compliance Timeline">
           {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : timeline.data ? (
-            <div className="space-y-0">
-              {timeline.data.protocols.flatMap((proto) =>
-                proto.timeline.map((entry, i) => (
-                  <div key={`${proto.protocolInstanceId}-${i}`} className="flex gap-3 py-2">
-                    <div className="flex flex-col items-center">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      {i < proto.timeline.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
-                    </div>
-                    <div className="min-w-0 pb-2">
-                      <p className="text-xs text-gray-400">{formatDateTime(entry.timestamp)}</p>
-                      <p className="text-sm text-gray-700">
-                        {entry.type === 'enrollment' ? `Enrolled in ${proto.protocolCanonical}` : entry.description || entry.type}
-                      </p>
-                      {entry.completionStatus && (
-                        <span className="text-xs text-gray-500">{entry.completionStatus}</span>
-                      )}
-                      {entry.source && (
-                        <span className="ml-2 text-xs text-gray-400">Source: {entry.source}</span>
-                      )}
-                    </div>
+            <div className="space-y-6">
+              {timeline.data.protocols.map((proto) => (
+                <div key={proto.protocolInstanceId}>
+                  <div className="mb-3 flex items-center gap-2">
+                    <StatusBadge
+                      label={proto.status}
+                      color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                    />
+                    <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
                   </div>
-                ))
-              )}
+                  <div className="space-y-0">
+                    {proto.timeline.map((entry, i) => {
+                      const dotColor = entry.state && entry.state !== 'ENROLLED'
+                        ? (STATE_COLORS[entry.state as StepState]?.dot ?? 'bg-gray-400')
+                        : 'bg-indigo-500';
+                      const bgHighlight = entry.state === 'OVERDUE' ? 'bg-amber-50' : entry.state === 'MISSED' ? 'bg-red-50' : '';
+                      return (
+                        <div key={`${proto.protocolInstanceId}-${i}`} className={`flex gap-3 py-2 rounded ${bgHighlight}`}>
+                          <div className="flex flex-col items-center">
+                            <div className={`mt-1 h-2.5 w-2.5 rounded-full ${dotColor}`} />
+                            {i < proto.timeline.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
+                          </div>
+                          <div className="min-w-0 pb-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-gray-900">
+                                {entry.type === 'enrollment'
+                                  ? 'Enrollment'
+                                  : entry.stepName || entry.actionId || entry.type}
+                              </p>
+                              {entry.state && entry.state !== 'ENROLLED' && (
+                                <StatusBadge
+                                  label={entry.state}
+                                  color={STATE_COLORS[entry.state as StepState] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                                />
+                              )}
+                            </div>
+                            {entry.type === 'enrollment' && (
+                              <p className="text-xs text-gray-500">{entry.description}</p>
+                            )}
+                            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                              {entry.timestamp && (
+                                <span className="text-xs text-gray-400">{formatDateTime(entry.timestamp)}</span>
+                              )}
+                              {entry.completionStatus && (
+                                <StatusBadge
+                                  label={entry.completionStatus}
+                                  color={COMPLETION_COLORS[entry.completionStatus as CompletionStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                                />
+                              )}
+                              {entry.source && (
+                                <span className="text-xs text-gray-400">Source: {entry.source}</span>
+                              )}
+                              {entry.daysOverdue != null && entry.daysOverdue > 0 && (
+                                <span className="text-xs font-medium text-amber-600">{entry.daysOverdue}d overdue</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : null}
         </Card>
