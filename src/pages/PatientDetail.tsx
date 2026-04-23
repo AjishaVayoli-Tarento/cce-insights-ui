@@ -116,7 +116,7 @@ export default function PatientDetail() {
                     <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
                   </div>
                   <div className="space-y-0">
-                    {proto.timeline.map((entry, i) => {
+                    {proto.timeline.filter((e) => e.type !== 'enrollment').map((entry, i, filtered) => {
                       const dotColor = entry.state && entry.state !== 'ENROLLED'
                         ? (STATE_COLORS[entry.state as StepState]?.dot ?? 'bg-gray-400')
                         : 'bg-indigo-500';
@@ -125,14 +125,12 @@ export default function PatientDetail() {
                         <div key={`${proto.protocolInstanceId}-${i}`} className={`flex gap-3 py-2 rounded ${bgHighlight}`}>
                           <div className="flex flex-col items-center">
                             <div className={`mt-1 h-2.5 w-2.5 rounded-full ${dotColor}`} />
-                            {i < proto.timeline.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
+                            {i < filtered.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
                           </div>
                           <div className="min-w-0 pb-2 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-gray-900">
-                                {entry.type === 'enrollment'
-                                  ? 'Enrollment'
-                                  : entry.stepName || entry.actionId || entry.type}
+                                {entry.stepName || entry.actionId || entry.type}
                               </p>
                               {entry.state && entry.state !== 'ENROLLED' && (
                                 <StatusBadge
@@ -141,9 +139,6 @@ export default function PatientDetail() {
                                 />
                               )}
                             </div>
-                            {entry.type === 'enrollment' && (
-                              <p className="text-xs text-gray-500">{entry.description}</p>
-                            )}
                             <div className="mt-0.5 flex flex-wrap items-center gap-2">
                               {entry.timestamp && (
                                 <span className="text-xs text-gray-400">{formatDateTime(entry.timestamp)}</span>
