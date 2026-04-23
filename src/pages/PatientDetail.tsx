@@ -9,7 +9,17 @@ import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrack
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
 import { STATUS_COLORS, STATE_COLORS, PROCESSING_COLORS, COMPLETION_COLORS } from '../utils/colors';
-import type { ProtocolInstanceStatus, StepState, ProcessingStatus, CompletionStatus } from '../api/types';
+import type { ProtocolInstanceStatus, StepState, ProcessingStatus, CompletionStatus, JourneyStep } from '../api/types';
+
+const JOURNEY_STATUS: Record<JourneyStep['status'], { bg: string; text: string; dot: string; label: string }> = {
+  COMPLETED:   { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Completed' },
+  PENDING:     { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',   label: 'Pending' },
+  DUE:         { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',   label: 'Due' },
+  OVERDUE:     { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-500',  label: 'Overdue' },
+  MISSED:      { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    label: 'Missed' },
+  SKIPPED:     { bg: 'bg-gray-50',   text: 'text-gray-600',   dot: 'bg-gray-400',   label: 'Skipped' },
+  NOT_STARTED: { bg: 'bg-gray-50',   text: 'text-gray-400',   dot: 'bg-gray-300',   label: 'Not Started' },
+};
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -102,6 +112,62 @@ export default function PatientDetail() {
         </Card>
       )}
 
+      {timeline.data && timeline.data.protocols.length > 0 && (
+        <Card title="Protocol Journey" className="mt-6">
+          <div className="space-y-6">
+            {timeline.data.protocols.map((proto) => (
+              <div key={`journey-${proto.protocolInstanceId}`}>
+                <div className="mb-3 flex items-center gap-2">
+                  <StatusBadge
+                    label={proto.status}
+                    color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                  />
+                  <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
+                </div>
+                <div className="space-y-0">
+                  {(proto.journey ?? []).map((step, i, arr) => {
+                    const info = JOURNEY_STATUS[step.status] ?? JOURNEY_STATUS.NOT_STARTED;
+                    return (
+                      <div key={`${proto.protocolInstanceId}-j-${i}`} className="flex gap-3 py-2">
+                        <div className="flex flex-col items-center">
+                          <div className={`mt-1 h-3 w-3 rounded-full ${info.dot} ring-2 ring-white`} />
+                          {i < arr.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
+                        </div>
+                        <div className="min-w-0 pb-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900">{step.stepName}</p>
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.bg} ${info.text}`}>
+                              {info.label}
+                            </span>
+                            {step.completionCount > 1 && (
+                              <span className="text-xs text-gray-400">×{step.completionCount}</span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            {step.effectiveDateTime && (
+                              <span className="text-xs text-gray-400">{formatDateTime(step.effectiveDateTime)}</span>
+                            )}
+                            {step.completionStatus && (
+                              <StatusBadge
+                                label={step.completionStatus}
+                                color={COMPLETION_COLORS[step.completionStatus as CompletionStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                              />
+                            )}
+                            {step.source && (
+                              <span className="text-xs text-gray-400">Source: {step.source}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Compliance Timeline">
           {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : timeline.data ? (
@@ -140,8 +206,8 @@ export default function PatientDetail() {
                               )}
                             </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                              {entry.timestamp && (
-                                <span className="text-xs text-gray-400">{formatDateTime(entry.timestamp)}</span>
+                              {(entry.effectiveDateTime || entry.timestamp) && (
+                                <span className="text-xs text-gray-400">{formatDateTime(entry.effectiveDateTime || entry.timestamp)}</span>
                               )}
                               {entry.completionStatus && (
                                 <StatusBadge
