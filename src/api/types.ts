@@ -189,6 +189,8 @@ export interface PatientDeviation {
   protocolInstanceId: string;
   protocolCanonical: string;
   stepInstanceId: string;
+  actionId?: string;
+  stepName?: string;
   deviationType: DeviationType;
   detectedAt: string;
 }
