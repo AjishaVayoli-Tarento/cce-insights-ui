@@ -146,6 +146,7 @@ export default function PatientList() {
                   <th className="pb-2 pr-4">Total Deviations</th>
                   <th className="pb-2 pr-4">Overdue</th>
                   <th className="pb-2 pr-4">Missed</th>
+                  <th className="pb-2 pr-4">Order Violation</th>
                   <th className="pb-2">Facility</th>
                 </tr>
               </thead>
@@ -160,6 +161,7 @@ export default function PatientList() {
                     <td className="py-2 pr-4">{formatNumber(r.totalDeviations)}</td>
                     <td className="py-2 pr-4">{formatNumber(r.overdueCount)}</td>
                     <td className="py-2 pr-4">{formatNumber(r.missedCount)}</td>
+                    <td className="py-2 pr-4">{formatNumber(r.orderViolationCount)}</td>
                     <td className="py-2">{r.facilityId}</td>
                   </tr>
                 ))}

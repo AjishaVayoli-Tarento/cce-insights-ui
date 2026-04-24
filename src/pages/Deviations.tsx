@@ -41,10 +41,11 @@ export default function Deviations() {
       <PageHeader title="Deviation Analytics" description="Trends, most-deviated steps, resolution rate" />
 
       {intel.isLoading ? <LoadingSpinner /> : intel.error ? <ErrorAlert error={intel.error} /> : intel.data ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <MetricCard title="Total Deviations" value={formatNumber(intel.data.totalDeviations)} />
           <MetricCard title="Overdue" value={formatNumber(intel.data.byType?.overdue ?? 0)} />
           <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} />
+          <MetricCard title="Order Violation" value={formatNumber(intel.data.byType?.orderViolation ?? 0)} />
           <MetricCard
             title="Resolution Rate"
             value={resolution.data?.resolved ? formatPercentage(resolution.data.resolved.percentage) : '—'}
@@ -87,7 +88,8 @@ export default function Deviations() {
                     <th className="pb-2 pr-4">Action</th>
                     <th className="pb-2 pr-4">Total</th>
                     <th className="pb-2 pr-4">Overdue</th>
-                    <th className="pb-2">Missed</th>
+                    <th className="pb-2 pr-4">Missed</th>
+                    <th className="pb-2">Order Violation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -96,7 +98,8 @@ export default function Deviations() {
                       <td className="py-2 pr-4 font-medium text-gray-900">{a.actionId}</td>
                       <td className="py-2 pr-4">{formatNumber(a.totalDeviations)}</td>
                       <td className="py-2 pr-4 text-amber-600">{formatNumber(a.overdueCount)}</td>
-                      <td className="py-2 text-red-600">{formatNumber(a.missedCount)}</td>
+                      <td className="py-2 pr-4 text-red-600">{formatNumber(a.missedCount)}</td>
+                      <td className="py-2 text-purple-600">{formatNumber(a.orderViolationCount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -132,7 +135,7 @@ export default function Deviations() {
 
       <Card title="Deviation List" className="mt-6">
         <div className="mb-4 flex gap-2">
-          {[{ value: '', label: 'All Types' }, { value: 'OVERDUE', label: 'Overdue' }, { value: 'MISSED', label: 'Missed' }].map((t) => (
+          {[{ value: '', label: 'All Types' }, { value: 'OVERDUE', label: 'Overdue' }, { value: 'MISSED', label: 'Missed' }, { value: 'ORDER_VIOLATION', label: 'Order Violation' }].map((t) => (
             <button
               key={t.value}
               onClick={() => { setDeviationType(t.value); setCursor(undefined); setPage(1); }}
@@ -173,7 +176,7 @@ export default function Deviations() {
                       </td>
                       <td className="py-2 pr-4">{d.actionId}</td>
                       <td className="py-2 pr-4">
-                        <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : 'text-red-600'}`}>
+                        <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
                           {d.deviationType}
                         </span>
                       </td>

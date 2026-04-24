@@ -59,6 +59,7 @@ export interface ComplianceSummary {
   deviationBreakdown: {
     overdue: number;
     missed: number;
+    orderViolation: number;
   };
 }
 
@@ -192,7 +193,7 @@ export interface PatientDeviation {
   detectedAt: string;
 }
 
-export type DeviationType = 'OVERDUE' | 'MISSED';
+export type DeviationType = 'OVERDUE' | 'MISSED' | 'ORDER_VIOLATION';
 
 // ─── Deviations & Intelligence ───────────────────────────────
 
@@ -214,6 +215,7 @@ export interface DeviationTrend {
     period: string;
     overdue: number;
     missed: number;
+    orderViolation: number;
     total: number;
   }[];
 }
@@ -225,6 +227,7 @@ export interface DeviationByAction {
   totalDeviations: number;
   overdueCount: number;
   missedCount: number;
+  orderViolationCount: number;
   affectedPatients: number;
 }
 
@@ -251,7 +254,7 @@ export interface DeviationResolution {
 
 export interface IntelligenceSummary {
   totalDeviations: number;
-  byType: { overdue: number; missed: number };
+  byType: { overdue: number; missed: number; orderViolation: number };
   bySeverity: { warning: number; critical: number };
   recentActivity: {
     last24Hours: number;
@@ -454,6 +457,7 @@ export interface RepeatDeviationPatient {
   totalDeviations: number;
   overdueCount: number;
   missedCount: number;
+  orderViolationCount: number;
   affectedProtocols: number;
   affectedSteps: number;
   facilityId: string;
