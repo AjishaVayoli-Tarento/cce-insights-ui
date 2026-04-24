@@ -193,6 +193,12 @@ export interface PatientDeviation {
   stepName?: string;
   deviationType: DeviationType;
   detectedAt: string;
+  metadata?: {
+    completedActionId?: string;
+    incompletePrerequisites?: string[];
+    backfilled?: boolean;
+  };
+  description?: string;
 }
 
 export type DeviationType = 'OVERDUE' | 'MISSED' | 'ORDER_VIOLATION';
