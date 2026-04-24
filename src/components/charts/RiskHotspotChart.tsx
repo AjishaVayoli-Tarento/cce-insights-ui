@@ -1,9 +1,9 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { getFacilityName } from '../../utils/facilityNames';
 
 interface HotspotChartProps {
   data: {
     facilityId: string;
+    facilityName?: string;
     onTrack: { count: number; percentage: number };
     atRisk: { count: number; percentage: number };
     nonCompliant: { count: number; percentage: number };
@@ -13,7 +13,7 @@ interface HotspotChartProps {
 
 export function RiskHotspotChart({ data, height = 250 }: HotspotChartProps) {
   const chartData = data.map((d) => ({
-    facility: getFacilityName(d.facilityId),
+    facility: d.facilityName ?? d.facilityId,
     'On Track': d.onTrack.count,
     'At Risk': d.atRisk.count,
     'Non-Compliant': d.nonCompliant.count,

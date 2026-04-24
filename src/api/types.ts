@@ -416,6 +416,7 @@ export interface EnrollmentTrend {
 export interface FacilityRanking {
   rank: number;
   facilityId: string;
+  facilityName?: string;
   totalEnrollments: number;
   complianceRate: number;
   activeDeviations: number;
@@ -452,8 +453,14 @@ export interface ProcessingQuality {
 
 // ─── Patient Risk ────────────────────────────────────────────
 
+export interface FacilityLookup {
+  id: string;
+  name: string;
+}
+
 export interface AtRiskHotspot {
   facilityId: string;
+  facilityName?: string;
   totalPatients: number;
   onTrack: { count: number; percentage: number };
   atRisk: { count: number; percentage: number };

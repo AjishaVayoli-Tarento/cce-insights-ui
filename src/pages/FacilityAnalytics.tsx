@@ -72,7 +72,7 @@ export default function FacilityAnalytics() {
               {ranking.data.data.slice(0, 5).map((f) => (
                 <div key={f.facilityId} className="flex items-center gap-3">
                   <span className="w-6 text-right text-sm font-bold text-gray-400">#{f.rank}</span>
-                  <span className="w-24 text-sm font-medium text-gray-900 truncate" title={getFacilityName(f.facilityId)}>{getFacilityName(f.facilityId)}</span>
+                  <span className="w-24 text-sm font-medium text-gray-900 truncate" title={f.facilityName ?? f.facilityId}>{f.facilityName ?? f.facilityId}</span>
                   <div className="flex-1">
                     <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                       <div className="h-full rounded-full bg-blue-500" style={{ width: `${f.complianceRate}%` }} />
@@ -103,7 +103,7 @@ export default function FacilityAnalytics() {
                     return (
                     <tr key={f.facilityId} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
-                      <td className="py-2 pr-4 font-medium text-gray-900">{getFacilityName(f.facilityId)}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? getFacilityName(f.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
                       <td className="py-2 pr-4">{formatPercentage(f.complianceRate)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.activeDeviations)}</td>
@@ -152,7 +152,7 @@ export default function FacilityAnalytics() {
                 <tbody className="divide-y divide-gray-100">
                   {hotspots.data.data.map((h) => (
                     <tr key={h.facilityId} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{getFacilityName(h.facilityId)}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
                       <td className="py-2 pr-4">{formatNumber(h.totalPatients)}</td>
                       <td className="py-2 pr-4 text-green-600">{h.onTrack.count} ({formatPercentage(h.onTrack.percentage)})</td>
                       <td className="py-2 pr-4 text-amber-600">{h.atRisk.count} ({formatPercentage(h.atRisk.percentage)})</td>

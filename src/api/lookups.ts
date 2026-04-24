@@ -1,12 +1,12 @@
 import { apiGet } from './client';
-import type { ProtocolLookup } from './types';
+import type { ProtocolLookup, FacilityLookup } from './types';
 
 export function getProtocols() {
   return apiGet<ProtocolLookup[]>('/lookups/protocols');
 }
 
 export function getFacilities() {
-  return apiGet<string[]>('/lookups/facilities');
+  return apiGet<FacilityLookup[]>('/lookups/facilities');
 }
 
 export function getPractitioners() {
