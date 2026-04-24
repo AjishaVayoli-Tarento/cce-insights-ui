@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { Card } from '../components/shared/Card';
@@ -11,7 +11,9 @@ import { formatPercentage } from '../utils/formatters';
 import { STATUS_COLORS, STATE_COLORS, PROCESSING_COLORS, COMPLETION_COLORS } from '../utils/colors';
 import type { ProtocolInstanceStatus, StepState, ProcessingStatus, CompletionStatus, JourneyStep } from '../api/types';
 
-const JOURNEY_STATUS: Record<JourneyStep['status'], { bg: string; text: string; dot: string; label: string }> = {
+type JourneyDisplayStatus = JourneyStep['status'] | 'DEVIATION';
+
+const JOURNEY_STATUS: Record<JourneyDisplayStatus, { bg: string; text: string; dot: string; label: string }> = {
   COMPLETED:   { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Completed' },
   PENDING:     { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',   label: 'Pending' },
   DUE:         { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',   label: 'Due' },
@@ -19,6 +21,7 @@ const JOURNEY_STATUS: Record<JourneyStep['status'], { bg: string; text: string; 
   MISSED:      { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    label: 'Missed' },
   SKIPPED:     { bg: 'bg-gray-50',   text: 'text-gray-600',   dot: 'bg-gray-400',   label: 'Skipped' },
   NOT_STARTED: { bg: 'bg-gray-50',   text: 'text-gray-400',   dot: 'bg-gray-300',   label: 'Not Started' },
+  DEVIATION:   { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Deviation' },
 };
 
 export default function PatientDetail() {
@@ -31,6 +34,22 @@ export default function PatientDetail() {
   const events = usePatientEvents(patientId, { limit: 50 });
   const deviations = usePatientDeviations(patientId);
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
+
+  // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
+  const deviationActionIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (deviations.data) {
+      for (const d of deviations.data) {
+        if (d.deviationType === 'ORDER_VIOLATION' && d.metadata?.incompletePrerequisites) {
+          d.metadata.incompletePrerequisites.forEach(id => ids.add(id));
+        }
+        if ((d.deviationType === 'OVERDUE' || d.deviationType === 'MISSED') && d.actionId) {
+          ids.add(d.actionId);
+        }
+      }
+    }
+    return ids;
+  }, [deviations.data]);
 
   return (
     <>
@@ -126,7 +145,11 @@ export default function PatientDetail() {
                 </div>
                 <div className="space-y-0">
                   {(proto.journey ?? []).map((step, i, arr) => {
-                    const info = JOURNEY_STATUS[step.status] ?? JOURNEY_STATUS.NOT_STARTED;
+                    const hasDeviation = deviationActionIds.has(step.actionId);
+                    const displayStatus: JourneyDisplayStatus = hasDeviation && step.status !== 'COMPLETED' && step.status !== 'SKIPPED'
+                      ? 'DEVIATION'
+                      : step.status;
+                    const info = JOURNEY_STATUS[displayStatus] ?? JOURNEY_STATUS.NOT_STARTED;
                     return (
                       <div key={`${proto.protocolInstanceId}-j-${i}`} className="flex gap-3 py-2">
                         <div className="flex flex-col items-center">
