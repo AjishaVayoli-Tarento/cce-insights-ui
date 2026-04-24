@@ -21,6 +21,7 @@ export const DEVIATION_TYPE_OPTIONS = [
   { value: '', label: 'All Types' },
   { value: 'overdue', label: 'Overdue' },
   { value: 'missed', label: 'Missed' },
+  { value: 'orderViolation', label: 'Order Violation' },
 ] as const;
 
 export const COMPLIANCE_STATUS_OPTIONS = [

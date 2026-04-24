@@ -240,8 +240,8 @@ export default function PatientDetail() {
                 <div key={d.deviationId} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : 'text-red-600'}`}>
-                        {d.deviationType === 'OVERDUE' ? '⚠' : '🔴'} {d.deviationType}
+                      <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
+                        {d.deviationType === 'OVERDUE' ? '⚠' : d.deviationType === 'ORDER_VIOLATION' ? '🔀' : '🔴'} {d.deviationType}
                       </span>
                     </div>
                     <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">

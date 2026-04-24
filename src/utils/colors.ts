@@ -39,6 +39,7 @@ export const CHART_COLORS = {
   secondary: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
+  orderViolation: '#8b5cf6',
   info: '#6366f1',
   muted: '#9ca3af',
   resourceTypes: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'],
