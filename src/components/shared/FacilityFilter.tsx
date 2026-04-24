@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { FilterContext } from '../../context/FilterContext';
 import { useFacilityLookup } from '../../hooks/useLookups';
+import { getFacilityName } from '../../utils/facilityNames';
 
 export function FacilityFilter() {
   const { facilityId, setFacilityId } = useContext(FilterContext);
@@ -16,7 +17,7 @@ export function FacilityFilter() {
       >
         <option value="">All facilities</option>
         {facilities.data?.map((f) => (
-          <option key={f} value={f}>{f}</option>
+          <option key={f} value={f}>{getFacilityName(f)}</option>
         ))}
       </select>
     </div>

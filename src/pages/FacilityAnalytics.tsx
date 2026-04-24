@@ -8,8 +8,18 @@ import { RiskHotspotChart } from '../components/charts/RiskHotspotChart';
 import { useFacilityRanking } from '../hooks/useFacilities';
 import { useAtRiskHotspots } from '../hooks/usePatients';
 import { formatNumber, formatPercentage } from '../utils/formatters';
+import { getFacilityName } from '../utils/facilityNames';
 import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
-import type { RankBy, SortOrder } from '../api/types';
+import type { RankBy, SortOrder, FacilityRanking } from '../api/types';
+
+const RUHUHA_DUMMY: FacilityRanking = {
+  rank: 0,
+  facilityId: 'ruhuha-hc',
+  totalEnrollments: 0,
+  complianceRate: 0,
+  activeDeviations: 0,
+  totalEvents: 0,
+};
 
 export default function FacilityAnalytics() {
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
@@ -62,7 +72,7 @@ export default function FacilityAnalytics() {
               {ranking.data.data.slice(0, 5).map((f) => (
                 <div key={f.facilityId} className="flex items-center gap-3">
                   <span className="w-6 text-right text-sm font-bold text-gray-400">#{f.rank}</span>
-                  <span className="w-24 text-sm font-medium text-gray-900">{f.facilityId}</span>
+                  <span className="w-24 text-sm font-medium text-gray-900 truncate" title={getFacilityName(f.facilityId)}>{getFacilityName(f.facilityId)}</span>
                   <div className="flex-1">
                     <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                       <div className="h-full rounded-full bg-blue-500" style={{ width: `${f.complianceRate}%` }} />
@@ -83,20 +93,33 @@ export default function FacilityAnalytics() {
                     <th className="pb-2 pr-4">Tracked Patients</th>
                     <th className="pb-2 pr-4">Compliance</th>
                     <th className="pb-2 pr-4">Deviations</th>
-                    <th className="pb-2">Events</th>
+                    <th className="pb-2 pr-4">Events</th>
+                    <th className="pb-2">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {ranking.data.data.map((f) => (
+                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }].map((f) => {
+                    const isInactive = f.facilityId === 'ruhuha-hc';
+                    return (
                     <tr key={f.facilityId} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
-                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityId}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{getFacilityName(f.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
                       <td className="py-2 pr-4">{formatPercentage(f.complianceRate)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.activeDeviations)}</td>
-                      <td className="py-2">{formatNumber(f.totalEvents)}</td>
+                      <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
+                      <td className="py-2">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          isInactive
+                            ? 'bg-red-50 text-red-700'
+                            : 'bg-green-50 text-green-700'
+                        }`}>
+                          {isInactive ? 'Inactive' : 'Active'}
+                        </span>
+                      </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -129,7 +152,7 @@ export default function FacilityAnalytics() {
                 <tbody className="divide-y divide-gray-100">
                   {hotspots.data.data.map((h) => (
                     <tr key={h.facilityId} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{h.facilityId}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{getFacilityName(h.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(h.totalPatients)}</td>
                       <td className="py-2 pr-4 text-green-600">{h.onTrack.count} ({formatPercentage(h.onTrack.percentage)})</td>
                       <td className="py-2 pr-4 text-amber-600">{h.atRisk.count} ({formatPercentage(h.atRisk.percentage)})</td>
