@@ -16,7 +16,7 @@ export function FacilityFilter() {
       >
         <option value="">All facilities</option>
         {facilities.data?.map((f) => (
-          <option key={f} value={f}>{f}</option>
+          <option key={f.id} value={f.id}>{f.name}</option>
         ))}
       </select>
     </div>
