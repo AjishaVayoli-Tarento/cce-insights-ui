@@ -63,7 +63,7 @@ export default function ComplianceOverview() {
         {data && (
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <MetricCard title="Enrolled" value={formatNumber(data.totalEnrollments)} />
+              <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} />
               <MetricCard title="Compliance Rate" value={formatPercentage(data.complianceRate)} />
               <MetricCard title="Active" value={formatNumber(data.statusBreakdown.active)} />
               <MetricCard title="Deviations" value={formatNumber(data.deviationCount)} />

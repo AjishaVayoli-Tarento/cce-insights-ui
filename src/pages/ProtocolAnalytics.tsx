@@ -30,7 +30,7 @@ export default function ProtocolAnalytics() {
       </div>
       <PageHeader
         title={`Protocol Analytics — ${protocolId}`}
-        description="Step-level analytics, completion funnel, outcome distribution, enrollment trends"
+        description="Step-level analytics, completion funnel, outcome distribution, tracking trends"
       />
 
       {isLoading && <LoadingSpinner />}
@@ -87,7 +87,7 @@ export default function ProtocolAnalytics() {
         </Card>
       </div>
 
-      <Card title="Enrollment Trends" className="mt-6"
+      <Card title="Tracking Trends" className="mt-6"
         action={
           <div className="flex gap-1">
             {INTERVAL_OPTIONS.map((opt) => (

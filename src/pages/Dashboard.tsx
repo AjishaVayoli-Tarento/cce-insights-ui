@@ -12,7 +12,6 @@ import { usePipelineLoss } from '../hooks/useIngestion';
 import { useAtRiskHotspots } from '../hooks/usePatients';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import {
-  ChartBarIcon,
   ExclamationTriangleIcon,
   BuildingOffice2Icon,
   SignalIcon,
@@ -53,12 +52,26 @@ export default function Dashboard() {
     <>
       <PageHeader title="Dashboard" description="High-level operational metrics and trend snapshots" />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Events"
-          value={events ? formatNumber(events.totalEvents) : '—'}
-          icon={<ChartBarIcon className="h-5 w-5" />}
-        />
+      {/* Source Comparison Banner */}
+      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700">Events by Source</h3>
+          <span className="text-xs text-gray-400">Total: {events ? formatNumber(events.totalEvents) : '—'}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-center">
+            <p className="text-xs font-medium uppercase tracking-wide text-blue-600">OpenHIM Channel</p>
+            <p className="mt-1 text-2xl font-bold text-blue-700">{events ? formatNumber(events.totalEvents) : '—'}</p>
+            <p className="mt-0.5 text-xs text-blue-500">via RHIE integration</p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">eBuzima Direct</p>
+            <p className="mt-1 text-2xl font-bold text-gray-400">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <MetricCard
           title="Active Deviations"
           value={intel ? formatNumber(intel.totalDeviations) : '—'}
@@ -75,6 +88,11 @@ export default function Dashboard() {
           value={loss ? formatPercentage(loss.lossRate) : '—'}
           subtitle={loss ? `${formatNumber(loss.lostEvents)} events lost` : undefined}
           icon={<SignalIcon className="h-5 w-5" />}
+        />
+        <MetricCard
+          title="Data Format Compliance"
+          value="0"
+          subtitle="coming soon"
         />
       </div>
 
