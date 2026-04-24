@@ -248,7 +248,7 @@ export default function PatientDetail() {
                       ✓ Notification Sent
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-gray-700">{d.protocolCanonical}</p>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{d.description || d.stepName || d.actionId || 'Unknown Step'}</p>
                   <p className="text-xs text-gray-500">Detected: {formatDate(d.detectedAt)}</p>
                 </div>
               ))}

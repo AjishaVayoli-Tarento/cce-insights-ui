@@ -189,8 +189,16 @@ export interface PatientDeviation {
   protocolInstanceId: string;
   protocolCanonical: string;
   stepInstanceId: string;
+  actionId?: string;
+  stepName?: string;
   deviationType: DeviationType;
   detectedAt: string;
+  metadata?: {
+    completedActionId?: string;
+    incompletePrerequisites?: string[];
+    backfilled?: boolean;
+  };
+  description?: string;
 }
 
 export type DeviationType = 'OVERDUE' | 'MISSED' | 'ORDER_VIOLATION';
