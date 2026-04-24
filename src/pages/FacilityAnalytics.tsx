@@ -80,7 +80,7 @@ export default function FacilityAnalytics() {
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Rank</th>
                     <th className="pb-2 pr-4">Facility</th>
-                    <th className="pb-2 pr-4">Protocol Enrollments</th>
+                    <th className="pb-2 pr-4">Tracked Patients</th>
                     <th className="pb-2 pr-4">Compliance</th>
                     <th className="pb-2 pr-4">Deviations</th>
                     <th className="pb-2">Events</th>

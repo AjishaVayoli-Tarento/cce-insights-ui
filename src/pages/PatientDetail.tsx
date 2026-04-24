@@ -39,11 +39,11 @@ export default function PatientDetail() {
       </div>
       <PageHeader title={`Patient: ${patientId}`} />
 
-      <Card title="Protocol Enrollments">
+      <Card title="Protocol Tracking">
         {tracking.isLoading && <LoadingSpinner />}
         {tracking.error && <ErrorAlert error={tracking.error} />}
         {tracking.data && tracking.data.length === 0 && (
-          <p className="py-4 text-center text-sm text-gray-400">No protocol enrollments found.</p>
+          <p className="py-4 text-center text-sm text-gray-400">No protocol tracking found.</p>
         )}
         {tracking.data && (
           <div className="space-y-3">
@@ -59,7 +59,7 @@ export default function PatientDetail() {
                       <span className="text-sm font-semibold text-gray-900">{p.protocolCanonical}</span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Enrolled: {formatDate(p.enrolledAt)} · Rate: {formatPercentage(p.complianceRate)} · Steps: {p.stepsCompleted}/{p.totalSteps}
+                      Tracking Since: {formatDate(p.enrolledAt)} · Rate: {formatPercentage(p.complianceRate)} · Steps: {p.stepsCompleted}/{p.totalSteps}
                     </p>
                     <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-200">
                       <div
