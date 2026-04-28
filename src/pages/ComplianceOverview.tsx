@@ -8,7 +8,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolComplianceSummary, useProtocolPatients } from '../hooks/useComplianceSummary';
-import { useStepAnalytics, useCompletionFunnel } from '../hooks/useProtocols';
+import { useStepAnalytics, useActionOrder } from '../hooks/useProtocols';
 import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
@@ -23,7 +23,7 @@ export default function ComplianceOverview() {
   const protocols = useProtocols();
   const summary = useProtocolComplianceSummary(protocolId);
   const stepAnalytics = useStepAnalytics(protocolId);
-  const funnel = useCompletionFunnel(protocolId);
+  const actionOrder = useActionOrder(protocolId);
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
@@ -109,9 +109,8 @@ export default function ComplianceOverview() {
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {(() => {
-                    const orderMap = new Map(
-                      (funnel.data?.funnel ?? []).map((f) => [f.actionId, f.stepOrder])
-                    );
+                    const order = actionOrder.data ?? [];
+                    const orderMap = new Map(order.map((id, idx) => [id, idx]));
                     return [...stepAnalytics.data.steps]
                       .filter((s) => s.totalInstances > 0)
                       .sort((a, b) => (orderMap.get(a.actionId) ?? 999) - (orderMap.get(b.actionId) ?? 999));

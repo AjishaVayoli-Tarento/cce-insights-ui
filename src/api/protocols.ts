@@ -15,6 +15,12 @@ export function getCompletionFunnel(
   return apiGet(`/protocols/${encodeURIComponent(protocolDefinitionId)}/completion-funnel`, params);
 }
 
+export function getActionOrder(
+  protocolDefinitionId: string,
+): Promise<string[]> {
+  return apiGet(`/protocols/${encodeURIComponent(protocolDefinitionId)}/action-order`);
+}
+
 export function getOutcomeDistribution(
   protocolDefinitionId: string,
   params?: { facilityId?: string; startDate?: string; endDate?: string },

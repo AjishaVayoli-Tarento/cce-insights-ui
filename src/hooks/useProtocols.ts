@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getStepAnalytics, getCompletionFunnel, getOutcomeDistribution, getEnrollmentTrends } from '../api/protocols';
+import { getStepAnalytics, getCompletionFunnel, getOutcomeDistribution, getEnrollmentTrends, getActionOrder } from '../api/protocols';
 import { useGlobalFilters } from './useGlobalFilters';
 
 export function useStepAnalytics(protocolDefinitionId: string) {
@@ -34,6 +34,14 @@ export function useEnrollmentTrends(protocolDefinitionId: string, interval = 'we
   return useQuery({
     queryKey: ['protocols', 'enrollment-trends', protocolDefinitionId, { interval, ...filters }],
     queryFn: () => getEnrollmentTrends(protocolDefinitionId, { interval, ...filters }),
+    enabled: !!protocolDefinitionId,
+  });
+}
+
+export function useActionOrder(protocolDefinitionId: string) {
+  return useQuery({
+    queryKey: ['protocols', 'action-order', protocolDefinitionId],
+    queryFn: () => getActionOrder(protocolDefinitionId),
     enabled: !!protocolDefinitionId,
   });
 }
