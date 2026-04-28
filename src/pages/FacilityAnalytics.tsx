@@ -19,6 +19,17 @@ const RUHUHA_DUMMY: FacilityRanking = {
   complianceRate: 0,
   activeDeviations: 0,
   totalEvents: 0,
+  patientsFromHIE: 0,
+};
+
+const KIBOGORA_DUMMY: FacilityRanking = {
+  rank: 0,
+  facilityId: 'kibogora-hc',
+  totalEnrollments: 0,
+  complianceRate: 0,
+  activeDeviations: 0,
+  totalEvents: 0,
+  patientsFromHIE: 0,
 };
 
 export default function FacilityAnalytics() {
@@ -98,8 +109,8 @@ export default function FacilityAnalytics() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }].map((f) => {
-                    const isInactive = f.facilityId === 'ruhuha-hc';
+                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }, { ...KIBOGORA_DUMMY, rank: ranking.data.data.length + 2 }].map((f) => {
+                    const isInactive = f.facilityId === 'ruhuha-hc' || f.facilityId === 'kibogora-hc';
                     return (
                     <tr key={f.facilityId} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
