@@ -15,7 +15,7 @@ export function Card({ title, subtitle, children, className = '', action }: Card
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
           <div>
             {title && <h3 className="text-sm font-semibold text-gray-700">{title}</h3>}
-            {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
           </div>
           {action}
         </div>
