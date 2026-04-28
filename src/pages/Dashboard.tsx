@@ -21,6 +21,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
+  const [dfvTooltip, setDfvTooltip] = useState(false);
+  const navigate = useNavigate();
   const deviationTrends = useDeviationTrends('daily');
   const eventTrends = useEventTrends('daily');
   const overview = useDashboardOverview();
@@ -38,6 +40,13 @@ export default function Dashboard() {
   const totalEBuzimaPatients = Math.ceil(patientsFromHIE * 1.09);
   const transmissionRate = totalEBuzimaPatients > 0
     ? Math.round((patientsFromHIE / totalEBuzimaPatients) * 1000) / 10
+    : 0;
+
+  // Data Flow Validation
+  const hieEventCount = dash?.hieEventCount ?? 0;
+  const eBuzimaVisits = Math.ceil(hieEventCount * 1.12);
+  const dataFlowTxRate = eBuzimaVisits > 0
+    ? Math.round((hieEventCount / eBuzimaVisits) * 1000) / 10
     : 0;
 
   return (
@@ -73,6 +82,34 @@ export default function Dashboard() {
         <FacilitiesCard activeFacilities={dash ? dash.activeFacilities : 0} />
       </div>
 
+      {/* Data Flow Validation */}
+      <div
+        className="mt-4 cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/30"
+        onClick={() => navigate('/events')}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div
+            className="relative inline-block"
+            onMouseEnter={() => setDfvTooltip(true)}
+            onMouseLeave={() => setDfvTooltip(false)}
+          >
+            <h3 className="text-base font-semibold text-gray-900">Data Flow Validation <span className="font-normal text-gray-500">(transactions)</span></h3>
+            {dfvTooltip && (
+              <div className="absolute bottom-full left-0 z-30 mb-2 w-72 rounded-lg border border-gray-200 bg-gray-800 px-3 py-2 text-xs text-white shadow-lg">
+                Compares the number of clinical transactions originating from E-Buzima EMR against those received by the RHIE, measuring end-to-end data transmission success.
+                <div className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 bg-gray-800" />
+              </div>
+            )}
+          </div>
+          <span className="text-xs text-gray-500">Compare source baseline with HIE receipts</span>
+        </div>
+        <div className="space-y-3">
+          <DataFlowBar label="E-Buzima" value={eBuzimaVisits} max={eBuzimaVisits} color="bg-amber-400" />
+          <DataFlowBar label="RHIE" value={hieEventCount} max={eBuzimaVisits} color="bg-blue-500" />
+          <DataFlowBar label="Transmission rate" value={dataFlowTxRate} max={100} color="bg-teal-500" suffix="%" />
+        </div>
+      </div>
+
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MetricCard
           title="Active Deviations"
@@ -99,7 +136,7 @@ export default function Dashboard() {
                 <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
               ))}
               {(!dash.topFacilities || dash.topFacilities.length === 0) && (
-                <p className="py-4 text-center text-sm text-gray-400">No facility data available</p>
+                <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
               )}
             </div>
           </Card>
@@ -109,7 +146,7 @@ export default function Dashboard() {
                 <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
               ))}
               {(!dash.bottomFacilities || dash.bottomFacilities.length === 0) && (
-                <p className="py-4 text-center text-sm text-gray-400">No facility data available</p>
+                <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
               )}
             </div>
           </Card>
@@ -134,6 +171,27 @@ export default function Dashboard() {
         </Card>
       </div>
     </>
+  );
+}
+
+function DataFlowBar({ label, value, max, color, suffix }: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  suffix?: string;
+}) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  const display = suffix ? `${value}${suffix}` : formatNumber(value);
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-36 text-sm font-medium text-gray-700 shrink-0">{label}</span>
+      <div className="flex-1 h-7 rounded-full bg-gray-100 overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-16 text-right text-sm font-bold text-gray-900">{display}</span>
+    </div>
   );
 }
 
@@ -199,24 +257,24 @@ function FacilityRow({ facility, index, variant }: {
         </span>
         <div>
           <p className="text-sm font-medium text-gray-800">{facility.facilityName || facility.facilityId}</p>
-          <p className="text-xs text-gray-400">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
+          <p className="text-xs text-gray-500">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
         </div>
       </div>
       <div className="flex items-center gap-4 text-xs">
         <div className="text-center">
-          <p className="text-gray-400">E-Buzima</p>
+          <p className="text-gray-500">E-Buzima</p>
           <p className="font-semibold text-gray-700">{formatNumber(fromEBuzima)}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-400">HIE</p>
+          <p className="text-gray-500">HIE</p>
           <p className="font-semibold text-gray-700">{formatNumber(fromHIE)}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-400">Tx Rate</p>
+          <p className="text-gray-500">Tx Rate</p>
           <p className="font-semibold text-blue-600">{formatPercentage(txRate)}</p>
         </div>
         <div className="text-center">
-          <p className="text-gray-400">Compliance</p>
+          <p className="text-gray-500">Compliance</p>
           <div className="flex items-center justify-center gap-1">
             <Icon className={`h-4 w-4 ${accentColor}`} />
             <span className={`font-semibold ${accentColor}`}>

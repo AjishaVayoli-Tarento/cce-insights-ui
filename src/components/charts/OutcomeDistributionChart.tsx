@@ -3,21 +3,16 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 const COLORS = ['#22c55e', '#3b82f6', '#ef4444', '#9ca3af'];
 
 interface OutcomeDistributionChartProps {
-  distribution: {
-    active: { count: number; percentage: number };
-    completed: { count: number; percentage: number };
-    expired: { count: number; percentage: number };
-    withdrawn: { count: number; percentage: number };
-  };
+  distribution: Record<string, { count: number; percentage: number }>;
   height?: number;
 }
 
 export function OutcomeDistributionChart({ distribution, height = 260 }: OutcomeDistributionChartProps) {
   const data = [
-    { name: 'Active', value: distribution.active.count },
-    { name: 'Completed', value: distribution.completed.count },
-    { name: 'Expired', value: distribution.expired.count },
-    { name: 'Withdrawn', value: distribution.withdrawn.count },
+    { name: 'Active', value: distribution.active?.count ?? 0 },
+    { name: 'Completed', value: distribution.completed?.count ?? 0 },
+    { name: 'Expired', value: distribution.expired?.count ?? 0 },
+    { name: 'Withdrawn', value: distribution.withdrawn?.count ?? 0 },
   ].filter((d) => d.value > 0);
 
   return (

@@ -8,6 +8,7 @@ export interface DashboardOverview {
   activeFacilities: number;
   activeDeviations: number;
   newDeviations24h: number;
+  hieEventCount: number;
   topFacilities: FacilityRanking[];
   bottomFacilities: FacilityRanking[];
 }

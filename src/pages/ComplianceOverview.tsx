@@ -8,6 +8,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolComplianceSummary, useProtocolPatients } from '../hooks/useComplianceSummary';
+import { useStepAnalytics } from '../hooks/useProtocols';
 import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
@@ -21,6 +22,7 @@ export default function ComplianceOverview() {
 
   const protocols = useProtocols();
   const summary = useProtocolComplianceSummary(protocolId);
+  const stepAnalytics = useStepAnalytics(protocolId);
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
@@ -69,43 +71,73 @@ export default function ComplianceOverview() {
               <MetricCard title="Deviations" value={formatNumber(data.deviationCount)} />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div>
-                <h4 className="mb-2 text-xs font-semibold text-gray-500 uppercase">Status Breakdown</h4>
-                <div className="space-y-1.5 text-sm">
-                  {(Object.entries(data.statusBreakdown) as [string, number][]).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <span className="capitalize text-gray-600">{status}</span>
-                      <span className="font-medium text-gray-900">
-                        {count} ({formatPercentage((count / data.totalEnrollments) * 100)})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="mb-2 text-xs font-semibold text-gray-500 uppercase">Step Metrics</h4>
-                <div className="space-y-1.5 text-sm">
-                  {Object.entries(data.stepMetrics)
-                    .filter(([k]) => k !== 'totalSteps')
-                    .map(([label, count]) => (
-                      <div key={label} className="flex items-center justify-between">
-                        <span className="capitalize text-gray-600">{label.replace(/([A-Z])/g, ' $1')}</span>
-                        <span className="font-medium text-gray-900">{formatNumber(count as number)}</span>
+            <div className="mt-1">
+              <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Step Metrics</h4>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {([
+                  { key: 'completed', label: 'Completed', color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' },
+                  { key: 'onTime', label: 'On Time', color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50' },
+                  { key: 'late', label: 'Late', color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50' },
+                  { key: 'early', label: 'Early', color: 'bg-teal-500', text: 'text-teal-700', bg: 'bg-teal-50' },
+                  { key: 'overdue', label: 'Overdue', color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
+                  { key: 'missed', label: 'Missed', color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
+                ] as const).map(({ key, label, color, text, bg }) => {
+                  const val = (data.stepMetrics as Record<string, number>)[key] ?? 0;
+                  const total = data.stepMetrics.totalSteps || 1;
+                  const pct = Math.round((val / total) * 100);
+                  return (
+                    <div key={key} className={`rounded-lg ${bg} p-3`}>
+                      <p className={`text-2xl font-bold ${text}`}>{formatNumber(val)}</p>
+                      <p className="mt-0.5 text-xs font-medium text-gray-600">{label}</p>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
+                        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                       </div>
-                    ))}
-                </div>
+                      <p className="mt-1 text-[10px] text-gray-500">{pct}% of {data.stepMetrics.totalSteps} steps</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="mt-4">
-              <Link
-                to={`/compliance/protocols/${encodeURIComponent(protocolId)}`}
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                View Protocol Analytics →
-              </Link>
-            </div>
+            {/* Clinical Workflow Compliance */}
+            {stepAnalytics.data && stepAnalytics.data.steps.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase">Clinical Workflow Compliance</h4>
+                  <span className="text-xs text-gray-500">Mandatory steps must be recorded</span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {stepAnalytics.data.steps
+                    .filter((s) => s.totalInstances > 0)
+                    .map((step) => {
+                      const pct = Math.round(step.completionRate * 100);
+                      const missing = step.totalInstances - step.completedCount;
+                      const label = step.actionId
+                        .replace(/-/g, ' ')
+                        .replace(/\b\w/g, (c) => c.toUpperCase());
+                      return (
+                        <div key={step.actionId} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-3">
+                          <DonutRing pct={pct} size={80} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-700 truncate">{label}</p>
+                            <p className="text-xs text-gray-500">
+                              <span className="font-semibold text-gray-900">{step.completedCount}</span>
+                              {' / '}
+                              <span className="font-semibold text-gray-900">{step.totalInstances}</span>
+                              {' completed'}
+                            </p>
+                            {missing > 0 && (
+                              <p className="text-xs text-red-500 mt-0.5">
+                                {missing} patient{missing !== 1 ? 's' : ''} missing
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </>
         )}
       </Card>
@@ -182,5 +214,29 @@ export default function ComplianceOverview() {
         </Card>
       )}
     </>
+  );
+}
+
+function DonutRing({ pct, size = 80 }: { pct: number; size?: number }) {
+  const stroke = 8;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (pct / 100) * circumference;
+  const color = pct >= 80 ? '#0d9488' : pct >= 50 ? '#ca8a04' : '#dc2626';
+
+  return (
+    <svg width={size} height={size} className="flex-shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
+      <circle
+        cx={size / 2} cy={size / 2} r={radius}
+        fill="none" stroke={color} strokeWidth={stroke}
+        strokeDasharray={circumference} strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="text-sm font-bold" fill={color}>
+        {pct}%
+      </text>
+    </svg>
   );
 }
