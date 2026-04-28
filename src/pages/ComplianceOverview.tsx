@@ -73,7 +73,7 @@ export default function ComplianceOverview() {
             </div>
 
             <div className="mt-1">
-              <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Step Metrics</h4>
+              <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Transactions</h4>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {([
                   { key: 'completed', label: 'Completed', color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' },
@@ -100,11 +100,11 @@ export default function ComplianceOverview() {
               </div>
             </div>
 
-            {/* Clinical Workflow Compliance */}
+            {/* Service Workflow Compliance */}
             {stepAnalytics.data && stepAnalytics.data.steps.length > 0 && (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase">Clinical Workflow Compliance</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase">Service Workflow Compliance</h4>
                   <span className="text-xs text-gray-500">Mandatory steps must be recorded</span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
