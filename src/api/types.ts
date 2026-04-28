@@ -421,6 +421,7 @@ export interface FacilityRanking {
   complianceRate: number;
   activeDeviations: number;
   totalEvents: number;
+  patientsFromHIE: number;
 }
 
 export type RankBy = 'complianceRate' | 'deviationCount' | 'eventVolume';

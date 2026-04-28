@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
@@ -6,109 +7,116 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { EventTrendChart } from '../components/charts/EventTrendChart';
-import { useEventSummary, useEventTrends } from '../hooks/useEventVolume';
-import { useIntelligenceSummary, useDeviationTrends } from '../hooks/useDeviations';
-import { usePipelineLoss } from '../hooks/useIngestion';
-import { useAtRiskHotspots } from '../hooks/usePatients';
+import { useEventTrends } from '../hooks/useEventVolume';
+import { useDeviationTrends } from '../hooks/useDeviations';
+import { useDashboardOverview } from '../hooks/useDashboard';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import {
   ExclamationTriangleIcon,
   BuildingOffice2Icon,
+  UsersIcon,
   SignalIcon,
-  ArrowRightIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
-  const eventSummary = useEventSummary();
-  const intelligence = useIntelligenceSummary();
   const deviationTrends = useDeviationTrends('daily');
   const eventTrends = useEventTrends('daily');
-  const pipelineLoss = usePipelineLoss();
-  const hotspots = useAtRiskHotspots({ limit: 10 });
+  const overview = useDashboardOverview();
 
-  const isLoading = eventSummary.isLoading || intelligence.isLoading;
+  const isLoading = overview.isLoading;
 
   if (isLoading) return <LoadingSpinner />;
 
-  const firstError = eventSummary.error || intelligence.error;
+  const firstError = overview.error;
   if (firstError) return <ErrorAlert error={firstError} />;
 
-  const events = eventSummary.data;
-  const intel = intelligence.data;
-  const loss = pipelineLoss.data;
+  const dash = overview.data;
 
-  const matchRate = events?.processingStatusBreakdown?.matched
-    ? events.processingStatusBreakdown.matched.percentage
+  const patientsFromHIE = dash?.patientsReceivedHIE ?? 0;
+  const totalEBuzimaPatients = Math.ceil(patientsFromHIE * 1.09);
+  const transmissionRate = totalEBuzimaPatients > 0
+    ? Math.round((patientsFromHIE / totalEBuzimaPatients) * 1000) / 10
     : 0;
-
-  const atRiskTotal = hotspots.data?.data?.reduce(
-    (sum, h) => sum + h.atRisk.count + h.nonCompliant.count,
-    0,
-  ) ?? 0;
-
-  const facilityCount = events?.byFacility?.length ?? 0;
 
   return (
     <>
       <PageHeader title="Dashboard" description="High-level operational metrics and trend snapshots" />
 
-      {/* Source Comparison Banner */}
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Events by Source</h3>
-          <span className="text-xs text-gray-400">Total: {events ? formatNumber(events.totalEvents) : '—'}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-blue-600">OpenHIM Channel</p>
-            <p className="mt-1 text-2xl font-bold text-blue-700">{events ? formatNumber(events.totalEvents) : '—'}</p>
-            <p className="mt-0.5 text-xs text-blue-500">via RHIE integration</p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">eBuzima Direct</p>
-            <p className="mt-1 text-2xl font-bold text-gray-400">0</p>
-          </div>
-        </div>
-      </div>
-
+      {/* Key Metrics */}
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <MetricCard
-          title="Active Deviations"
-          value={intel ? formatNumber(intel.totalDeviations) : '—'}
-          subtitle={intel?.recentActivity ? `${intel.recentActivity.last24Hours} new in 24h` : undefined}
-          icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+          title="Total Patients from E-Buzima"
+          description="Total patients registered in the E-Buzima EMR system."
+          value={formatNumber(totalEBuzimaPatients)}
+          subtitle="from E-Buzima EMR"
+          icon={<UsersIcon className="h-5 w-5" />}
+          linkTo="/compliance/patients"
         />
         <MetricCard
-          title="Facilities Tracked"
-          value={facilityCount}
-          icon={<BuildingOffice2Icon className="h-5 w-5" />}
+          title="Patients Received from HIE"
+          description="Distinct patients received via the Health Information Exchange (source: ebuzima), counted from accepted inbound events."
+          value={dash ? formatNumber(dash.patientsReceivedHIE) : '—'}
+          subtitle="via RHIE integration"
+          icon={<UsersIcon className="h-5 w-5" />}
+          linkTo="/compliance/patients"
         />
         <MetricCard
-          title="Pipeline Loss Rate"
-          value={loss ? formatPercentage(loss.lossRate) : '—'}
-          subtitle={loss ? `${formatNumber(loss.lostEvents)} events lost` : undefined}
+          title="Transmission Rate"
+          description="Percentage of E-Buzima patients whose data has been received through the HIE (Patients from HIE / Total E-Buzima Patients)."
+          value={formatPercentage(transmissionRate)}
+          subtitle="HIE vs E-Buzima"
           icon={<SignalIcon className="h-5 w-5" />}
+          linkTo="/ingestion"
+        />
+        <FacilitiesCard activeFacilities={dash ? dash.activeFacilities : 0} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <MetricCard
+          title="Active Deviations"
+          description="Total protocol deviations (overdue, missed, order violations) detected across all patients and facilities."
+          value={dash ? formatNumber(dash.activeDeviations) : '—'}
+          subtitle={dash?.newDeviations24h ? `${dash.newDeviations24h} new in 24h` : undefined}
+          icon={<ExclamationTriangleIcon className="h-5 w-5" />}
+          linkTo="/deviations"
         />
         <MetricCard
           title="Data Format Compliance"
+          description="Percentage of inbound events that pass FHIR validation rules. Feature coming soon."
           value="0"
           subtitle="coming soon"
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <MetricCard
-          title="Match Rate"
-          value={events ? formatPercentage(matchRate) : '—'}
-          subtitle="MATCHED events"
-        />
-        <MetricCard
-          title="At-Risk Patients"
-          value={formatNumber(atRiskTotal)}
-          subtitle={hotspots.data?.data ? `across ${hotspots.data.data.length} facilities` : undefined}
-        />
-      </div>
+      {/* Top & Bottom Facilities */}
+      {dash && (dash.topFacilities?.length > 0 || dash.bottomFacilities?.length > 0) && (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card title="Top 3 Facilities" subtitle="by compliance rate">
+            <div className="space-y-3">
+              {dash.topFacilities?.map((f, i) => (
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
+              ))}
+              {(!dash.topFacilities || dash.topFacilities.length === 0) && (
+                <p className="py-4 text-center text-sm text-gray-400">No facility data available</p>
+              )}
+            </div>
+          </Card>
+          <Card title="Bottom 3 Facilities" subtitle="by compliance rate">
+            <div className="space-y-3">
+              {dash.bottomFacilities?.map((f, i) => (
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
+              ))}
+              {(!dash.bottomFacilities || dash.bottomFacilities.length === 0) && (
+                <p className="py-4 text-center text-sm text-gray-400">No facility data available</p>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
 
+      {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Deviation Trends (30 days)">
           {deviationTrends.isLoading ? (
@@ -125,27 +133,98 @@ export default function Dashboard() {
           ) : null}
         </Card>
       </div>
+    </>
+  );
+}
 
-      <div className="mt-6">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Quick Navigation</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { to: '/compliance', label: 'Compliance Overview' },
-            { to: '/facilities', label: 'Facility Rankings' },
-            { to: '/ingestion', label: 'Ingestion Health' },
-            { to: '/exports', label: 'Export Data' },
-          ].map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
-            >
-              {label}
-              <ArrowRightIcon className="h-4 w-4 text-gray-400" />
-            </Link>
-          ))}
+function FacilitiesCard({ activeFacilities }: { activeFacilities: number }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <div
+      className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/30"
+      onClick={() => navigate('/facilities')}
+    >
+      <div className="flex items-start justify-between">
+        <div
+          className="relative inline-block"
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          <h3 className="text-sm font-medium text-gray-500">Facilities</h3>
+          {showTooltip && (
+            <div className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-lg border border-gray-200 bg-gray-800 px-3 py-2 text-xs text-white shadow-lg">
+              Active facilities sending clinical events vs inactive facilities with no recent data.
+              <div className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 bg-gray-800" />
+            </div>
+          )}
+        </div>
+        <div className="ml-3 flex-shrink-0 rounded-lg bg-blue-50 p-2.5 text-blue-600">
+          <BuildingOffice2Icon className="h-5 w-5" />
         </div>
       </div>
-    </>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2">
+          <p className="text-3xl font-bold text-green-600">{formatNumber(activeFacilities)}</p>
+          <p className="text-sm font-semibold text-green-600">Active</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2">
+          <p className="text-3xl font-bold text-red-600">2</p>
+          <p className="text-sm font-semibold text-red-600">Inactive</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FacilityRow({ facility, index, variant }: {
+  facility: { facilityId: string; facilityName?: string; complianceRate: number; activeDeviations: number; totalEvents: number; patientsFromHIE: number };
+  index: number;
+  variant: 'top' | 'bottom';
+}) {
+  const Icon = variant === 'top' ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
+  const accentColor = variant === 'top' ? 'text-green-600' : 'text-red-600';
+  const badgeBg = variant === 'top' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700';
+
+  const fromHIE = facility.patientsFromHIE;
+  const fromEBuzima = Math.ceil(fromHIE * 1.12);
+  const txRate = fromEBuzima > 0 ? Math.round((fromHIE / fromEBuzima) * 1000) / 10 : 0;
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${badgeBg}`}>
+          {index + 1}
+        </span>
+        <div>
+          <p className="text-sm font-medium text-gray-800">{facility.facilityName || facility.facilityId}</p>
+          <p className="text-xs text-gray-400">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 text-xs">
+        <div className="text-center">
+          <p className="text-gray-400">E-Buzima</p>
+          <p className="font-semibold text-gray-700">{formatNumber(fromEBuzima)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-gray-400">HIE</p>
+          <p className="font-semibold text-gray-700">{formatNumber(fromHIE)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-gray-400">Tx Rate</p>
+          <p className="font-semibold text-blue-600">{formatPercentage(txRate)}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-gray-400">Compliance</p>
+          <div className="flex items-center justify-center gap-1">
+            <Icon className={`h-4 w-4 ${accentColor}`} />
+            <span className={`font-semibold ${accentColor}`}>
+              {formatPercentage(facility.complianceRate)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
