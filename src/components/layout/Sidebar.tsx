@@ -7,6 +7,7 @@ import {
   BuildingOffice2Icon,
   CogIcon,
   ArrowDownTrayIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 
 const NAV_ITEMS = [
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { to: '/events', label: 'Events', icon: SignalIcon },
   { to: '/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
   { to: '/ingestion', label: 'Ingestion', icon: CogIcon },
+  { to: '/intelligence', label: 'Intelligence', icon: BoltIcon },
   { to: '/exports', label: 'Exports', icon: ArrowDownTrayIcon },
 ];
 
