@@ -1,0 +1,72 @@
+name: UI CI and ECR Push
+
+on:
+  push:
+    branches: [ "demo-intelligence" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_REPO: ${{ vars.AWS_ECR_REPO }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ vars.AWS_ROLE }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, Tag & Push Image
+      run: |
+        ECR_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}
+        docker build -t ${ECR_URI}:latest .
+        docker tag ${ECR_URI}:latest ${ECR_URI}:${IMAGE_TAG}
+        docker push ${ECR_URI}:${IMAGE_TAG}
+        docker push ${ECR_URI}:latest
+
+  trigger-deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/demo-intelligence' && success()
+    env:
+      GH_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}
+    steps:
+      - name: Trigger deploy-scripts workflow_dispatch
+        run: |
+          gh api --method POST \
+            /repos/openphc/deploy-scripts/actions/workflows/deploy.yml/dispatches \
+            --input - <<'JSON'
+          {
+            "ref": "demo",
+            "inputs": { "target_env": "dev" }
+          }
+          JSON
+ 
