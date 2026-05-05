@@ -31,7 +31,7 @@ export function useDeviationResolution() {
 
 export function useIntelligenceSummary() {
   return useQuery({
-    queryKey: ['intelligence', 'summary'],
+    queryKey: ['deviations', 'intelligence-summary'],
     queryFn: getIntelligenceSummary,
     refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
   });

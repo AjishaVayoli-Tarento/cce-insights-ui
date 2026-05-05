@@ -75,5 +75,5 @@ export function getDeviationResolutionRate(params?: {
 }
 
 export function getIntelligenceSummary(): Promise<IntelligenceSummary> {
-  return apiGet('/intelligence/summary');
+  return apiGet('/deviations/intelligence-summary');
 }
