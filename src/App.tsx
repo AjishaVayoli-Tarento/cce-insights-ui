@@ -16,6 +16,7 @@ const SourceComparison = lazy(() => import('./pages/SourceComparison'));
 const FacilityAnalytics = lazy(() => import('./pages/FacilityAnalytics'));
 const IngestionPipeline = lazy(() => import('./pages/IngestionPipeline'));
 const Exports = lazy(() => import('./pages/Exports'));
+const Intelligence = lazy(() => import('./pages/Intelligence'));
 
 export function App() {
   return (
@@ -39,6 +40,7 @@ export function App() {
               <Route path="/events/source-comparison" element={<SourceComparison />} />
               <Route path="/facilities" element={<FacilityAnalytics />} />
               <Route path="/ingestion" element={<IngestionPipeline />} />
+              <Route path="/intelligence" element={<Intelligence />} />
               <Route path="/exports" element={<Exports />} />
             </Routes>
           </Suspense>
