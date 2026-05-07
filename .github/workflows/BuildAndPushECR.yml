@@ -55,7 +55,7 @@ jobs:
   trigger-deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
+    if: github.event_name == 'push' && github.ref == 'refs/heads/demo-intelligence' && success()
     env:
       GH_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}
     steps:
