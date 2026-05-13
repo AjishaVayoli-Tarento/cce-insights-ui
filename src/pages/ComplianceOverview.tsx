@@ -27,6 +27,7 @@ export default function ComplianceOverview() {
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
+    limit: 20,
   });
 
   const data = summary.data;

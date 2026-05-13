@@ -26,6 +26,7 @@ export default function PatientList() {
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
+    limit: 20,
   });
   const repeats = useRepeatDeviations({ minDeviations, limit: 10 });
 
