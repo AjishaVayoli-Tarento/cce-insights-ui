@@ -37,7 +37,7 @@ export function getProtocolPatients(
     {
       status: params?.status,
       facilityId: params?.facilityId,
-      limit: params?.limit?.toString(),
+      limit: (params?.limit ?? 20).toString(),
       cursor: params?.cursor,
     },
   );
