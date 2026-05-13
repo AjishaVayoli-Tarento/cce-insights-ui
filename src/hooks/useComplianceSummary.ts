@@ -22,7 +22,7 @@ export function useFacilityComplianceSummary(facilityId: string) {
 
 export function useProtocolPatients(
   protocolDefinitionId: string,
-  params?: { status?: string; facilityId?: string; limit?: number; cursor?: string },
+  params?: { status?: string; facilityId?: string; limit?: number; cursor?: string; patientId?: string },
 ) {
   return useQuery({
     queryKey: ['compliance', 'patients', protocolDefinitionId, params],
