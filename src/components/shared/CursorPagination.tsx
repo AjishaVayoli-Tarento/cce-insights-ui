@@ -2,13 +2,14 @@ interface CursorPaginationProps {
   hasMore: boolean;
   nextCursor: string | null;
   onNext: (cursor: string) => void;
+  onPrevious?: () => void;
   onReset: () => void;
   currentPage?: number;
 }
 
-export function CursorPagination({ hasMore, nextCursor, onNext, onReset, currentPage = 1 }: CursorPaginationProps) {
+export function CursorPagination({ hasMore, nextCursor, onNext, onPrevious, onReset, currentPage = 1 }: CursorPaginationProps) {
   return (
-    <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+    <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-2">
       <p className="text-xs text-gray-500">Page {currentPage}</p>
       <div className="flex gap-2">
         {currentPage > 1 && (
@@ -16,7 +17,15 @@ export function CursorPagination({ hasMore, nextCursor, onNext, onReset, current
             onClick={onReset}
             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
           >
-            First
+            ⟪ First
+          </button>
+        )}
+        {currentPage > 1 && onPrevious && (
+          <button
+            onClick={onPrevious}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            ← Previous
           </button>
         )}
         {hasMore && nextCursor && (

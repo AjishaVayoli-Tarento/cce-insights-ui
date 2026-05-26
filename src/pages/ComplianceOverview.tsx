@@ -18,7 +18,10 @@ export default function ComplianceOverview() {
   const [protocolId, setProtocolId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [cursor, setCursor] = useState<string | undefined>();
+  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([]);
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
 
   const protocols = useProtocols();
   const summary = useProtocolComplianceSummary(protocolId);
@@ -27,6 +30,8 @@ export default function ComplianceOverview() {
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
+    limit: 20,
+    patientId: activeSearch || undefined,
   });
 
   const data = summary.data;
@@ -43,6 +48,7 @@ export default function ComplianceOverview() {
             onChange={(e) => {
               setProtocolId(e.target.value);
               setCursor(undefined);
+              setCursorHistory([]);
               setPage(1);
             }}
             className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -149,24 +155,70 @@ export default function ComplianceOverview() {
 
       {protocolId && (
         <Card title="Patient Compliance" className="mt-6">
-          <div className="mb-4 flex gap-2">
-            {['', 'on_track', 'at_risk', 'non_compliant'].map((s) => (
+          <div className="mb-4 flex flex-wrap items-end gap-4">
+            <div className="flex gap-2 items-end">
+              {['', 'on_track', 'at_risk', 'non_compliant'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setStatusFilter(s);
+                    setCursor(undefined);
+                    setCursorHistory([]);
+                    setPage(1);
+                  }}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    statusFilter === s
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {s === '' ? 'All' : s.replace(/_/g, ' ')}
+                </button>
+              ))}
+            </div>
+            <div className="flex-1" />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setActiveSearch(searchTerm.trim());
+                setCursor(undefined);
+                setCursorHistory([]);
+                setPage(1);
+              }}
+              className="flex items-end gap-2"
+            >
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-500">Search Patient</label>
+                <input
+                  type="text"
+                  placeholder="Enter patient ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-56 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
               <button
-                key={s}
-                onClick={() => {
-                  setStatusFilter(s);
-                  setCursor(undefined);
-                  setPage(1);
-                }}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  statusFilter === s
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+                type="submit"
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
               >
-                {s === '' ? 'All' : s.replace(/_/g, ' ')}
+                Search
               </button>
-            ))}
+              {activeSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setActiveSearch('');
+                    setCursor(undefined);
+                    setCursorHistory([]);
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Clear
+                </button>
+              )}
+            </form>
           </div>
 
           {patients.isLoading && <LoadingSpinner />}
@@ -210,8 +262,9 @@ export default function ComplianceOverview() {
               <CursorPagination
                 hasMore={patients.data.pagination.has_more}
                 nextCursor={patients.data.pagination.next_cursor}
-                onNext={(c) => { setCursor(c); setPage((p) => p + 1); }}
-                onReset={() => { setCursor(undefined); setPage(1); }}
+                onNext={(c) => { setCursorHistory((h) => [...h, cursor]); setCursor(c); setPage((p) => p + 1); }}
+                onPrevious={() => { const prev = [...cursorHistory]; const prevCursor = prev.pop(); setCursorHistory(prev); setCursor(prevCursor); setPage((p) => p - 1); }}
+                onReset={() => { setCursor(undefined); setCursorHistory([]); setPage(1); }}
                 currentPage={page}
               />
             </>
