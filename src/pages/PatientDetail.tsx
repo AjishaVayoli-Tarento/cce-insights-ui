@@ -150,15 +150,17 @@ export default function PatientDetail() {
                       ? 'DEVIATION'
                       : step.status;
                     const info = JOURNEY_STATUS[displayStatus] ?? JOURNEY_STATUS.NOT_STARTED;
+                    const depth = step.depth ?? 0;
+                    const isSubStep = depth > 0;
                     return (
-                      <div key={`${proto.protocolInstanceId}-j-${i}`} className="flex gap-3 py-2">
+                      <div key={`${proto.protocolInstanceId}-j-${i}`} className="flex gap-3 py-2" style={{ paddingLeft: `${depth * 24}px` }}>
                         <div className="flex flex-col items-center">
-                          <div className={`mt-1 h-3 w-3 rounded-full ${info.dot} ring-2 ring-white`} />
-                          {i < arr.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
+                          <div className={`mt-1 ${isSubStep ? 'h-2.5 w-2.5' : 'h-3 w-3'} rounded-full ${info.dot} ring-2 ring-white`} />
+                          {i < arr.length - 1 && <div className={`w-px flex-1 ${isSubStep ? 'bg-gray-150' : 'bg-gray-200'}`} />}
                         </div>
                         <div className="min-w-0 pb-1 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-900">{step.stepName}</p>
+                            <p className={`${isSubStep ? 'text-xs' : 'text-sm'} font-medium text-gray-900`}>{step.stepName}</p>
                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.bg} ${info.text}`}>
                               {info.label}
                             </span>
