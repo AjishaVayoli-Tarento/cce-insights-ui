@@ -110,12 +110,14 @@ export interface PatientTimeline {
 
 export interface JourneyStep {
   actionId: string;
+  parentActionId?: string;
   stepName: string;
   status: 'COMPLETED' | 'PENDING' | 'NOT_STARTED' | 'OVERDUE' | 'MISSED' | 'SKIPPED' | 'DUE';
   completionCount: number;
   effectiveDateTime?: string;
   completionStatus?: CompletionStatus;
   source?: string;
+  depth?: number;
 }
 
 export interface TimelineEntry {
