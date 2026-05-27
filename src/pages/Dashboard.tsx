@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
@@ -23,8 +22,6 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  
   const eventSummary = useEventSummary();
   const intelligence = useIntelligenceSummary();
   const deviationTrends = useDeviationTrends('daily');
