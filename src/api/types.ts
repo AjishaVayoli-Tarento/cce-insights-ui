@@ -117,6 +117,8 @@ export interface JourneyStep {
   effectiveDateTime?: string;
   completionStatus?: CompletionStatus;
   source?: string;
+  practitioner?: string;
+  facilityId?: string;
   depth?: number;
 }
 

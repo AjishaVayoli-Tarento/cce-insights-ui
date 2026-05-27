@@ -181,6 +181,12 @@ export default function PatientDetail() {
                             {step.source && (
                               <span className="text-xs text-gray-400">Source: {step.source}</span>
                             )}
+                            {step.practitioner && (
+                              <span className="text-xs text-gray-400">Practitioner: {step.practitioner}</span>
+                            )}
+                            {step.facilityId && (
+                              <span className="text-xs text-gray-400">Facility: {step.facilityId}</span>
+                            )}
                           </div>
                         </div>
                       </div>
