@@ -14,6 +14,7 @@ const Deviations = lazy(() => import('./pages/Deviations'));
 const EventVolume = lazy(() => import('./pages/EventVolume'));
 const SourceComparison = lazy(() => import('./pages/SourceComparison'));
 const FacilityAnalytics = lazy(() => import('./pages/FacilityAnalytics'));
+const PractitionerAnalytics = lazy(() => import('./pages/PractitionerAnalytics'));
 const IngestionPipeline = lazy(() => import('./pages/IngestionPipeline'));
 const Exports = lazy(() => import('./pages/Exports'));
 const Intelligence = lazy(() => import('./pages/Intelligence'));
@@ -39,6 +40,7 @@ export function App() {
               <Route path="/events" element={<EventVolume />} />
               <Route path="/events/source-comparison" element={<SourceComparison />} />
               <Route path="/facilities" element={<FacilityAnalytics />} />
+              <Route path="/practitioners" element={<PractitionerAnalytics />} />
               <Route path="/ingestion" element={<IngestionPipeline />} />
               <Route path="/intelligence" element={<Intelligence />} />
               <Route path="/exports" element={<Exports />} />

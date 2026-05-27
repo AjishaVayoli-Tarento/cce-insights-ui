@@ -431,6 +431,23 @@ export interface FacilityRanking {
 export type RankBy = 'complianceRate' | 'deviationCount' | 'eventVolume';
 export type SortOrder = 'asc' | 'desc';
 
+// ─── Practitioner Analytics ──────────────────────────────────
+
+export interface PractitionerRanking {
+  rank: number;
+  practitionerRef: string;
+  practitionerName: string | null;
+  facilityId: string | null;
+  totalPatients: number;
+  complianceRate: number;
+  totalSteps: number;
+  completedSteps: number;
+  activeDeviations: number;
+  totalEvents: number;
+}
+
+export type PractitionerRankBy = 'complianceRate' | 'totalPatients' | 'totalEvents';
+
 // ─── Processing Quality ──────────────────────────────────────
 
 export interface ProcessingStatusBucket {
