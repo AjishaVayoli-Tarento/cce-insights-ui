@@ -24,6 +24,7 @@ import {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  
   const eventSummary = useEventSummary();
   const intelligence = useIntelligenceSummary();
   const deviationTrends = useDeviationTrends('daily');
