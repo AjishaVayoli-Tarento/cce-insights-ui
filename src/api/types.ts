@@ -119,6 +119,7 @@ export interface JourneyStep {
   source?: string;
   practitioner?: string;
   facilityId?: string;
+  requiredBehavior?: 'must' | 'could';
   depth?: number;
 }
 

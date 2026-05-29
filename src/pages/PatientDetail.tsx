@@ -164,6 +164,16 @@ export default function PatientDetail() {
                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.bg} ${info.text}`}>
                               {info.label}
                             </span>
+                            {step.requiredBehavior === 'must' && (
+                              <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-200">
+                                Mandatory
+                              </span>
+                            )}
+                            {step.requiredBehavior === 'could' && (
+                              <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-500 ring-1 ring-inset ring-gray-200">
+                                Optional
+                              </span>
+                            )}
                             {step.completionCount > 1 && (
                               <span className="text-xs text-gray-400">×{step.completionCount}</span>
                             )}

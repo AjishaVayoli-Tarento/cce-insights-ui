@@ -61,12 +61,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Events"
+          description="Total inbound clinical events (FHIR resources) received and processed by the compliance engine across all sources."
           value={events ? formatNumber(events.totalEvents) : '—'}
           icon={<ChartBarIcon className="h-5 w-5" />}
           linkTo="/events"
         />
         <MetricCard
           title="Active Deviations"
+          description="Protocol deviations (overdue, missed, order violations) currently active across all patients and facilities."
           value={intel ? formatNumber(intel.totalDeviations) : '—'}
           subtitle={intel ? `${intel.recentActivity.last24Hours} new in 24h` : undefined}
           icon={<ExclamationTriangleIcon className="h-5 w-5" />}
@@ -74,12 +76,14 @@ export default function Dashboard() {
         />
         <MetricCard
           title="Facilities Tracked"
+          description="Number of distinct healthcare facilities that have sent clinical data within the selected date range."
           value={formatNumber(facilityCount)}
           icon={<BuildingOffice2Icon className="h-5 w-5" />}
           linkTo="/facilities"
         />
         <MetricCard
           title="Pipeline Loss Rate"
+          description="Percentage of events lost during ingestion (rejected or failed processing) relative to total received."
           value={loss ? formatPercentage(loss.lossRate) : '—'}
           subtitle={loss ? `${formatNumber(loss.lostEvents)} events lost` : undefined}
           icon={<SignalIcon className="h-5 w-5" />}
@@ -90,12 +94,14 @@ export default function Dashboard() {
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MetricCard
           title="Match Rate"
+          description="Percentage of inbound events that were successfully matched to a protocol step instance."
           value={events ? formatPercentage(matchRate) : '—'}
           subtitle="MATCHED events"
           linkTo="/events"
         />
         <MetricCard
           title="At-Risk Patients"
+          description="Patients classified as at-risk or non-compliant based on protocol step completion status."
           value={formatNumber(atRiskTotal)}
           subtitle={hotspots.data?.data ? `across ${hotspots.data.data.length} facilities` : undefined}
           icon={<UserGroupIcon className="h-5 w-5" />}
