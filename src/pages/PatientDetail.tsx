@@ -241,8 +241,8 @@ export default function PatientDetail() {
                             {step.practitioner && (
                               <span className="text-xs text-gray-500">Practitioner: {step.practitioner}</span>
                             )}
-                            {step.facilityId && (
-                              <span className="text-xs text-gray-500">Facility: {step.facilityId}</span>
+                            {(step.facilityName || step.facilityId) && (
+                              <span className="text-xs text-gray-500">Facility: {step.facilityName || step.facilityId}</span>
                             )}
                           </div>
                           {isDeviation && step.description && (
