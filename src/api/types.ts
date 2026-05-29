@@ -121,6 +121,7 @@ export interface JourneyStep {
   facilityId?: string;
   requiredBehavior?: 'must' | 'could';
   depth?: number;
+  description?: string;
 }
 
 export interface TimelineEntry {
