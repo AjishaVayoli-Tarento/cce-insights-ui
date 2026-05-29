@@ -143,6 +143,37 @@ export default function PatientDetail() {
                   />
                   <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
                 </div>
+
+                {/* Legend */}
+                <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                    <span className="text-xs text-gray-600">Completed</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                    <span className="text-xs text-gray-600">Pending</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                    <span className="text-xs text-gray-600">Deviation</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-300 bg-white" />
+                    <span className="text-xs text-gray-600">Not started</span>
+                  </div>
+                  <div className="ml-2 border-l border-gray-300 pl-3 flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">mandatory</span>
+                      <span className="text-xs text-gray-500">always tracked</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">policy</span>
+                      <span className="text-xs text-gray-500">policy-defined</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-0">
                   {(proto.journey ?? []).map((step, i, arr) => {
                     const hasDeviation = deviationActionIds.has(step.actionId);
@@ -152,52 +183,71 @@ export default function PatientDetail() {
                     const info = JOURNEY_STATUS[displayStatus] ?? JOURNEY_STATUS.NOT_STARTED;
                     const depth = step.depth ?? 0;
                     const isSubStep = depth > 0;
+                    const isDeviation = displayStatus === 'DEVIATION';
+                    const isNotStarted = displayStatus === 'NOT_STARTED';
+
                     return (
-                      <div key={`${proto.protocolInstanceId}-j-${i}`} className="flex gap-3 py-2" style={{ paddingLeft: `${depth * 24}px` }}>
+                      <div
+                        key={`${proto.protocolInstanceId}-j-${i}`}
+                        className={`flex gap-3 py-2.5 ${isDeviation ? 'mx-[-12px] px-3 rounded-lg bg-red-50 border border-red-200' : ''}`}
+                        style={{ paddingLeft: isDeviation ? undefined : `${depth * 24}px` }}
+                      >
                         <div className="flex flex-col items-center">
-                          <div className={`mt-1 ${isSubStep ? 'h-2.5 w-2.5' : 'h-3 w-3'} rounded-full ${info.dot} ring-2 ring-white`} />
-                          {i < arr.length - 1 && <div className={`w-px flex-1 ${isSubStep ? 'bg-gray-150' : 'bg-gray-200'}`} />}
+                          {isNotStarted ? (
+                            <div className="mt-1 h-3.5 w-3.5 rounded-full border-2 border-gray-300 bg-white" />
+                          ) : (
+                            <div className={`mt-1 ${isSubStep ? 'h-3 w-3' : 'h-3.5 w-3.5'} rounded-full ${info.dot}`} />
+                          )}
+                          {i < arr.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
                         </div>
                         <div className="min-w-0 pb-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className={`${isSubStep ? 'text-xs' : 'text-sm'} font-medium text-gray-900`}>{step.stepName}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`${isSubStep ? 'text-sm' : 'text-base'} font-semibold ${isNotStarted ? 'text-gray-400' : 'text-gray-900'}`}>{step.stepName}</p>
                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.bg} ${info.text}`}>
                               {info.label}
                             </span>
                             {step.requiredBehavior === 'must' && (
-                              <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-200">
-                                Mandatory
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">
+                                mandatory
                               </span>
                             )}
                             {step.requiredBehavior === 'could' && (
-                              <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-500 ring-1 ring-inset ring-gray-200">
-                                Optional
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">
+                                policy
                               </span>
                             )}
                             {step.completionCount > 1 && (
                               <span className="text-xs text-gray-400">×{step.completionCount}</span>
                             )}
                           </div>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
                             {step.effectiveDateTime && (
-                              <span className="text-xs text-gray-400">{formatDateTime(step.effectiveDateTime)}</span>
+                              <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
                             {step.completionStatus && (
-                              <StatusBadge
-                                label={step.completionStatus}
-                                color={COMPLETION_COLORS[step.completionStatus as CompletionStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                              />
+                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                step.completionStatus === 'LATE'
+                                  ? 'text-red-700 bg-red-100'
+                                  : step.completionStatus === 'EARLY'
+                                    ? 'text-blue-700 bg-blue-100'
+                                    : 'text-green-700 bg-green-100'
+                              }`}>
+                                {step.completionStatus === 'LATE' ? 'SLA BREACHED' : step.completionStatus}
+                              </span>
                             )}
                             {step.source && (
-                              <span className="text-xs text-gray-400">Source: {step.source}</span>
+                              <span className="text-xs text-gray-500">Source: {step.source}</span>
                             )}
                             {step.practitioner && (
-                              <span className="text-xs text-gray-400">Practitioner: {step.practitioner}</span>
+                              <span className="text-xs text-gray-500">Practitioner: {step.practitioner}</span>
                             )}
-                            {step.facilityId && (
-                              <span className="text-xs text-gray-400">Facility: {step.facilityId}</span>
+                            {(step.facilityName || step.facilityId) && (
+                              <span className="text-xs text-gray-500">Facility: {step.facilityName || step.facilityId}</span>
                             )}
                           </div>
+                          {isDeviation && step.description && (
+                            <p className="mt-1 text-xs text-red-600">{step.description}</p>
+                          )}
                         </div>
                       </div>
                     );
