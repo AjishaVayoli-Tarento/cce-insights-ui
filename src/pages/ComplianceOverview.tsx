@@ -74,7 +74,7 @@ export default function ComplianceOverview() {
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
               <MetricCard title="Compliant Patients" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />
-              <MetricCard title="Non-Compliant Patients" value={formatNumber(data.deviationCount)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
+              <MetricCard title="Non-Compliant Patients" value={formatNumber(data.totalEnrollments - data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
               <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of compliant patients out of total tracked patients under this protocol." />
             </div>
 
@@ -92,27 +92,40 @@ export default function ComplianceOverview() {
                   const totalSteps = data.stepMetrics.totalSteps || 1;
 
                   const tiles = [
-                    { key: 'total', label: 'Total Steps', value: totalSteps, denom: totalSteps, color: 'bg-gray-500', text: 'text-gray-800', bg: 'bg-gray-50', desc: 'Total applicable steps across all tracked patients' },
-                    { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', sub: { onTime, late } },
-                    { key: 'due', label: 'Due', value: due, denom: totalSteps, color: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50' },
-                    { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
-                    { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
-                    { key: 'pending', label: 'Pending', value: pending, denom: totalSteps, color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-100' },
+                    { key: 'total', label: 'Total Steps', value: totalSteps, denom: totalSteps, color: 'bg-gray-500', text: 'text-gray-800', bg: 'bg-gray-50', desc: 'Total applicable steps across all tracked patients.' },
+                    { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', sub: { onTime, late }, desc: 'Steps that have been completed (on time or late).' },
+                    { key: 'due', label: 'Due', value: due, denom: totalSteps, color: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50', desc: 'Steps that are currently due and within the allowed window.' },
+                    { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50', desc: 'Steps that have exceeded their due date but are not yet missed.' },
+                    { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', desc: 'Steps that were never completed within the allowed window.' },
+                    { key: 'pending', label: 'Pending', value: pending, denom: totalSteps, color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-100', desc: 'Steps not yet triggered — waiting for a preceding step to complete.' },
                   ];
 
                   return tiles.map(({ key, label, value, denom, color, text, bg, sub, desc }) => {
                     const pct = Math.round((value / denom) * 100);
                     return (
-                      <div key={key} className={`rounded-lg ${bg} p-3`}>
+                      <div key={key} className={`rounded-lg ${bg} p-3 relative group`}>
                         <p className={`text-2xl font-bold ${text}`}>
                           {formatNumber(value)}
                           <span className="text-sm font-normal text-gray-400">/{formatNumber(denom)}</span>
                         </p>
-                        <p className="mt-0.5 text-xs font-medium text-gray-600">{label}</p>
+                        <div className="mt-0.5 flex items-center gap-1">
+                          <p className="text-xs font-medium text-gray-600">{label}</p>
+                          {desc && (
+                            <div className="relative">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-gray-400 cursor-help peer">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
+                              </svg>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 z-30 mb-2 w-48 rounded-lg border border-gray-200 bg-gray-800 px-3 py-2 text-xs text-white shadow-lg opacity-0 pointer-events-none peer-hover:opacity-100 transition-opacity">
+                                {desc}
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-2 w-2 rotate-45 bg-gray-800" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
                           <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <p className="mt-1 text-[10px] text-gray-500">{desc || `${pct}% of ${formatNumber(denom)} steps`}</p>
+                        <p className="mt-1 text-[10px] text-gray-500">{`${pct}% of ${formatNumber(denom)} steps`}</p>
                         {sub && (
                           <div className="mt-2 flex gap-3 border-t border-gray-200 pt-2">
                             <span className="text-[10px] text-blue-600 font-medium">On Time: {sub.onTime}</span>
