@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
@@ -15,6 +15,13 @@ export default function ComplianceOverview() {
 
   const protocols = useProtocols();
   const facilities = useFacilityLookup();
+
+  useEffect(() => {
+    if (!protocolId && protocols.data && protocols.data.length > 0) {
+      setProtocolId(protocols.data[0].id);
+    }
+  }, [protocols.data, protocolId]);
+
   const summary = useProtocolComplianceSummary(protocolId);
   const stepAnalytics = useStepAnalytics(protocolId);
   const actionOrder = useActionOrder(protocolId);

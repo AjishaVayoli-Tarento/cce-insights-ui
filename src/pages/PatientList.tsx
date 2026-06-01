@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { Card } from '../components/shared/Card';
@@ -24,6 +24,13 @@ export default function PatientList() {
   const [activeSearch, setActiveSearch] = useState('');
 
   const protocols = useProtocols();
+
+  useEffect(() => {
+    if (!protocolId && protocols.data && protocols.data.length > 0) {
+      setProtocolId(protocols.data[0].id);
+    }
+  }, [protocols.data, protocolId]);
+
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
@@ -48,7 +55,7 @@ export default function PatientList() {
               <option value="">Select a protocol...</option>
               {protocols.data?.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.url.split('/').pop()} v{p.version}
+                  {p.title || p.url.split('/').pop()} (v{p.version})
                 </option>
               ))}
             </select>
