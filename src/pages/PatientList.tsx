@@ -7,7 +7,6 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolPatients } from '../hooks/useComplianceSummary';
-import { useRepeatDeviations } from '../hooks/usePatients';
 import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
@@ -19,7 +18,6 @@ export default function PatientList() {
   const [cursor, setCursor] = useState<string | undefined>();
   const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([]);
   const [page, setPage] = useState(1);
-  const [minDeviations, setMinDeviations] = useState(3);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
 
@@ -37,8 +35,6 @@ export default function PatientList() {
     limit: 20,
     patientId: activeSearch || undefined,
   });
-  const repeats = useRepeatDeviations({ minDeviations, limit: 10 });
-
   return (
     <>
       <PageHeader title="Patient Compliance" description="Browse patients by compliance category" />
@@ -75,16 +71,7 @@ export default function PatientList() {
               </button>
             ))}
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-500">Min Deviations (repeat)</label>
-            <input
-              type="number"
-              min={1}
-              value={minDeviations}
-              onChange={(e) => setMinDeviations(Number(e.target.value))}
-              className="w-20 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+
           <div className="flex-1" />
           <form
             onSubmit={(e) => {
@@ -184,40 +171,7 @@ export default function PatientList() {
         )}
       </Card>
 
-      {repeats.data && repeats.data.data.length > 0 && (
-        <Card title="Repeat Deviation Patients" className="mt-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="pb-2 pr-4">Patient ID</th>
-                  <th className="pb-2 pr-4">Total Deviations</th>
-                  <th className="pb-2 pr-4">Overdue</th>
-                  <th className="pb-2 pr-4">Missed</th>
-                  <th className="pb-2 pr-4">Order Violation</th>
-                  <th className="pb-2">Facility</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {repeats.data.data.map((r) => (
-                  <tr key={r.patientId} className="hover:bg-gray-50">
-                    <td className="py-2 pr-4">
-                      <Link to={`/compliance/patients/${encodeURIComponent(r.patientId)}`} className="font-medium text-blue-600 hover:text-blue-700">
-                        {r.patientId}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-4">{formatNumber(r.totalDeviations)}</td>
-                    <td className="py-2 pr-4">{formatNumber(r.overdueCount)}</td>
-                    <td className="py-2 pr-4">{formatNumber(r.missedCount)}</td>
-                    <td className="py-2 pr-4">{formatNumber(r.orderViolationCount)}</td>
-                    <td className="py-2">{r.facilityId}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+
     </>
   );
 }
