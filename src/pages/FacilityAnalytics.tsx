@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
+import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
@@ -33,6 +34,7 @@ const KIBOGORA_DUMMY: FacilityRanking = {
 };
 
 export default function FacilityAnalytics() {
+  const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
   const [order, setOrder] = useState<SortOrder>('desc');
   const [cursor, setCursor] = useState<string | undefined>();
@@ -46,6 +48,7 @@ export default function FacilityAnalytics() {
       <PageHeader title="Facility Analytics" description="Facility leaderboard and at-risk hotspots" />
 
       <div className="mb-4 flex flex-wrap gap-4">
+        <ProtocolFilter value={protocolId} onChange={setProtocolId} />
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Rank By:</span>
           {RANK_BY_OPTIONS.map((opt) => (

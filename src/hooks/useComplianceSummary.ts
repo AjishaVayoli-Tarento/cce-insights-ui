@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { getProtocolComplianceSummary, getFacilityComplianceSummary, getProtocolPatients } from '../api/compliance';
+import { getAllProtocolsComplianceSummary, getProtocolComplianceSummary, getFacilityComplianceSummary, getProtocolPatients } from '../api/compliance';
 import { useGlobalFilters } from './useGlobalFilters';
 
 export function useProtocolComplianceSummary(protocolDefinitionId: string) {
   const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['compliance', 'summary', protocolDefinitionId, filters],
-    queryFn: () => getProtocolComplianceSummary(protocolDefinitionId, filters),
-    enabled: !!protocolDefinitionId,
+    queryKey: ['compliance', 'summary', protocolDefinitionId || 'all', filters],
+    queryFn: () => protocolDefinitionId
+      ? getProtocolComplianceSummary(protocolDefinitionId, filters)
+      : getAllProtocolsComplianceSummary(),
   });
 }
 
