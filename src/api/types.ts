@@ -55,6 +55,7 @@ export interface ComplianceSummary {
     early: number;
     overdue: number;
     missed: number;
+    due: number;
     pending: number;
   };
   deviationCount: number;
