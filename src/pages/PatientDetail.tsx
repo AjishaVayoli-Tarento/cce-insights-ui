@@ -224,16 +224,22 @@ export default function PatientDetail() {
                             {step.dueDate && (step.status === 'MISSED' || step.status === 'OVERDUE' || step.status === 'PENDING' || step.status === 'DUE') && (
                               <span className="text-xs text-gray-500">Due: {formatDate(step.dueDate)}</span>
                             )}
+                            {(step.status === 'OVERDUE' || step.status === 'MISSED') && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-red-700 bg-red-100">
+                                SLA BREACHED
+                              </span>
+                            )}
                             {step.effectiveDateTime && (
                               <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
-                            {step.completionStatus && (
-                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                                step.completionStatus === 'LATE'
-                                  ? 'text-red-700 bg-red-100'
-                                  : 'text-green-700 bg-green-100'
-                              }`}>
-                                {step.completionStatus === 'LATE' ? 'SLA BREACHED' : 'ON TIME'}
+                            {step.completionStatus && step.completionStatus !== 'ON_TIME' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100">
+                                LATE
+                              </span>
+                            )}
+                            {step.completionStatus === 'ON_TIME' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
+                                ON TIME
                               </span>
                             )}
                             {step.source && (
