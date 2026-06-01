@@ -32,7 +32,7 @@ export default function PatientDetail() {
   const tracking = usePatientProtocolTracking(patientId);
   const timeline = usePatientTimeline(patientId);
   const events = usePatientEvents(patientId, { limit: 50 });
-  const deviations = usePatientDeviations(patientId);
+  const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
 
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
@@ -221,6 +221,9 @@ export default function PatientDetail() {
                             )}
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
+                            {step.dueDate && (step.status === 'MISSED' || step.status === 'OVERDUE' || step.status === 'PENDING' || step.status === 'DUE') && (
+                              <span className="text-xs text-gray-500">Due: {formatDate(step.dueDate)}</span>
+                            )}
                             {step.effectiveDateTime && (
                               <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
