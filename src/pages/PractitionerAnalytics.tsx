@@ -11,7 +11,6 @@ import type { PractitionerRankBy, SortOrder } from '../api/types';
 const RANK_OPTIONS: { value: PractitionerRankBy; label: string }[] = [
   { value: 'complianceRate', label: 'Compliance Rate' },
   { value: 'totalPatients', label: 'Patients Served' },
-  { value: 'totalEvents', label: 'Event Volume' },
 ];
 
 const ORDER_OPTIONS: { value: SortOrder; label: string }[] = [
@@ -101,8 +100,7 @@ export default function PractitionerAnalytics() {
                     <th className="pb-2 pr-4">Facility</th>
                     <th className="pb-2 pr-4">Patients</th>
                     <th className="pb-2 pr-4">Compliance</th>
-                    <th className="pb-2 pr-4">Steps (Done/Total)</th>
-                    <th className="pb-2">Events</th>
+                    <th className="pb-2">Steps (Done/Total)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -123,8 +121,7 @@ export default function PractitionerAnalytics() {
                           {formatPercentage(p.complianceRate)}
                         </span>
                       </td>
-                      <td className="py-2 pr-4">{formatNumber(p.completedSteps)} / {formatNumber(p.totalSteps)}</td>
-                      <td className="py-2">{formatNumber(p.totalEvents)}</td>
+                      <td className="py-2">{formatNumber(p.completedSteps)} / {formatNumber(p.totalSteps)}</td>
                     </tr>
                   ))}
                 </tbody>
