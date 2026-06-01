@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
+import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
@@ -26,6 +27,7 @@ function formatPractitionerName(ref: string, display: string | null): string {
 }
 
 export default function PractitionerAnalytics() {
+  const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<PractitionerRankBy>('complianceRate');
   const [order, setOrder] = useState<SortOrder>('desc');
 
@@ -36,6 +38,7 @@ export default function PractitionerAnalytics() {
       <PageHeader title="Practitioner Analytics" description="Practitioner leaderboard ranked by compliance performance" />
 
       <div className="mb-4 flex flex-wrap gap-4">
+        <ProtocolFilter value={protocolId} onChange={setProtocolId} />
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Rank By:</span>
           {RANK_OPTIONS.map((opt) => (

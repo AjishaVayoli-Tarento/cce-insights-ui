@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
@@ -16,6 +17,7 @@ import { formatDate } from '../utils/dates';
 import { INTERVAL_OPTIONS } from '../config';
 
 export default function Deviations() {
+  const [protocolId, setProtocolId] = useState('');
   const [interval, setInterval] = useState('weekly');
   const [deviationType, setDeviationType] = useState('');
   const [cursor, setCursor] = useState<string | undefined>();
@@ -39,6 +41,10 @@ export default function Deviations() {
   return (
     <>
       <PageHeader title="Deviation Analytics" description="Trends, most-deviated steps, resolution rate" />
+
+      <div className="mb-4">
+        <ProtocolFilter value={protocolId} onChange={setProtocolId} />
+      </div>
 
       {intel.isLoading ? <LoadingSpinner /> : intel.error ? <ErrorAlert error={intel.error} /> : intel.data ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">

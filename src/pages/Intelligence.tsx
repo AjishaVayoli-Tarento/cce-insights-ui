@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
+import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
@@ -16,6 +18,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Intelligence() {
+  const [protocolId, setProtocolId] = useState('');
   const { data, isLoading, error } = useIntelligenceSummary();
 
   if (isLoading) return <LoadingSpinner />;
@@ -27,6 +30,10 @@ export default function Intelligence() {
   return (
     <>
       <PageHeader title="Intelligence" description="Delivery analytics — success rates, destinations, active adaptors" />
+
+      <div className="mb-4">
+        <ProtocolFilter value={protocolId} onChange={setProtocolId} />
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

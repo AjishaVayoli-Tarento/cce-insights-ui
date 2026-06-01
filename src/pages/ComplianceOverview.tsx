@@ -6,13 +6,15 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { useProtocolComplianceSummary } from '../hooks/useComplianceSummary';
 import { useStepAnalytics, useActionOrder } from '../hooks/useProtocols';
-import { useProtocols } from '../hooks/useLookups';
+import { useProtocols, useFacilityLookup } from '../hooks/useLookups';
 import { formatNumber, formatRate } from '../utils/formatters';
 
 export default function ComplianceOverview() {
   const [protocolId, setProtocolId] = useState('');
+  const [facilityId, setFacilityId] = useState('');
 
   const protocols = useProtocols();
+  const facilities = useFacilityLookup();
   const summary = useProtocolComplianceSummary(protocolId);
   const stepAnalytics = useStepAnalytics(protocolId);
   const actionOrder = useActionOrder(protocolId);
@@ -24,27 +26,36 @@ export default function ComplianceOverview() {
       <PageHeader title="Compliance Overview" description="Protocol & facility compliance summaries" />
 
       <Card title="Protocol Compliance">
-        <div className="mb-4">
-          <label className="mb-1 block text-xs font-medium text-gray-500">Select Protocol</label>
-          <select
-            value={protocolId}
-            onChange={(e) => {
-              setProtocolId(e.target.value);
-            }}
-            className="w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">Select a protocol...</option>
-            {protocols.data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title || p.url.split('/').pop()} (v{p.version} - {p.status})
-              </option>
-            ))}
-          </select>
+        <div className="mb-4 flex flex-wrap gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
+            <select
+              value={protocolId}
+              onChange={(e) => setProtocolId(e.target.value)}
+              className="w-64 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Protocols</option>
+              {protocols.data?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title || p.url.split('/').pop()} (v{p.version})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500">Facility</label>
+            <select
+              value={facilityId}
+              onChange={(e) => setFacilityId(e.target.value)}
+              className="w-64 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">All Facilities</option>
+              {facilities.data?.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
-
-        {!protocolId && (
-          <p className="py-6 text-center text-sm text-gray-400">Select a protocol to view compliance.</p>
-        )}
 
         {summary.isLoading && <LoadingSpinner />}
         {summary.error && <ErrorAlert error={summary.error} />}
