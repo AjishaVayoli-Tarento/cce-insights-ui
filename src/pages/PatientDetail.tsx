@@ -185,9 +185,10 @@ export default function PatientDetail() {
                       }
                       if (parentStatus === 'COMPLETED') return false;
                     } else {
-                      // Root step: hide if any later root step has progressed
+                      // Root step: hide if any later root step has actually been worked on
                       for (let j = i + 1; j < arr.length; j++) {
-                        if ((arr[j].depth ?? 0) === 0 && arr[j].status !== 'NOT_STARTED') return false;
+                        const s = arr[j];
+                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING') return false;
                       }
                     }
                     return true;
