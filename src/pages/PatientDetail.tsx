@@ -174,7 +174,24 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="space-y-0">
-                  {(proto.journey ?? []).map((step, i, arr) => {
+                  {(proto.journey ?? []).filter((step, i, arr) => {
+                    if (step.status !== 'NOT_STARTED') return true;
+                    const depth = step.depth ?? 0;
+                    if (depth > 0) {
+                      // Sub-step: hide if parent is COMPLETED
+                      let parentStatus = '';
+                      for (let j = i - 1; j >= 0; j--) {
+                        if ((arr[j].depth ?? 0) < depth) { parentStatus = arr[j].status; break; }
+                      }
+                      if (parentStatus === 'COMPLETED') return false;
+                    } else {
+                      // Root step: hide if any later root step has progressed
+                      for (let j = i + 1; j < arr.length; j++) {
+                        if ((arr[j].depth ?? 0) === 0 && arr[j].status !== 'NOT_STARTED') return false;
+                      }
+                    }
+                    return true;
+                  }).map((step, i, arr) => {
                     const hasDeviation = deviationActionIds.has(step.actionId);
                     const displayStatus: JourneyDisplayStatus = hasDeviation && step.status !== 'COMPLETED' && step.status !== 'SKIPPED'
                       ? 'DEVIATION'
