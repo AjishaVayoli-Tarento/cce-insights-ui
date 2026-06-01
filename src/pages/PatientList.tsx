@@ -6,9 +6,8 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
-import { RiskHotspotChart } from '../components/charts/RiskHotspotChart';
 import { useProtocolPatients } from '../hooks/useComplianceSummary';
-import { useAtRiskHotspots, useRepeatDeviations } from '../hooks/usePatients';
+import { useRepeatDeviations } from '../hooks/usePatients';
 import { useProtocols } from '../hooks/useLookups';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
@@ -25,7 +24,6 @@ export default function PatientList() {
   const [activeSearch, setActiveSearch] = useState('');
 
   const protocols = useProtocols();
-  const hotspots = useAtRiskHotspots({ limit: 10 });
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
@@ -36,15 +34,9 @@ export default function PatientList() {
 
   return (
     <>
-      <PageHeader title="Patient Compliance" description="Browse patients by compliance category and view at-risk hotspots" />
+      <PageHeader title="Patient Compliance" description="Browse patients by compliance category" />
 
-      <Card title="Risk Hotspots by Facility">
-        {hotspots.isLoading ? <LoadingSpinner /> : hotspots.error ? <ErrorAlert error={hotspots.error} /> : hotspots.data ? (
-          <RiskHotspotChart data={hotspots.data.data} />
-        ) : null}
-      </Card>
-
-      <Card title="Patient List" className="mt-6">
+      <Card title="Patient List">
         <div className="mb-4 flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
