@@ -73,36 +73,56 @@ export default function ComplianceOverview() {
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
-              <MetricCard title="Compliant" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />
-              <MetricCard title="Deviant Patients" value={formatNumber(data.deviationCount)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
-              <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of protocol steps completed out of total expected steps across all patients." />
+              <MetricCard title="Compliant Patients" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />
+              <MetricCard title="Non-Compliant Patients" value={formatNumber(data.deviationCount)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
+              <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of compliant patients out of total tracked patients under this protocol." />
             </div>
 
             <div className="mt-1">
               <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Transactions</h4>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                {([
-                  { key: 'completed', label: 'Completed', color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' },
-                  { key: 'onTime', label: 'On Time', color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50' },
-                  { key: 'late', label: 'Late', color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50' },
-                  { key: 'early', label: 'Early', color: 'bg-teal-500', text: 'text-teal-700', bg: 'bg-teal-50' },
-                  { key: 'overdue', label: 'Overdue', color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
-                  { key: 'missed', label: 'Missed', color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
-                ] as const).map(({ key, label, color, text, bg }) => {
-                  const val = (data.stepMetrics as Record<string, number>)[key] ?? 0;
-                  const total = data.stepMetrics.totalSteps || 1;
-                  const pct = Math.round((val / total) * 100);
-                  return (
-                    <div key={key} className={`rounded-lg ${bg} p-3`}>
-                      <p className={`text-2xl font-bold ${text}`}>{formatNumber(val)}</p>
-                      <p className="mt-0.5 text-xs font-medium text-gray-600">{label}</p>
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
-                        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-2xl font-bold text-gray-800">{formatNumber(data.stepMetrics.totalSteps)}</p>
+                  <p className="mt-0.5 text-xs font-medium text-gray-600">Total Steps</p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
+                    <div className="h-full rounded-full bg-gray-400" style={{ width: '100%' }} />
+                  </div>
+                  <p className="mt-1 text-[10px] text-gray-500">Total applicable steps across all tracked patients where some could be optional.</p>
+                </div>
+                {(() => {
+                  const completed = data.stepMetrics.completed ?? 0;
+                  const onTime = (data.stepMetrics.onTime ?? 0) + (data.stepMetrics.early ?? 0);
+                  const late = data.stepMetrics.late ?? 0;
+                  const overdue = data.stepMetrics.overdue ?? 0;
+                  const missed = data.stepMetrics.missed ?? 0;
+                  const totalSteps = data.stepMetrics.totalSteps || 1;
+                  const completedOrOne = completed || 1;
+
+                  const tiles = [
+                    { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, denomBase: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' },
+                    { key: 'onTime', label: 'On Time', value: onTime, denom: completed, denomBase: completedOrOne, color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50' },
+                    { key: 'late', label: 'Late', value: late, denom: completed, denomBase: completedOrOne, color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50' },
+                    { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, denomBase: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
+                    { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, denomBase: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
+                  ];
+
+                  return tiles.map(({ key, label, value, denom, denomBase, color, text, bg }) => {
+                    const pct = Math.round((value / denomBase) * 100);
+                    return (
+                      <div key={key} className={`rounded-lg ${bg} p-3`}>
+                        <p className={`text-2xl font-bold ${text}`}>
+                          {formatNumber(value)}
+                          <span className="text-sm font-normal text-gray-400">/{formatNumber(denom)}</span>
+                        </p>
+                        <p className="mt-0.5 text-xs font-medium text-gray-600">{label}</p>
+                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
+                          <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="mt-1 text-[10px] text-gray-500">{pct}% of {formatNumber(denom)} steps</p>
                       </div>
-                      <p className="mt-1 text-[10px] text-gray-500">{pct}% of {data.stepMetrics.totalSteps} steps</p>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             </div>
 

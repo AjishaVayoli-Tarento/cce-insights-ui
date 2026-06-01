@@ -228,11 +228,9 @@ export default function PatientDetail() {
                               <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
                                 step.completionStatus === 'LATE'
                                   ? 'text-red-700 bg-red-100'
-                                  : step.completionStatus === 'EARLY'
-                                    ? 'text-blue-700 bg-blue-100'
-                                    : 'text-green-700 bg-green-100'
+                                  : 'text-green-700 bg-green-100'
                               }`}>
-                                {step.completionStatus === 'LATE' ? 'SLA BREACHED' : step.completionStatus}
+                                {step.completionStatus === 'LATE' ? 'SLA BREACHED' : 'ON TIME'}
                               </span>
                             )}
                             {step.source && (
