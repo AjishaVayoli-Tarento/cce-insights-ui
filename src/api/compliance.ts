@@ -1,8 +1,10 @@
 import { apiGet, apiGetPaginated } from './client';
 import type { ComplianceSummary, FacilitySummary, PatientCompliance, GlobalFilters } from './types';
 
-export function getAllProtocolsComplianceSummary(): Promise<ComplianceSummary> {
-  return apiGet('/protocols/compliance-summary');
+export function getAllProtocolsComplianceSummary(filters?: GlobalFilters): Promise<ComplianceSummary> {
+  return apiGet('/protocols/compliance-summary', {
+    facilityId: filters?.facilityId,
+  });
 }
 
 export function getProtocolComplianceSummary(

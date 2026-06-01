@@ -98,6 +98,9 @@ export default function ComplianceOverview() {
                         <p className={`text-2xl font-bold ${text}`}>
                           {formatNumber(value)}
                           <span className="text-sm font-normal text-gray-400">/{formatNumber(denom)}</span>
+                          {key !== 'total' && (
+                            <span className="ml-2 text-base font-semibold text-gray-500">({pct}%)</span>
+                          )}
                         </p>
                         <div className="mt-0.5 flex items-center gap-1">
                           <p className="text-xs font-medium text-gray-600">{label}</p>
@@ -116,7 +119,6 @@ export default function ComplianceOverview() {
                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
                           <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <p className="mt-1 text-[10px] text-gray-500">{`${pct}% of ${formatNumber(denom)} steps`}</p>
                         {sub && (
                           <div className="mt-2 flex gap-3 border-t border-gray-200 pt-2">
                             <span className="text-[10px] text-blue-600 font-medium">On Time: {sub.onTime}</span>
