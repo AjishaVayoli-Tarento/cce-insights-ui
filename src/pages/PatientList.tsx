@@ -8,7 +8,7 @@ import { StatusBadge } from '../components/shared/StatusBadge';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useProtocols } from '../hooks/useLookups';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
 import type { ComplianceCategory } from '../api/types';
 
