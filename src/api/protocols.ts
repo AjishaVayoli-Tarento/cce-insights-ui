@@ -1,5 +1,5 @@
 import { apiGet } from './client';
-import type { StepAnalytics, CompletionFunnel, OutcomeDistribution, EnrollmentTrend } from './types';
+import type { StepAnalytics, CompletionFunnel, OutcomeDistribution, EnrollmentTrend, ActionOrderEntry } from './types';
 
 export function getStepAnalytics(
   protocolDefinitionId: string,
@@ -17,7 +17,7 @@ export function getCompletionFunnel(
 
 export function getActionOrder(
   protocolDefinitionId: string,
-): Promise<string[]> {
+): Promise<ActionOrderEntry[]> {
   return apiGet(`/protocols/${encodeURIComponent(protocolDefinitionId)}/action-order`);
 }
 

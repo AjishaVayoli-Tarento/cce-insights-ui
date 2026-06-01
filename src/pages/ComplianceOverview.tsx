@@ -128,13 +128,46 @@ export default function ComplianceOverview() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {(() => {
                     const order = actionOrder.data ?? [];
-                    const orderMap = new Map(order.map((id, idx) => [id, idx]));
-                    return [...stepAnalytics.data.steps]
+                    const orderMap = new Map(order.map((e, idx) => [e.actionId, idx]));
+                    const parentMap = new Map(order.map((e) => [e.actionId, e.parentActionId]));
+
+                    const sortedSteps = [...stepAnalytics.data.steps]
                       .filter((s) => s.totalInstances > 0)
                       .sort((a, b) => (orderMap.get(a.actionId) ?? 999) - (orderMap.get(b.actionId) ?? 999));
-                  })().map((step) => {
-                      const pct = Math.round(step.completionRate * 100);
-                      const missing = step.totalInstances - step.completedCount;
+
+                    const completedMap = new Map(sortedSteps.map((s) => [s.actionId, s.completedCount]));
+
+                    // Compute denominator for each step based on hierarchy
+                    const denominators = new Map<string, number>();
+                    let prevTopLevel: string | null = null;
+                    const prevSiblingByParent = new Map<string, string>();
+
+                    for (const step of sortedSteps) {
+                      const parent = parentMap.get(step.actionId) ?? null;
+                      if (!parent) {
+                        if (prevTopLevel === null) {
+                          denominators.set(step.actionId, data.totalEnrollments);
+                        } else {
+                          denominators.set(step.actionId, completedMap.get(prevTopLevel) ?? step.totalInstances);
+                        }
+                        prevTopLevel = step.actionId;
+                      } else {
+                        const prevSibling = prevSiblingByParent.get(parent);
+                        if (prevSibling) {
+                          denominators.set(step.actionId, completedMap.get(prevSibling) ?? step.totalInstances);
+                        } else {
+                          denominators.set(step.actionId, completedMap.get(parent) ?? step.totalInstances);
+                        }
+                      }
+                      if (parent) {
+                        prevSiblingByParent.set(parent, step.actionId);
+                      }
+                    }
+
+                    return sortedSteps.map((step) => {
+                      const denom = denominators.get(step.actionId) ?? step.totalInstances;
+                      const pct = denom > 0 ? Math.round((step.completedCount / denom) * 100) : 0;
+                      const missing = denom - step.completedCount;
                       const label = step.actionId
                         .replace(/-/g, ' ')
                         .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -158,7 +191,7 @@ export default function ComplianceOverview() {
                             <p className="text-xs text-gray-500">
                               <span className="font-semibold text-gray-900">{step.completedCount}</span>
                               {' / '}
-                              <span className="font-semibold text-gray-900">{step.totalInstances}</span>
+                              <span className="font-semibold text-gray-900">{denom}</span>
                               {' completed'}
                             </p>
                             {missing > 0 && (
@@ -169,7 +202,8 @@ export default function ComplianceOverview() {
                           </div>
                         </div>
                       );
-                    })}
+                    });
+                  })()}
                 </div>
               </div>
             )}

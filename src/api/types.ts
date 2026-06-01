@@ -387,6 +387,11 @@ export interface StepAnalytics {
   }[];
 }
 
+export interface ActionOrderEntry {
+  actionId: string;
+  parentActionId: string | null;
+}
+
 export interface CompletionFunnel {
   protocolDefinitionId: string;
   protocolCanonical: string;
