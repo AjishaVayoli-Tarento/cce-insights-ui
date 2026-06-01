@@ -92,15 +92,15 @@ export default function ComplianceOverview() {
                   const totalSteps = data.stepMetrics.totalSteps || 1;
 
                   const tiles = [
-                    { key: 'total', label: 'Total Steps', value: totalSteps, denom: totalSteps, color: 'bg-gray-500', text: 'text-gray-800', bg: 'bg-gray-50' },
+                    { key: 'total', label: 'Total Steps', value: totalSteps, denom: totalSteps, color: 'bg-gray-500', text: 'text-gray-800', bg: 'bg-gray-50', desc: 'Total applicable steps across all tracked patients' },
                     { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', sub: { onTime, late } },
-                    { key: 'pending', label: 'Pending', value: pending, denom: totalSteps, color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-100' },
                     { key: 'due', label: 'Due', value: due, denom: totalSteps, color: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50' },
                     { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
                     { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
+                    { key: 'pending', label: 'Pending', value: pending, denom: totalSteps, color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-100' },
                   ];
 
-                  return tiles.map(({ key, label, value, denom, color, text, bg, sub }) => {
+                  return tiles.map(({ key, label, value, denom, color, text, bg, sub, desc }) => {
                     const pct = Math.round((value / denom) * 100);
                     return (
                       <div key={key} className={`rounded-lg ${bg} p-3`}>
@@ -112,7 +112,7 @@ export default function ComplianceOverview() {
                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
                           <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <p className="mt-1 text-[10px] text-gray-500">{pct}% of {formatNumber(denom)} steps</p>
+                        <p className="mt-1 text-[10px] text-gray-500">{desc || `${pct}% of ${formatNumber(denom)} steps`}</p>
                         {sub && (
                           <div className="mt-2 flex gap-3 border-t border-gray-200 pt-2">
                             <span className="text-[10px] text-blue-600 font-medium">On Time: {sub.onTime}</span>
