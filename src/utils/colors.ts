@@ -29,7 +29,7 @@ export const PROCESSING_COLORS: Record<ProcessingStatus, { bg: string; text: str
 };
 
 export const COMPLETION_COLORS: Record<CompletionStatus, { bg: string; text: string }> = {
-  EARLY: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  EARLY: { bg: 'bg-green-100', text: 'text-green-700' },
   ON_TIME: { bg: 'bg-green-100', text: 'text-green-700' },
   LATE: { bg: 'bg-amber-100', text: 'text-amber-700' },
 };
