@@ -42,14 +42,15 @@ export default function Deviations() {
 
       {intel.isLoading ? <LoadingSpinner /> : intel.error ? <ErrorAlert error={intel.error} /> : intel.data ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <MetricCard title="Total Deviations" value={formatNumber(intel.data.totalDeviations)} />
-          <MetricCard title="Overdue" value={formatNumber(intel.data.byType?.overdue ?? 0)} />
-          <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} />
-          <MetricCard title="Order Violation" value={formatNumber(intel.data.byType?.orderViolation ?? 0)} />
+          <MetricCard title="Total Deviations" value={formatNumber(intel.data.totalDeviations)} description="Total number of protocol deviations detected across all patients and facilities." />
+          <MetricCard title="Overdue" value={formatNumber(intel.data.byType?.overdue ?? 0)} description="Steps that were not completed by the due date and are still pending." />
+          <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} description="Steps that exceeded the maximum allowed window and are now considered missed." />
+          <MetricCard title="Order Violation" value={formatNumber(intel.data.byType?.orderViolation ?? 0)} description="Steps completed out of the expected sequence order defined in the protocol." />
           <MetricCard
             title="Resolution Rate"
             value={resolution.data?.resolved ? formatPercentage(resolution.data.resolved.percentage) : '—'}
             subtitle={resolution.data?.resolved?.avgDaysToResolve != null ? `Avg ${resolution.data.resolved.avgDaysToResolve.toFixed(1)} days` : undefined}
+            description="Percentage of deviations that were subsequently resolved (step completed after deviation was raised)."
           />
         </div>
       ) : null}
