@@ -5,107 +5,88 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { EventTrendChart } from '../components/charts/EventTrendChart';
-import { useEventSummary, useEventTrends } from '../hooks/useEventVolume';
-import { useDeviationTrends, useIntelligenceSummary } from '../hooks/useDeviations';
-import { usePipelineLoss } from '../hooks/useIngestion';
-import { useAtRiskHotspots } from '../hooks/usePatients';
-import { useDashboardOverview } from '../hooks/useDashboard';
+import { useEventTrends } from '../hooks/useEventVolume';
+import { useDeviationTrends } from '../hooks/useDeviations';
+import { useDashboardOverview, useDashboardComplianceSummary } from '../hooks/useDashboard';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import {
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  BuildingOffice2Icon,
-  SignalIcon,
-  UserGroupIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
-  const eventSummary = useEventSummary();
-  const intelligence = useIntelligenceSummary();
   const deviationTrends = useDeviationTrends('daily');
   const eventTrends = useEventTrends('daily');
-  const pipelineLoss = usePipelineLoss();
-  const hotspots = useAtRiskHotspots({ limit: 10 });
   const overview = useDashboardOverview();
+  const complianceSummary = useDashboardComplianceSummary();
 
-  const isLoading = eventSummary.isLoading || intelligence.isLoading;
+  const isLoading = overview.isLoading || complianceSummary.isLoading;
 
   if (isLoading) return <LoadingSpinner />;
 
-  const firstError = eventSummary.error || intelligence.error;
+  const firstError = overview.error || complianceSummary.error;
   if (firstError) return <ErrorAlert error={firstError} />;
 
-  const events = eventSummary.data;
-  const intel = intelligence.data;
-  const loss = pipelineLoss.data;
   const dash = overview.data;
+  const compliance = complianceSummary.data;
 
-  const matchRate = events?.totalEvents
-    ? ((events.processingStatusBreakdown?.matched?.count ?? 0) / events.totalEvents) * 100
-    : 0;
-
-  const atRiskTotal = hotspots.data?.data?.reduce(
-    (sum, h) => sum + h.atRisk.count + h.nonCompliant.count,
-    0,
-  ) ?? 0;
-
-  const facilityCount = dash?.activeFacilities ?? events?.byFacility?.length ?? 0;
+  const patients = compliance?.patients;
+  const facilities = compliance?.facilities;
+  const practitioners = compliance?.practitioners;
 
   return (
     <>
       <PageHeader title="Dashboard" description="High-level operational metrics and trend snapshots" />
 
-      {/* Key Metrics */}
+      {/* Patient Compliance Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total Events"
-          description="Total inbound clinical events (FHIR resources) received and processed by the compliance engine across all sources."
-          value={events ? formatNumber(events.totalEvents) : '—'}
-          icon={<ChartBarIcon className="h-5 w-5" />}
-          linkTo="/events"
+          title="Tracked Patients"
+          description="Total patients enrolled and tracked across all protocols."
+          value={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
-          title="Active Deviations"
-          description="Protocol deviations (overdue, missed, order violations) currently active across all patients and facilities."
-          value={intel ? formatNumber(intel.totalDeviations) : '—'}
-          subtitle={intel ? `${intel.recentActivity.last24Hours} new in 24h` : undefined}
-          icon={<ExclamationTriangleIcon className="h-5 w-5" />}
-          linkTo="/deviations"
+          title="Compliant Patients"
+          description="Patients with no active deviations across all protocols."
+          value={formatNumber(patients?.compliantPatients ?? 0)}
+          denomination={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
-          title="Facilities Tracked"
-          description="Number of distinct healthcare facilities that have sent clinical data within the selected date range."
-          value={formatNumber(facilityCount)}
-          icon={<BuildingOffice2Icon className="h-5 w-5" />}
-          linkTo="/facilities"
+          title="Non-Compliant Patients"
+          description="Patients with at least one active deviation across all protocols."
+          value={formatNumber(patients?.nonCompliantPatients ?? 0)}
+          denomination={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
-          title="Pipeline Loss Rate"
-          description="Percentage of events lost during ingestion (rejected or failed processing) relative to total received."
-          value={loss ? formatPercentage(loss.lossRate) : '—'}
-          subtitle={loss ? `${formatNumber(loss.lostEvents)} events lost` : undefined}
-          icon={<SignalIcon className="h-5 w-5" />}
-          linkTo="/ingestion"
+          title="Compliance Rate"
+          description="Percentage of compliant patients out of total tracked patients."
+          value={formatPercentage(patients?.complianceRate ?? 0)}
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Facility Compliance Metrics */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Match Rate"
-          description="Percentage of inbound events that were successfully matched to a protocol step instance."
-          value={events ? formatPercentage(matchRate) : '—'}
-          subtitle="MATCHED events"
-          linkTo="/events"
+          title="Tracked Facilities"
+          description="Total healthcare facilities being tracked across all protocols."
+          value={formatNumber(facilities?.trackedFacilities ?? 0)}
         />
         <MetricCard
-          title="At-Risk Patients"
-          description="Patients classified as at-risk or non-compliant based on protocol step completion status."
-          value={formatNumber(atRiskTotal)}
-          subtitle={hotspots.data?.data ? `across ${hotspots.data.data.length} facilities` : undefined}
-          icon={<UserGroupIcon className="h-5 w-5" />}
-          linkTo="/compliance/patients"
+          title="Compliant Facilities"
+          description="Facilities with no active deviations."
+          value={formatNumber(facilities?.compliantFacilities ?? 0)}
+          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+        />
+        <MetricCard
+          title="Non-Compliant Facilities"
+          description="Facilities with at least one active deviation."
+          value={formatNumber(facilities?.nonCompliantFacilities ?? 0)}
+          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+        />
+        <MetricCard
+          title="Facility Compliance Rate"
+          description="Percentage of facilities with no active deviations."
+          value={formatPercentage(facilities?.complianceRate ?? 0)}
         />
       </div>
 
@@ -134,6 +115,32 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
+
+      {/* Practitioner Compliance Metrics */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Tracked Practitioners"
+          description="Total practitioners involved in patient care across all protocols."
+          value={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+        />
+        <MetricCard
+          title="Compliant Practitioners"
+          description="Practitioners with no active deviations among their patients."
+          value={formatNumber(practitioners?.compliantPractitioners ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+        />
+        <MetricCard
+          title="Non-Compliant Practitioners"
+          description="Practitioners with at least one active deviation among their patients."
+          value={formatNumber(practitioners?.nonCompliantPractitioners ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+        />
+        <MetricCard
+          title="Practitioner Compliance Rate"
+          description="Percentage of practitioners with no active deviations."
+          value={formatPercentage(practitioners?.complianceRate ?? 0)}
+        />
+      </div>
 
       {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
