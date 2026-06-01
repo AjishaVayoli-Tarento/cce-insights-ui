@@ -2,13 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { getAllProtocolsComplianceSummary, getProtocolComplianceSummary, getFacilityComplianceSummary, getProtocolPatients } from '../api/compliance';
 import { useGlobalFilters } from './useGlobalFilters';
 
-export function useProtocolComplianceSummary(protocolDefinitionId: string) {
+export function useProtocolComplianceSummary(protocolDefinitionId: string, facilityId?: string) {
   const filters = useGlobalFilters();
+  const effectiveFilters = { ...filters, ...(facilityId ? { facilityId } : {}) };
   return useQuery({
-    queryKey: ['compliance', 'summary', protocolDefinitionId || 'all', filters],
+    queryKey: ['compliance', 'summary', protocolDefinitionId || 'all', effectiveFilters],
     queryFn: () => protocolDefinitionId
-      ? getProtocolComplianceSummary(protocolDefinitionId, filters)
-      : getAllProtocolsComplianceSummary(filters),
+      ? getProtocolComplianceSummary(protocolDefinitionId, effectiveFilters)
+      : getAllProtocolsComplianceSummary(effectiveFilters),
   });
 }
 
