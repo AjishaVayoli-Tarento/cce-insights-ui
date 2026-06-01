@@ -158,14 +158,14 @@ export default function Dashboard() {
 
       {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card title="Deviation Trends (30 days)">
+        <Card title="Deviation Trends">
           {deviationTrends.isLoading ? (
             <LoadingSpinner />
           ) : deviationTrends.data ? (
             <DeviationTrendChart data={deviationTrends.data.trends} height={240} />
           ) : null}
         </Card>
-        <Card title="Event Volume (30 days)">
+        <Card title="Event Volume">
           {eventTrends.isLoading ? (
             <LoadingSpinner />
           ) : eventTrends.data ? (

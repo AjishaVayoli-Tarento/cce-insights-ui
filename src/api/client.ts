@@ -61,9 +61,16 @@ export async function apiGetPaginated<T>(
 ): Promise<PaginatedResponse<T>> {
   const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
   const json = await handleResponse(res);
+  const p = json.pagination;
   return {
     data: json.data,
-    pagination: json.pagination ?? { limit: 50, next_cursor: null, has_more: false },
+    pagination: p
+      ? {
+          limit: p.limit ?? 50,
+          next_cursor: p.next_cursor ?? p.nextCursor ?? null,
+          has_more: p.has_more ?? p.hasMore ?? false,
+        }
+      : { limit: 50, next_cursor: null, has_more: false },
   };
 }
 

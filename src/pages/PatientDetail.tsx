@@ -5,11 +5,11 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientEvents, usePatientDeviations } from '../hooks/usePatients';
+import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
-import { STATUS_COLORS, STATE_COLORS, PROCESSING_COLORS, COMPLETION_COLORS } from '../utils/colors';
-import type { ProtocolInstanceStatus, StepState, ProcessingStatus, CompletionStatus, JourneyStep } from '../api/types';
+import { STATUS_COLORS, STATE_COLORS, COMPLETION_COLORS } from '../utils/colors';
+import type { ProtocolInstanceStatus, StepState, CompletionStatus, JourneyStep } from '../api/types';
 
 type JourneyDisplayStatus = JourneyStep['status'] | 'DEVIATION';
 
@@ -31,7 +31,6 @@ export default function PatientDetail() {
 
   const tracking = usePatientProtocolTracking(patientId);
   const timeline = usePatientTimeline(patientId);
-  const events = usePatientEvents(patientId, { limit: 50 });
   const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
 
@@ -224,16 +223,22 @@ export default function PatientDetail() {
                             {step.dueDate && (step.status === 'MISSED' || step.status === 'OVERDUE' || step.status === 'PENDING' || step.status === 'DUE') && (
                               <span className="text-xs text-gray-500">Due: {formatDate(step.dueDate)}</span>
                             )}
+                            {(step.status === 'OVERDUE' || step.status === 'MISSED') && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-red-700 bg-red-100">
+                                SLA BREACHED
+                              </span>
+                            )}
                             {step.effectiveDateTime && (
                               <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
-                            {step.completionStatus && (
-                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                                step.completionStatus === 'LATE'
-                                  ? 'text-red-700 bg-red-100'
-                                  : 'text-green-700 bg-green-100'
-                              }`}>
-                                {step.completionStatus === 'LATE' ? 'SLA BREACHED' : 'ON TIME'}
+                            {step.completionStatus && step.completionStatus !== 'ON_TIME' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100">
+                                LATE
+                              </span>
+                            )}
+                            {step.completionStatus === 'ON_TIME' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
+                                ON TIME
                               </span>
                             )}
                             {step.source && (
@@ -261,75 +266,31 @@ export default function PatientDetail() {
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card title="Compliance Timeline">
-          {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : timeline.data ? (
-            <div className="space-y-6">
-              {timeline.data.protocols.map((proto) => (
-                <div key={proto.protocolInstanceId}>
-                  <div className="mb-3 flex items-center gap-2">
-                    <StatusBadge
-                      label={proto.status}
-                      color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                    />
-                    <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
-                  </div>
-                  <div className="space-y-0">
-                    {proto.timeline.filter((e) => e.type !== 'enrollment').map((entry, i, filtered) => {
-                      const dotColor = entry.state && entry.state !== 'ENROLLED'
-                        ? (STATE_COLORS[entry.state as StepState]?.dot ?? 'bg-gray-400')
-                        : 'bg-indigo-500';
-                      const bgHighlight = entry.state === 'OVERDUE' ? 'bg-amber-50' : entry.state === 'MISSED' ? 'bg-red-50' : '';
-                      return (
-                        <div key={`${proto.protocolInstanceId}-${i}`} className={`flex gap-3 py-2 rounded ${bgHighlight}`}>
-                          <div className="flex flex-col items-center">
-                            <div className={`mt-1 h-2.5 w-2.5 rounded-full ${dotColor}`} />
-                            {i < filtered.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
-                          </div>
-                          <div className="min-w-0 pb-2 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-gray-900">
-                                {entry.stepName || entry.actionId || entry.type}
-                              </p>
-                              {entry.state && entry.state !== 'ENROLLED' && (
-                                <StatusBadge
-                                  label={entry.state}
-                                  color={STATE_COLORS[entry.state as StepState] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                                />
-                              )}
-                            </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                              {(entry.effectiveDateTime || entry.timestamp) && (
-                                <span className="text-xs text-gray-400">{formatDateTime(entry.effectiveDateTime || entry.timestamp)}</span>
-                              )}
-                              {entry.completionStatus && (
-                                <StatusBadge
-                                  label={entry.completionStatus}
-                                  color={COMPLETION_COLORS[entry.completionStatus as CompletionStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                                />
-                              )}
-                              {entry.source && (
-                                <span className="text-xs text-gray-400">Source: {entry.source}</span>
-                              )}
-                              {entry.daysOverdue != null && entry.daysOverdue > 0 && (
-                                <span className="text-xs font-medium text-amber-600">{entry.daysOverdue}d overdue</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </Card>
-
         <Card title="Deviations">
           {deviations.isLoading ? <LoadingSpinner /> : deviations.error ? <ErrorAlert error={deviations.error} /> : deviations.data && deviations.data.length > 0 ? (
             <div className="space-y-3">
               {deviations.data.map((d) => (
-                <div key={d.deviationId} className="rounded-lg border border-gray-200 p-3">
+                <div key={`dev-${d.deviationId}`} className="rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
+                      {d.deviationType === 'OVERDUE' ? '⚠' : d.deviationType === 'ORDER_VIOLATION' ? '🔀' : '🔴'} {d.deviationType}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-medium text-gray-900">{d.description || d.stepName || d.actionId || 'Unknown Step'}</p>
+                  <p className="text-xs text-gray-500">Detected: {formatDate(d.detectedAt)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-4 text-center text-sm text-gray-400">No deviations found.</p>
+          )}
+        </Card>
+
+        <Card title="Intelligence Alerts">
+          {deviations.isLoading ? <LoadingSpinner /> : deviations.error ? <ErrorAlert error={deviations.error} /> : deviations.data && deviations.data.length > 0 ? (
+            <div className="space-y-3">
+              {deviations.data.map((d) => (
+                <div key={`alert-${d.deviationId}`} className="rounded-lg border border-gray-200 p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
@@ -346,45 +307,73 @@ export default function PatientDetail() {
               ))}
             </div>
           ) : (
-            <p className="py-4 text-center text-sm text-gray-400">No deviations found.</p>
+            <p className="py-4 text-center text-sm text-gray-400">No alerts found.</p>
           )}
         </Card>
       </div>
 
-      <Card title="Event History" className="mt-6">
-        {events.isLoading ? <LoadingSpinner /> : events.error ? <ErrorAlert error={events.error} /> : events.data && events.data.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="pb-2 pr-4">Time</th>
-                  <th className="pb-2 pr-4">Source</th>
-                  <th className="pb-2 pr-4">Type</th>
-                  <th className="pb-2 pr-4">Action</th>
-                  <th className="pb-2">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {events.data.map((e) => (
-                  <tr key={e.eventId} className="hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-gray-600">{formatDateTime(e.eventTime)}</td>
-                    <td className="py-2 pr-4 text-gray-600">{e.source}</td>
-                    <td className="py-2 pr-4">{e.resourceType}</td>
-                    <td className="py-2 pr-4 text-gray-600">{e.actionId || '—'}</td>
-                    <td className="py-2">
-                      <StatusBadge
-                        label={e.processingStatus}
-                        color={PROCESSING_COLORS[e.processingStatus as ProcessingStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <Card title="Compliance Timeline" className="mt-6">
+        {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : timeline.data ? (
+          <div className="space-y-6">
+            {timeline.data.protocols.map((proto) => (
+              <div key={proto.protocolInstanceId}>
+                <div className="mb-3 flex items-center gap-2">
+                  <StatusBadge
+                    label={proto.status}
+                    color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                  />
+                  <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
+                </div>
+                <div className="space-y-0">
+                  {proto.timeline.filter((e) => e.type !== 'enrollment').map((entry, i, filtered) => {
+                    const dotColor = entry.state && entry.state !== 'ENROLLED'
+                      ? (STATE_COLORS[entry.state as StepState]?.dot ?? 'bg-gray-400')
+                      : 'bg-indigo-500';
+                    const bgHighlight = entry.state === 'OVERDUE' ? 'bg-amber-50' : entry.state === 'MISSED' ? 'bg-red-50' : '';
+                    return (
+                      <div key={`${proto.protocolInstanceId}-${i}`} className={`flex gap-3 py-2 rounded ${bgHighlight}`}>
+                        <div className="flex flex-col items-center">
+                          <div className={`mt-1 h-2.5 w-2.5 rounded-full ${dotColor}`} />
+                          {i < filtered.length - 1 && <div className="w-px flex-1 bg-gray-200" />}
+                        </div>
+                        <div className="min-w-0 pb-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900">
+                              {entry.stepName || entry.actionId || entry.type}
+                            </p>
+                            {entry.state && entry.state !== 'ENROLLED' && (
+                              <StatusBadge
+                                label={entry.state}
+                                color={STATE_COLORS[entry.state as StepState] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                              />
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            {(entry.effectiveDateTime || entry.timestamp) && (
+                              <span className="text-xs text-gray-400">{formatDateTime(entry.effectiveDateTime || entry.timestamp)}</span>
+                            )}
+                            {entry.completionStatus && (
+                              <StatusBadge
+                                label={entry.completionStatus}
+                                color={COMPLETION_COLORS[entry.completionStatus as CompletionStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                              />
+                            )}
+                            {entry.source && (
+                              <span className="text-xs text-gray-400">Source: {entry.source}</span>
+                            )}
+                            {entry.daysOverdue != null && entry.daysOverdue > 0 && (
+                              <span className="text-xs font-medium text-amber-600">{entry.daysOverdue}d overdue</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        ) : (
-          <p className="py-4 text-center text-sm text-gray-400">No events found.</p>
-        )}
+        ) : null}
       </Card>
     </>
   );

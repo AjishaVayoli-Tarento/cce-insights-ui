@@ -45,7 +45,7 @@ export default function FacilityAnalytics() {
 
   return (
     <>
-      <PageHeader title="Facility Analytics" description="Facility leaderboard and at-risk hotspots" />
+      <PageHeader title="Facility Analytics" description="Facility leaderboard and non-compliant hotspots" />
 
       <div className="mb-4 flex flex-wrap gap-4">
         <ProtocolFilter value={protocolId} onChange={setProtocolId} />
@@ -148,7 +148,7 @@ export default function FacilityAnalytics() {
         ) : null}
       </Card>
 
-      <Card title="At-Risk Hotspots" className="mt-6">
+      <Card title="Non-Compliant Hotspots" className="mt-6">
         {hotspots.isLoading ? <LoadingSpinner /> : hotspots.error ? <ErrorAlert error={hotspots.error} /> : hotspots.data ? (
           <>
             <RiskHotspotChart data={hotspots.data.data} />
@@ -158,8 +158,7 @@ export default function FacilityAnalytics() {
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Facility</th>
                     <th className="pb-2 pr-4">Total</th>
-                    <th className="pb-2 pr-4">On Track</th>
-                    <th className="pb-2 pr-4">At Risk</th>
+                    <th className="pb-2 pr-4">Compliant</th>
                     <th className="pb-2">Non-Compliant</th>
                   </tr>
                 </thead>
@@ -169,8 +168,7 @@ export default function FacilityAnalytics() {
                       <td className="py-2 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
                       <td className="py-2 pr-4">{formatNumber(h.totalPatients)}</td>
                       <td className="py-2 pr-4 text-green-600">{h.onTrack.count} ({formatPercentage(h.onTrack.percentage)})</td>
-                      <td className="py-2 pr-4 text-amber-600">{h.atRisk.count} ({formatPercentage(h.atRisk.percentage)})</td>
-                      <td className="py-2 text-red-600">{h.nonCompliant.count} ({formatPercentage(h.nonCompliant.percentage)})</td>
+                      <td className="py-2 text-red-600">{(h.atRisk.count + h.nonCompliant.count)} ({formatPercentage(h.atRisk.percentage + h.nonCompliant.percentage)})</td>
                     </tr>
                   ))}
                 </tbody>

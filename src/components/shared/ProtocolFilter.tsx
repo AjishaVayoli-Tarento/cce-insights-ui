@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useProtocols } from '../../hooks/useLookups';
 
 interface ProtocolFilterProps {
@@ -7,6 +8,12 @@ interface ProtocolFilterProps {
 
 export function ProtocolFilter({ value, onChange }: ProtocolFilterProps) {
   const protocols = useProtocols();
+
+  useEffect(() => {
+    if (!value && protocols.data && protocols.data.length > 0) {
+      onChange(protocols.data[0].id);
+    }
+  }, [protocols.data, value, onChange]);
 
   return (
     <div className="flex items-center gap-2">

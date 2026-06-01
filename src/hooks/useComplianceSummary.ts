@@ -8,7 +8,7 @@ export function useProtocolComplianceSummary(protocolDefinitionId: string) {
     queryKey: ['compliance', 'summary', protocolDefinitionId || 'all', filters],
     queryFn: () => protocolDefinitionId
       ? getProtocolComplianceSummary(protocolDefinitionId, filters)
-      : getAllProtocolsComplianceSummary(),
+      : getAllProtocolsComplianceSummary(filters),
   });
 }
 

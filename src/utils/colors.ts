@@ -11,7 +11,6 @@ export const STATE_COLORS: Record<StepState, { bg: string; text: string; dot: st
 
 export const COMPLIANCE_COLORS: Record<ComplianceCategory, { bg: string; text: string; dot: string }> = {
   on_track: { bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-500' },
-  at_risk: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
   non_compliant: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
 };
 

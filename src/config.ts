@@ -26,7 +26,6 @@ export const DEVIATION_TYPE_OPTIONS = [
 
 export const COMPLIANCE_STATUS_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'on_track', label: 'On Track' },
-  { value: 'at_risk', label: 'At Risk' },
+  { value: 'on_track', label: 'Compliant' },
   { value: 'non_compliant', label: 'Non-Compliant' },
 ] as const;
