@@ -11,15 +11,16 @@ interface MetricCardProps {
   trend?: string;
   trendUp?: boolean;
   linkTo?: string;
+  bgColor?: string;
 }
 
-export function MetricCard({ title, value, subtitle, description, denomination, icon, trend, trendUp, linkTo }: MetricCardProps) {
+export function MetricCard({ title, value, subtitle, description, denomination, icon, trend, trendUp, linkTo, bgColor }: MetricCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const navigate = useNavigate();
 
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white p-5 shadow-sm ${linkTo ? 'cursor-pointer transition-colors hover:border-blue-300 hover:bg-blue-50/30' : ''}`}
+      className={`rounded-xl border border-gray-200 p-5 shadow-sm ${bgColor || 'bg-white'} ${linkTo ? 'cursor-pointer transition-colors hover:border-blue-300 hover:bg-blue-50/30' : ''}`}
       onClick={linkTo ? () => navigate(linkTo) : undefined}
     >
       <div className="flex items-start justify-between">

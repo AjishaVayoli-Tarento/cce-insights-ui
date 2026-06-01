@@ -22,16 +22,16 @@ export interface ComplianceMetric {
 
 export interface FacilityComplianceMetric {
   trackedFacilities: number;
-  compliantFacilities: number;
-  nonCompliantFacilities: number;
-  complianceRate: number;
+  above90: number;
+  between75And90: number;
+  below75: number;
 }
 
 export interface PractitionerComplianceMetric {
   trackedPractitioners: number;
-  compliantPractitioners: number;
-  nonCompliantPractitioners: number;
-  complianceRate: number;
+  above90: number;
+  between75And90: number;
+  below75: number;
 }
 
 export interface DashboardComplianceSummary {

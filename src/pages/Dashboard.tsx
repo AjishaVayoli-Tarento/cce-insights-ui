@@ -39,6 +39,7 @@ export default function Dashboard() {
       <PageHeader title="Dashboard" description="High-level operational metrics and trend snapshots" />
 
       {/* Patient Compliance Metrics */}
+      <div className="rounded-xl border border-gray-200 p-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Tracked Patients"
@@ -63,31 +64,38 @@ export default function Dashboard() {
           value={formatPercentage(patients?.complianceRate ?? 0)}
         />
       </div>
+      </div>
 
       {/* Facility Compliance Metrics */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 rounded-xl border border-gray-200 p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Tracked Facilities"
           description="Total healthcare facilities being tracked across all protocols."
           value={formatNumber(facilities?.trackedFacilities ?? 0)}
         />
         <MetricCard
-          title="Compliant Facilities"
-          description="Facilities with no active deviations."
-          value={formatNumber(facilities?.compliantFacilities ?? 0)}
+          title="> 90% Compliance"
+          description="Facilities with compliance rate above 90%."
+          value={formatNumber(facilities?.above90 ?? 0)}
           denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+          bgColor="bg-green-50"
         />
         <MetricCard
-          title="Non-Compliant Facilities"
-          description="Facilities with at least one active deviation."
-          value={formatNumber(facilities?.nonCompliantFacilities ?? 0)}
+          title="75–90% Compliance"
+          description="Facilities with compliance rate between 75% and 90%."
+          value={formatNumber(facilities?.between75And90 ?? 0)}
           denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+          bgColor="bg-amber-50"
         />
         <MetricCard
-          title="Facility Compliance Rate"
-          description="Percentage of facilities with no active deviations."
-          value={formatPercentage(facilities?.complianceRate ?? 0)}
+          title="< 75% Compliance"
+          description="Facilities with compliance rate below 75%."
+          value={formatNumber(facilities?.below75 ?? 0)}
+          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+          bgColor="bg-red-50"
         />
+      </div>
       </div>
 
       {/* Top & Bottom Facilities */}
@@ -117,29 +125,35 @@ export default function Dashboard() {
       )}
 
       {/* Practitioner Compliance Metrics */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 rounded-xl border border-gray-200 p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Tracked Practitioners"
           description="Total practitioners involved in patient care across all protocols."
           value={formatNumber(practitioners?.trackedPractitioners ?? 0)}
         />
         <MetricCard
-          title="Compliant Practitioners"
-          description="Practitioners with no active deviations among their patients."
-          value={formatNumber(practitioners?.compliantPractitioners ?? 0)}
+          title="> 90% Compliance"
+          description="Practitioners with compliance rate above 90%."
+          value={formatNumber(practitioners?.above90 ?? 0)}
           denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-green-50"
         />
         <MetricCard
-          title="Non-Compliant Practitioners"
-          description="Practitioners with at least one active deviation among their patients."
-          value={formatNumber(practitioners?.nonCompliantPractitioners ?? 0)}
+          title="75–90% Compliance"
+          description="Practitioners with compliance rate between 75% and 90%."
+          value={formatNumber(practitioners?.between75And90 ?? 0)}
           denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-amber-50"
         />
         <MetricCard
-          title="Practitioner Compliance Rate"
-          description="Percentage of practitioners with no active deviations."
-          value={formatPercentage(practitioners?.complianceRate ?? 0)}
+          title="< 75% Compliance"
+          description="Practitioners with compliance rate below 75%."
+          value={formatNumber(practitioners?.below75 ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-red-50"
         />
+      </div>
       </div>
 
       {/* Trend Charts */}
