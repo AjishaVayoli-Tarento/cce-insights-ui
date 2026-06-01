@@ -95,7 +95,7 @@ export interface PatientCompliance {
 }
 
 export type ProtocolInstanceStatus = 'ACTIVE' | 'COMPLETED' | 'WITHDRAWN' | 'EXPIRED';
-export type ComplianceCategory = 'on_track' | 'at_risk' | 'non_compliant';
+export type ComplianceCategory = 'on_track' | 'non_compliant';
 
 // ─── Patient Compliance ──────────────────────────────────────
 

@@ -14,9 +14,8 @@ interface HotspotChartProps {
 export function RiskHotspotChart({ data, height = 250 }: HotspotChartProps) {
   const chartData = data.map((d) => ({
     facility: d.facilityName ?? d.facilityId,
-    'On Track': d.onTrack.count,
-    'At Risk': d.atRisk.count,
-    'Non-Compliant': d.nonCompliant.count,
+    'Compliant': d.onTrack.count,
+    'Non-Compliant': d.atRisk.count + d.nonCompliant.count,
   }));
 
   return (
@@ -26,8 +25,7 @@ export function RiskHotspotChart({ data, height = 250 }: HotspotChartProps) {
         <YAxis type="category" dataKey="facility" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={80} />
         <Tooltip />
         <Legend />
-        <Bar dataKey="On Track" stackId="a" fill="#22c55e" />
-        <Bar dataKey="At Risk" stackId="a" fill="#f59e0b" />
+        <Bar dataKey="Compliant" stackId="a" fill="#22c55e" />
         <Bar dataKey="Non-Compliant" stackId="a" fill="#ef4444" />
       </BarChart>
     </ResponsiveContainer>

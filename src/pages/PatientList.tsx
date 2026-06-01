@@ -61,7 +61,7 @@ export default function PatientList() {
             </select>
           </div>
           <div className="flex gap-2 items-end">
-            {['', 'on_track', 'at_risk', 'non_compliant'].map((s) => (
+            {['', 'on_track', 'non_compliant'].map((s) => (
               <button
                 key={s}
                 onClick={() => { setStatusFilter(s); setCursor(undefined); setCursorHistory([]); setPage(1); }}
@@ -71,7 +71,7 @@ export default function PatientList() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {s === '' ? 'All' : s.replace(/_/g, ' ')}
+                {s === '' ? 'All' : s === 'on_track' ? 'Compliant' : 'Non-Compliant'}
               </button>
             ))}
           </div>
@@ -160,7 +160,7 @@ export default function PatientList() {
                       </td>
                       <td className="py-2 pr-4">
                         <StatusBadge
-                          label={p.complianceCategory.replace(/_/g, ' ')}
+                          label={p.complianceCategory === 'on_track' ? 'Compliant' : 'Non-Compliant'}
                           color={COMPLIANCE_COLORS[p.complianceCategory as ComplianceCategory] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
                         />
                       </td>

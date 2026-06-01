@@ -9,10 +9,10 @@ export function parseCanonicalUrl(canonical: string): { url: string; version: st
   return { url, version, name };
 }
 
-export function classifyComplianceCategory(steps: StepInstance[]): 'on_track' | 'at_risk' | 'non_compliant' {
+export function classifyComplianceCategory(steps: StepInstance[]): 'on_track' | 'non_compliant' {
   const hasMissed = steps.some((s) => s.state === 'MISSED');
   if (hasMissed) return 'non_compliant';
   const hasOverdue = steps.some((s) => s.state === 'OVERDUE');
-  if (hasOverdue) return 'at_risk';
+  if (hasOverdue) return 'non_compliant';
   return 'on_track';
 }
