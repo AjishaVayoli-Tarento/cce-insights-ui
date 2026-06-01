@@ -8,8 +8,8 @@ import { StatusBadge } from '../components/shared/StatusBadge';
 import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
-import { STATUS_COLORS, STATE_COLORS, COMPLETION_COLORS } from '../utils/colors';
-import type { ProtocolInstanceStatus, StepState, CompletionStatus, JourneyStep } from '../api/types';
+import { STATUS_COLORS, STATE_COLORS } from '../utils/colors';
+import type { ProtocolInstanceStatus, StepState, JourneyStep } from '../api/types';
 
 type JourneyDisplayStatus = JourneyStep['status'] | 'DEVIATION';
 
