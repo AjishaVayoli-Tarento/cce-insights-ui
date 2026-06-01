@@ -20,13 +20,14 @@ export default function IngestionPipeline() {
       {funnel.isLoading ? <LoadingSpinner /> : funnel.error ? <ErrorAlert error={funnel.error} /> : funnel.data ? (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <MetricCard title="Received" value={formatNumber(funnel.data.totalReceived)} />
-            <MetricCard title="Accepted" value={formatPercentage(funnel.data.acceptanceRate)} subtitle={formatNumber(funnel.data.accepted)} />
-            <MetricCard title="Rejected" value={formatPercentage(funnel.data.rejectionRate)} subtitle={formatNumber(funnel.data.rejected)} />
+            <MetricCard title="Received" value={formatNumber(funnel.data.totalReceived)} description="Total number of clinical events received by the ingestion pipeline from all sources." />
+            <MetricCard title="Accepted" value={formatPercentage(funnel.data.acceptanceRate)} subtitle={formatNumber(funnel.data.accepted)} description="Percentage of received events that passed validation and were accepted for processing." />
+            <MetricCard title="Rejected" value={formatPercentage(funnel.data.rejectionRate)} subtitle={formatNumber(funnel.data.rejected)} description="Percentage of received events that failed validation and were rejected (malformed, missing fields, etc.)." />
             <MetricCard
               title="Pipeline Loss"
               value={loss.data ? formatPercentage(loss.data.lossRate) : '—'}
               subtitle={loss.data ? `${formatNumber(loss.data.lostEvents)} events` : undefined}
+              description="Events accepted by the Collector but not found in the Compliance engine — indicates data loss between pipeline stages."
             />
           </div>
 

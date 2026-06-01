@@ -30,15 +30,15 @@ export default function Intelligence() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MetricCard title="Total Deliveries" value={formatNumber(data.total)} />
-        <MetricCard title="Delivered" value={formatNumber(data.delivered)} />
-        <MetricCard title="Failed" value={formatNumber(data.failed)} />
-        <MetricCard title="Pending" value={formatNumber(data.pending)} />
+        <MetricCard title="Total Deliveries" value={formatNumber(data.total)} description="Total number of intelligence delivery attempts (alerts, notifications, recommendations) sent to external systems." />
+        <MetricCard title="Delivered" value={formatNumber(data.delivered)} description="Deliveries that were successfully received and acknowledged by the target system." />
+        <MetricCard title="Failed" value={formatNumber(data.failed)} description="Deliveries that failed due to target system errors, timeouts, or connectivity issues." />
+        <MetricCard title="Pending" value={formatNumber(data.pending)} description="Deliveries currently queued or in-progress, awaiting confirmation from the target system." />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <MetricCard title="Success Rate" value={formatPercentage(data.successRate)} />
-        <MetricCard title="Avg Latency" value={data.avgLatencySeconds != null ? `${data.avgLatencySeconds.toFixed(1)}s` : '—'} />
+        <MetricCard title="Success Rate" value={formatPercentage(data.successRate)} description="Percentage of deliveries that were successfully delivered out of all attempted deliveries." />
+        <MetricCard title="Avg Latency" value={data.avgLatencySeconds != null ? `${data.avgLatencySeconds.toFixed(1)}s` : '—'} description="Average time from delivery initiation to successful acknowledgement by the target system." />
       </div>
 
       {/* Donut Chart */}

@@ -50,10 +50,10 @@ export default function EventVolume() {
 
       {summary.isLoading ? <LoadingSpinner /> : summary.error ? <ErrorAlert error={summary.error} /> : events ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <MetricCard title="Total Events" value={formatNumber(events.totalEvents)} />
-          <MetricCard title="Matched Rate" value={events.processingStatusBreakdown?.matched ? formatPercentage(events.processingStatusBreakdown.matched.percentage) : '—'} />
-          <MetricCard title="Zero Match" value={events.processingStatusBreakdown?.zeroMatch ? formatPercentage(events.processingStatusBreakdown.zeroMatch.percentage) : '—'} />
-          <MetricCard title="Duplicate Rate" value={events.processingStatusBreakdown?.duplicate ? formatPercentage(events.processingStatusBreakdown.duplicate.percentage) : '—'} />
+          <MetricCard title="Total Events" value={formatNumber(events.totalEvents)} description="Total inbound clinical events (FHIR resources) received from all sources." />
+          <MetricCard title="Matched Rate" value={events.processingStatusBreakdown?.matched ? formatPercentage(events.processingStatusBreakdown.matched.percentage) : '—'} description="Percentage of events successfully matched to a protocol step instance." />
+          <MetricCard title="Zero Match" value={events.processingStatusBreakdown?.zeroMatch ? formatPercentage(events.processingStatusBreakdown.zeroMatch.percentage) : '—'} description="Percentage of events that could not be matched to any protocol step (no eligible patient or step found)." />
+          <MetricCard title="Duplicate Rate" value={events.processingStatusBreakdown?.duplicate ? formatPercentage(events.processingStatusBreakdown.duplicate.percentage) : '—'} description="Percentage of events identified as duplicates of previously processed events." />
         </div>
       ) : null}
 

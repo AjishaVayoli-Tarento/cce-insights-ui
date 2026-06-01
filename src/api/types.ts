@@ -6,6 +6,7 @@ export interface ProtocolLookup {
   version: string;
   canonical: string;
   status: string;
+  title?: string;
 }
 
 // ─── Response Envelopes ──────────────────────────────────────
@@ -38,6 +39,7 @@ export interface ComplianceSummary {
   protocolDefinitionId: string;
   protocolCanonical: string;
   totalEnrollments: number;
+  compliantPatients: number;
   statusBreakdown: {
     active: number;
     completed: number;

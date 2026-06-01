@@ -10,7 +10,7 @@ import { CursorPagination } from '../components/shared/CursorPagination';
 import { useProtocolComplianceSummary, useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useStepAnalytics, useActionOrder } from '../hooks/useProtocols';
 import { useProtocols } from '../hooks/useLookups';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { formatNumber, formatPercentage, formatRate } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
 import type { ComplianceCategory } from '../api/types';
 
@@ -56,7 +56,7 @@ export default function ComplianceOverview() {
             <option value="">Select a protocol...</option>
             {protocols.data?.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.url.split('/').pop()} v{p.version} — {p.status}
+                {p.title || p.url.split('/').pop()} (v{p.version} - {p.status})
               </option>
             ))}
           </select>
@@ -72,10 +72,10 @@ export default function ComplianceOverview() {
         {data && (
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} />
-              <MetricCard title="Compliance Rate" value={formatPercentage(data.complianceRate)} />
-              <MetricCard title="Active" value={formatNumber(data.statusBreakdown.active)} />
-              <MetricCard title="Deviations" value={formatNumber(data.deviationCount)} />
+              <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
+              <MetricCard title="Compliant" value={formatNumber(data.compliantPatients)} description="Active patients currently on-track with no protocol deviations (overdue, missed, or order violations)." />
+              <MetricCard title="Deviations" value={formatNumber(data.deviationCount)} description="Total protocol deviations (overdue, missed, or order violations) across all patients." />
+              <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of protocol steps completed out of total expected steps across all patients." />
             </div>
 
             <div className="mt-1">
