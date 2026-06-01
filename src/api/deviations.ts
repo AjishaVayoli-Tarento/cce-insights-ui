@@ -74,6 +74,14 @@ export function getDeviationResolutionRate(params?: {
   });
 }
 
-export function getIntelligenceSummary(): Promise<IntelligenceSummary> {
-  return apiGet('/deviations/intelligence-summary');
+export function getIntelligenceSummary(params?: {
+  startDate?: string;
+  endDate?: string;
+  facilityId?: string;
+}): Promise<IntelligenceSummary> {
+  return apiGet('/deviations/intelligence-summary', {
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+    facilityId: params?.facilityId,
+  });
 }

@@ -22,7 +22,7 @@ export default function ComplianceOverview() {
     }
   }, [protocols.data, protocolId]);
 
-  const summary = useProtocolComplianceSummary(protocolId);
+  const summary = useProtocolComplianceSummary(protocolId, facilityId || undefined);
   const stepAnalytics = useStepAnalytics(protocolId);
   const actionOrder = useActionOrder(protocolId);
 
