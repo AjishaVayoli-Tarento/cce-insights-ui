@@ -188,8 +188,8 @@ export default function PatientDetail() {
                     return (
                       <div
                         key={`${proto.protocolInstanceId}-j-${i}`}
-                        className={`flex gap-3 py-2.5 ${isDeviation ? 'mx-[-12px] px-3 rounded-lg bg-red-50 border border-red-200' : ''}`}
-                        style={{ paddingLeft: isDeviation ? undefined : `${depth * 24}px` }}
+                        className={`flex gap-3 py-2.5 ${isDeviation ? 'rounded-lg bg-red-50 border border-red-200' : ''}`}
+                        style={{ paddingLeft: `${depth * 24}px` }}
                       >
                         <div className="flex flex-col items-center">
                           {isNotStarted ? (
