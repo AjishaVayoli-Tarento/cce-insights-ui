@@ -80,7 +80,7 @@ export default function ComplianceOverview() {
 
             <div className="mt-1">
               <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Transactions</h4>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <div className="rounded-lg bg-gray-50 p-3">
                   <p className="text-2xl font-bold text-gray-800">{formatNumber(data.stepMetrics.totalSteps)}</p>
                   <p className="mt-0.5 text-xs font-medium text-gray-600">Total Steps</p>
@@ -150,7 +150,19 @@ export default function ComplianceOverview() {
                         <div key={step.actionId} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-3">
                           <DonutRing pct={pct} size={80} />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-700 truncate">{label}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-medium text-gray-700 truncate">{label}</p>
+                              {step.requiredBehavior === 'must' && (
+                                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">
+                                  mandatory
+                                </span>
+                              )}
+                              {step.requiredBehavior === 'could' && (
+                                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">
+                                  policy
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500">
                               <span className="font-semibold text-gray-900">{step.completedCount}</span>
                               {' / '}
