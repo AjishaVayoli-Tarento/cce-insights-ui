@@ -81,33 +81,27 @@ export default function ComplianceOverview() {
             <div className="mt-1">
               <h4 className="mb-3 text-xs font-semibold text-gray-500 uppercase">Transactions</h4>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <div className="rounded-lg bg-gray-50 p-3">
-                  <p className="text-2xl font-bold text-gray-800">{formatNumber(data.stepMetrics.totalSteps)}</p>
-                  <p className="mt-0.5 text-xs font-medium text-gray-600">Total Steps</p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60">
-                    <div className="h-full rounded-full bg-gray-400" style={{ width: '100%' }} />
-                  </div>
-                  <p className="mt-1 text-[10px] text-gray-500">Total applicable steps across all tracked patients where some could be optional.</p>
-                </div>
                 {(() => {
                   const completed = data.stepMetrics.completed ?? 0;
                   const onTime = (data.stepMetrics.onTime ?? 0) + (data.stepMetrics.early ?? 0);
                   const late = data.stepMetrics.late ?? 0;
+                  const due = data.stepMetrics.due ?? 0;
                   const overdue = data.stepMetrics.overdue ?? 0;
                   const missed = data.stepMetrics.missed ?? 0;
+                  const pending = data.stepMetrics.pending ?? 0;
                   const totalSteps = data.stepMetrics.totalSteps || 1;
-                  const completedOrOne = completed || 1;
 
                   const tiles = [
-                    { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, denomBase: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' },
-                    { key: 'onTime', label: 'On Time', value: onTime, denom: completed, denomBase: completedOrOne, color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50' },
-                    { key: 'late', label: 'Late', value: late, denom: completed, denomBase: completedOrOne, color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50' },
-                    { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, denomBase: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
-                    { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, denomBase: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
+                    { key: 'total', label: 'Total Steps', value: totalSteps, denom: totalSteps, color: 'bg-gray-500', text: 'text-gray-800', bg: 'bg-gray-50' },
+                    { key: 'completed', label: 'Completed', value: completed, denom: totalSteps, color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', sub: { onTime, late } },
+                    { key: 'pending', label: 'Pending', value: pending, denom: totalSteps, color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-100' },
+                    { key: 'due', label: 'Due', value: due, denom: totalSteps, color: 'bg-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50' },
+                    { key: 'overdue', label: 'Overdue', value: overdue, denom: totalSteps, color: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50' },
+                    { key: 'missed', label: 'Missed', value: missed, denom: totalSteps, color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50' },
                   ];
 
-                  return tiles.map(({ key, label, value, denom, denomBase, color, text, bg }) => {
-                    const pct = Math.round((value / denomBase) * 100);
+                  return tiles.map(({ key, label, value, denom, color, text, bg, sub }) => {
+                    const pct = Math.round((value / denom) * 100);
                     return (
                       <div key={key} className={`rounded-lg ${bg} p-3`}>
                         <p className={`text-2xl font-bold ${text}`}>
@@ -119,6 +113,12 @@ export default function ComplianceOverview() {
                           <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
                         </div>
                         <p className="mt-1 text-[10px] text-gray-500">{pct}% of {formatNumber(denom)} steps</p>
+                        {sub && (
+                          <div className="mt-2 flex gap-3 border-t border-gray-200 pt-2">
+                            <span className="text-[10px] text-blue-600 font-medium">On Time: {sub.onTime}</span>
+                            <span className="text-[10px] text-amber-600 font-medium">Late: {sub.late}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   });
