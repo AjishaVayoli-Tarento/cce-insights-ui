@@ -73,8 +73,8 @@ export default function ComplianceOverview() {
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
-              <MetricCard title="Compliant" value={formatNumber(data.compliantPatients)} description="Active patients currently on-track with no protocol deviations (overdue, missed, or order violations)." />
-              <MetricCard title="Deviations" value={formatNumber(data.deviationCount)} description="Total protocol deviations (overdue, missed, or order violations) across all patients." />
+              <MetricCard title="Compliant" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />
+              <MetricCard title="Deviant Patients" value={formatNumber(data.deviationCount)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
               <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of protocol steps completed out of total expected steps across all patients." />
             </div>
 
