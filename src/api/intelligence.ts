@@ -14,6 +14,12 @@ export interface IntelligenceSummary {
   activeAdaptors: { name: string; status: string; destinations: string[] }[];
 }
 
-export function getIntelligenceSummary(): Promise<IntelligenceSummary> {
-  return apiGet('/intelligence/summary');
+export function getIntelligenceSummary(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<IntelligenceSummary> {
+  return apiGet('/intelligence/summary', {
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+  });
 }
