@@ -118,6 +118,7 @@ export interface JourneyStep {
   status: 'COMPLETED' | 'PENDING' | 'NOT_STARTED' | 'OVERDUE' | 'MISSED' | 'SKIPPED' | 'DUE';
   completionCount: number;
   effectiveDateTime?: string;
+  dueDate?: string;
   completionStatus?: CompletionStatus;
   source?: string;
   practitioner?: string;

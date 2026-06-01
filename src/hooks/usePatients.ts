@@ -40,11 +40,13 @@ export function usePatientEvents(patientId: string, params?: { resourceType?: st
   });
 }
 
-export function usePatientDeviations(patientId: string, params?: { deviationType?: string }) {
+export function usePatientDeviations(patientId: string, params?: { deviationType?: string; skipDateFilter?: boolean }) {
   const filters = useGlobalFilters();
+  const { skipDateFilter, ...restParams } = params || {};
+  const effectiveFilters = skipDateFilter ? { facilityId: filters.facilityId } : filters;
   return useQuery({
-    queryKey: ['patients', 'deviations', patientId, { ...params, ...filters }],
-    queryFn: () => getPatientDeviations(patientId, { ...params, ...filters }),
+    queryKey: ['patients', 'deviations', patientId, { ...restParams, ...effectiveFilters }],
+    queryFn: () => getPatientDeviations(patientId, { ...restParams, ...effectiveFilters }),
     enabled: !!patientId,
   });
 }
