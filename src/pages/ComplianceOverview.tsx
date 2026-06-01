@@ -131,7 +131,6 @@ export default function ComplianceOverview() {
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-semibold text-gray-500 uppercase">Service Workflow Compliance</h4>
-                  <span className="text-xs text-gray-500">Mandatory steps must be recorded</span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {(() => {
