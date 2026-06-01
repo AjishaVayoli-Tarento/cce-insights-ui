@@ -30,9 +30,10 @@ export function useDeviationResolution() {
 }
 
 export function useIntelligenceSummary() {
+  const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['deviations', 'intelligence-summary'],
-    queryFn: getIntelligenceSummary,
+    queryKey: ['deviations', 'intelligence-summary', filters],
+    queryFn: () => getIntelligenceSummary(filters),
     refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
   });
 }

@@ -9,10 +9,10 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
-import { useIntelligenceSummary, useDeviationTrends, useDeviationsByAction, useDeviationResolution } from '../hooks/useDeviations';
+import { useIntelligenceSummary, useDeviationTrends, useDeviationsByAction } from '../hooks/useDeviations';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { getDeviations } from '../api/deviations';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { formatNumber } from '../utils/formatters';
 import { formatDate } from '../utils/dates';
 import { INTERVAL_OPTIONS } from '../config';
 
@@ -27,7 +27,6 @@ export default function Deviations() {
   const intel = useIntelligenceSummary();
   const trends = useDeviationTrends(interval);
   const byAction = useDeviationsByAction();
-  const resolution = useDeviationResolution();
 
   const deviationList = useQuery({
     queryKey: ['deviations', 'list', { deviationType, cursor, ...filters }],
@@ -47,17 +46,11 @@ export default function Deviations() {
       </div>
 
       {intel.isLoading ? <LoadingSpinner /> : intel.error ? <ErrorAlert error={intel.error} /> : intel.data ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <MetricCard title="Total Deviations" value={formatNumber(intel.data.totalDeviations)} description="Total number of protocol deviations detected across all patients and facilities." />
           <MetricCard title="Overdue" value={formatNumber(intel.data.byType?.overdue ?? 0)} description="Steps that were not completed by the due date and are still pending." />
           <MetricCard title="Missed" value={formatNumber(intel.data.byType?.missed ?? 0)} description="Steps that exceeded the maximum allowed window and are now considered missed." />
           <MetricCard title="Order Violation" value={formatNumber(intel.data.byType?.orderViolation ?? 0)} description="Steps completed out of the expected sequence order defined in the protocol." />
-          <MetricCard
-            title="Resolution Rate"
-            value={resolution.data?.resolved ? formatPercentage(resolution.data.resolved.percentage) : '—'}
-            subtitle={resolution.data?.resolved?.avgDaysToResolve != null ? `Avg ${resolution.data.resolved.avgDaysToResolve.toFixed(1)} days` : undefined}
-            description="Percentage of deviations that were subsequently resolved (step completed after deviation was raised)."
-          />
         </div>
       ) : null}
 
@@ -85,7 +78,7 @@ export default function Deviations() {
         ) : null}
       </Card>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="mt-6">
         <Card title="Most Deviated Steps">
           {byAction.isLoading ? <LoadingSpinner /> : byAction.error ? <ErrorAlert error={byAction.error} /> : byAction.data ? (
             <div className="overflow-x-auto">
@@ -111,30 +104,6 @@ export default function Deviations() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          ) : null}
-        </Card>
-
-        <Card title="Resolution Rate">
-          {resolution.isLoading ? <LoadingSpinner /> : resolution.error ? <ErrorAlert error={resolution.error} /> : resolution.data ? (
-            <div>
-              <div className="mb-4 h-3 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  className="h-full rounded-full bg-green-500"
-                  style={{ width: `${resolution.data.resolved.percentage}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-green-600 font-medium">
-                  {formatPercentage(resolution.data.resolved.percentage)} Resolved ({formatNumber(resolution.data.resolved.count)})
-                </span>
-                <span className="text-red-600 font-medium">
-                  {formatPercentage(resolution.data.escalatedToMissed.percentage)} Escalated ({formatNumber(resolution.data.escalatedToMissed.count)})
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-gray-500">
-                Average days to resolve: {resolution.data.resolved.avgDaysToResolve?.toFixed(1) ?? '—'}
-              </p>
             </div>
           ) : null}
         </Card>
