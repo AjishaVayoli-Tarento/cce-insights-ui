@@ -382,6 +382,7 @@ export interface StepAnalytics {
     pendingCount: number;
     avgDaysToComplete: number;
     medianDaysToComplete: number;
+    requiredBehavior?: 'must' | 'could';
   }[];
 }
 
