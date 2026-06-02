@@ -13,10 +13,13 @@ import type { ProtocolInstanceStatus, StepState, JourneyStep } from '../api/type
 
 type JourneyDisplayStatus = JourneyStep['status'] | 'DEVIATION';
 
-/** Convert Google Drive share URLs to direct-serve image URLs */
+/** Convert Google Drive URLs to embeddable thumbnail URLs */
 function toDirectImageUrl(url: string): string {
-  const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  // Match /file/d/ID or uc?...id=ID formats
+  const fileMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (fileMatch) return `https://drive.google.com/thumbnail?id=${fileMatch[1]}&sz=w200`;
+  const ucMatch = url.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
+  if (ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=w200`;
   return url;
 }
 
