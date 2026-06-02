@@ -80,7 +80,7 @@ export default function FacilityAnalytics() {
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <ProtocolFilter value={protocolId} onChange={setProtocolId} />
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-gray-500">Rank By:</span>
@@ -110,22 +110,20 @@ export default function FacilityAnalytics() {
             </button>
           ))}
         </div>
+        <div className="ml-auto">
+          <input
+            type="text"
+            placeholder="Search by facility name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-60 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
       <Card title="Facility Ranking">
         {ranking.isLoading ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
-            {/* Search */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search by facility name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
