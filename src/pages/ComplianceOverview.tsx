@@ -47,7 +47,7 @@ function SubActionsPanel({
           <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-200" />
           {children.map((child) => {
             const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
-            const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
+            const childPct = childDenom > 0 ? Math.min(Math.round((child.completedCount / childDenom) * 100), 100) : 0;
             const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
             const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
             const childDotColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
@@ -92,7 +92,7 @@ export default function ComplianceOverview() {
   }, [protocols.data, protocolId]);
 
   const summary = useProtocolComplianceSummary(protocolId, facilityId || undefined);
-  const stepAnalytics = useStepAnalytics(protocolId);
+  const stepAnalytics = useStepAnalytics(protocolId, facilityId || undefined);
   const actionOrder = useActionOrder(protocolId);
 
   const data = summary.data;
@@ -265,8 +265,8 @@ export default function ComplianceOverview() {
 
                       {topLevel.map((step) => {
                         const denom = denominators.get(step.actionId) ?? step.totalInstances;
-                        const pct = denom > 0 ? Math.round((step.completedCount / denom) * 100) : 0;
-                        const missing = denom - step.completedCount;
+                        const pct = denom > 0 ? Math.min(Math.round((step.completedCount / denom) * 100), 100) : 0;
+                        const missing = Math.max(denom - step.completedCount, 0);
                         const label = titleMap.get(step.actionId) || step.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                         const children = childrenOf(step.actionId);
                         const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
