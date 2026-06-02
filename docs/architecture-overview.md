@@ -1,7 +1,7 @@
 # Architecture Overview
 
 > **CCE Insights UI** — Analytics dashboard for compliance intelligence  
-> **Version**: 1.0.0 | **Last Updated**: 2026-04-01
+> **Version**: 2.0.0 | **Last Updated**: 2026-06-02
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 1. System Context
 
-The Insights UI is a **read-only** React SPA that visualizes compliance analytics by consuming the CCE Insights Service's 38 REST endpoints (33 analytics + 5 lookup). It provides protocol adherence dashboards, deviation trend analysis, event volume metrics, facility leaderboards, patient risk hotspots, and ingestion pipeline monitoring.
+The Insights UI is a **read-only** React SPA that visualizes compliance analytics by consuming the CCE Insights Service REST endpoints. It provides protocol adherence dashboards, deviation trend analysis, event volume metrics, facility leaderboards, practitioner analytics, intelligence delivery monitoring, and ingestion pipeline monitoring. Compliance categories are binary: **Compliant** (`on_track`) and **Non-Compliant** (`non_compliant`).
 
 ```mermaid
 graph LR
@@ -73,7 +73,7 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 | **Focus** | Individual patient journey demo | Aggregate analytics & operational intelligence |
 | **Backend** | Compliance Service (port 8080) | Insights Service (port 8084) |
 | **Port** | 3000 | 3001 |
-| **Endpoints used** | ~12 (patient-centric) | 38 (33 analytics + 5 lookup) |
+| **Endpoints used** | ~12 (patient-centric) | 40+ (analytics + lookup) |
 | **Primary users** | Demo audience, clinical staff | Operations managers, facility supervisors, data analysts |
 
 ---
@@ -91,7 +91,6 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 | **Icons** | Heroicons | 2.x | Consistent icon set |
 | **Charts** | Recharts | 2.x | Bar, line, area, pie, funnel charts |
 | **Dates** | date-fns | 4.x | Date formatting, diff calculation |
-| **Auth** | keycloak-js | 26.x | Keycloak OIDC authentication (PKCE) |
 | **Testing** | Vitest + Testing Library | latest | Component + hook tests |
 | **API Mocking** | MSW | 2.x | Mock Service Worker for tests |
 | **Linting** | ESLint + Prettier | latest | Code quality |
@@ -114,7 +113,7 @@ flowchart TD
         app[App.tsx<br/>QueryClientProvider + Router + FilterProvider]
     end
 
-    subgraph "Pages (11)"
+    subgraph "Pages (13)"
         P1[DashboardPage]
         P2[ComplianceOverviewPage]
         P3[ProtocolAnalyticsPage]
@@ -124,8 +123,10 @@ flowchart TD
         P7[EventVolumePage]
         P8[SourceComparisonPage]
         P9[FacilityAnalyticsPage]
-        P10[IngestionPage]
-        P11[ExportsPage]
+        P10[PractitionerAnalyticsPage]
+        P11[IngestionPage]
+        P12[IntelligencePage]
+        P13[ExportsPage]
     end
 
     subgraph "Components"
@@ -137,9 +138,8 @@ flowchart TD
 
     subgraph "Data Layer"
         CTX[Context<br/>FilterContext]
-        H[Hooks (10)<br/>useComplianceSummary,<br/>useDeviations, useLookups, etc.]
-        A[API Client (11 modules)<br/>compliance, deviations, events,<br/>ingestion, lookups, etc.]
-        AUTH[Auth<br/>keycloak.ts<br/>OIDC + PKCE + auto-refresh]
+        H[Hooks (13)<br/>useComplianceSummary, useDashboard,<br/>useDeviations, useIntelligence,<br/>usePractitioners, useLookups, etc.]
+        A[API Client (14 modules)<br/>compliance, dashboard, deviations,<br/>events, intelligence, practitioners,<br/>ingestion, lookups, etc.]
     end
 
     subgraph "Utilities"
@@ -149,13 +149,12 @@ flowchart TD
     main --> app
     app --> L
     app --> CTX
-    L --> P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11
-    P1 & P2 & P3 & P6 & P7 & P9 --> CH
-    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 --> C
-    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 --> H
+    L --> P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13
+    P1 & P2 & P3 & P6 & P7 & P9 & P12 --> CH
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13 --> C
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13 --> H
     H --> A
     H --> CTX
-    A --> AUTH
     CH --> U
     C --> U
 ```
@@ -168,8 +167,8 @@ flowchart TD
 | **Components** | Visual rendering; receive data via props | Stateless where possible; no API calls |
 | **Charts** | Recharts wrappers; receive processed data arrays | No data fetching; pure render |
 | **Hooks** | TanStack Query wrappers; return `{ data, isLoading, error }` | One hook per API endpoint group; receive global filters from context |
-| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (11 modules incl. lookups) | No React dependencies; pure TypeScript |
-| **Auth** | Keycloak OIDC init with PKCE; auto-refresh token every 30s; token injected into API headers | `src/auth/keycloak.ts`; skipped when `VITE_AUTH_ENABLED=false` or `VITE_KEYCLOAK_URL` not set |
+| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (14 modules incl. lookups) | No React dependencies; pure TypeScript |
+| **Auth** | Token injection via `VITE_AUTH_TOKEN` or `sessionStorage('access_token')` | Enabled when `VITE_AUTH_ENABLED=true`; no Keycloak dependency in demo mode |
 | **Context** | Global filter state (date range, facility) shared across pages | Persisted in URL search params for shareability |
 | **Utils** | Pure functions for formatting, computation, color mapping | No side effects |
 
@@ -185,17 +184,17 @@ App (QueryClientProvider + FilterProvider)
 │   └── <Outlet/> (page content)
 │
 ├── / → DashboardPage
-│   ├── MetricCard × 6 (compliance rate, deviations, events, facilities, patients, loss rate)
-│   ├── ComplianceRateChart (bar — top protocols by compliance)
-│   ├── DeviationTrendChart (area — last 30 days)
+│   ├── MetricCard × 4 (Tracked Cohort, Compliant Care Journeys, Non-Compliant Care Journeys, Active Protocols)
+│   ├── Facility/Practitioner summary cards
+│   ├── DeviationTrendChart (area — daily)
 │   ├── EventVolumeTrendChart (stacked area — by resource type)
-│   └── QuickLinks (navigate to detailed pages)
+│   └── Quick navigation links
 │
 ├── /compliance → ComplianceOverviewPage
 │   ├── ProtocolSelector (dropdown)
-│   ├── ComplianceSummaryCard (protocol-level metrics)
-│   ├── FacilitySummaryCard (facility-level metrics)
-│   └── PatientComplianceTable (paginated patient list by status)
+│   ├── ComplianceSummaryCards (enrollments, compliance rate, deviations)
+│   ├── Service Workflow Compliance (vertical timeline with light cards, bold dots, sub-action graph nodes)
+│   └── PatientComplianceTable (paginated, Compliant/Non-Compliant filter)
 │
 ├── /compliance/protocols/:id → ProtocolAnalytics
 │   ├── StepAnalyticsTable (per-step rates, timeliness, avg/median)
@@ -204,13 +203,14 @@ App (QueryClientProvider + FilterProvider)
 │   └── EnrollmentTrendChart (line — enrollments over time)
 │
 ├── /compliance/patients → PatientList
-│   ├── ComplianceCategoryFilter (on_track / at_risk / non_compliant)
+│   ├── ComplianceCategoryFilter (on_track / non_compliant)
 │   ├── PatientComplianceTable (paginated, filterable)
-│   └── RiskHotspotChart (at-risk hotspots by facility)
+│   └── RiskHotspotChart (non-compliant hotspots by facility)
 │
 ├── /compliance/patients/:id → PatientDetail
 │   ├── ComplianceTimeline (chronological events & steps)
 │   ├── ProtocolTrackingCard × N (protocol instances)
+│   ├── Protocol Journey (steps with source color-coded pills)
 │   ├── StepInstanceTable (step details for selected protocol)
 │   └── PatientDeviationList (cross-protocol deviations)
 │
@@ -237,8 +237,18 @@ App (QueryClientProvider + FilterProvider)
 │
 ├── /facilities → FacilityAnalytics
 │   ├── RankingSelector (by: complianceRate, deviationCount, eventVolume)
-│   ├── FacilityRankingTable (detailed leaderboard)
-│   └── RiskHotspotChart (at-risk patients per facility)
+│   ├── FacilityRankingTable (color-coded compliance column with legend)
+│   └── Non-Compliant Hotspots section
+│
+├── /practitioners → PractitionerAnalytics
+│   ├── Practitioner table with compliance column (color-coded with legend)
+│   └── Protocol/Facility filter
+│
+├── /intelligence → IntelligencePage
+│   ├── Total Action Instances metric
+│   ├── Donut chart (delivery status)
+│   ├── Destinations table + Adaptors table
+│   └── Intelligence Actions table
 │
 ├── /ingestion → IngestionPipeline
 │   ├── IngestionFunnelChart (ACCEPTED/REJECTED/DUPLICATE)
@@ -378,7 +388,9 @@ useQuery({
   <Route path="/events" element={<EventVolume />} />
   <Route path="/events/source-comparison" element={<SourceComparison />} />
   <Route path="/facilities" element={<FacilityAnalytics />} />
+  <Route path="/practitioners" element={<PractitionerAnalytics />} />
   <Route path="/ingestion" element={<IngestionPipeline />} />
+  <Route path="/intelligence" element={<Intelligence />} />
   <Route path="/exports" element={<Exports />} />
 </Routes>
 ```
@@ -390,15 +402,17 @@ The sidebar uses a flat navigation list (no groups):
 ```
 Dashboard       → /
 Compliance      → /compliance
-Patients        → /compliance/patients
-Deviations      → /deviations
-Events          → /events
 Facilities      → /facilities
+Practitioners   → /practitioners
+Deviations      → /deviations
+Intelligence    → /intelligence
+Patients        → /compliance/patients
+Events          → /events
 Ingestion       → /ingestion
 Exports         → /exports
 ```
 
-Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `ExclamationTriangleIcon`, `SignalIcon`, `BuildingOffice2Icon`, `CogIcon`, `ArrowDownTrayIcon`.
+Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `ExclamationTriangleIcon`, `SignalIcon`, `BuildingOffice2Icon`, `UserGroupIcon`, `CogIcon`, `ArrowDownTrayIcon`, `BoltIcon`.
 
 ---
 
@@ -409,7 +423,6 @@ Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `Ex
 | Category | Background | Text | Dot/Icon | Usage |
 |----------|-----------|------|----------|-------|
 | `on_track` | green-100 | green-700 | green-500 | Badges, table rows, chart segments |
-| `at_risk` | amber-100 | amber-700 | amber-500 | Same |
 | `non_compliant` | red-100 | red-700 | red-500 | Same |
 
 ### Step State Palette

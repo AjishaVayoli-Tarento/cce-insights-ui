@@ -1,3 +1,72 @@
+# Release Notes — CCE Insights UI v2.0.0
+
+**Release Date:** 2026-06-02
+
+## Overview
+
+Major UX refresh focused on binary compliance model (Compliant / Non-Compliant only), new pages (Intelligence, Practitioner Analytics), redesigned Service Workflow Compliance as a vertical timeline, and visual polish across all views.
+
+## Breaking Changes
+
+- **Compliance categories are now binary**: Only `on_track` (Compliant) and `non_compliant` (Non-Compliant). The `at_risk` category has been fully removed from the UI, API types, and backend classification logic.
+- **Default date range changed to 180 days** (from 30 days). Set `VITE_DEFAULT_DATE_RANGE_DAYS` to override.
+- **Keycloak dependency removed** from the API client. Auth now uses `VITE_AUTH_TOKEN` or `sessionStorage('access_token')` only.
+
+## New Features
+
+### New Pages
+
+- **Intelligence** (`/intelligence`) — Action instance metrics, delivery status donut chart, destinations & adaptors tables, Intelligence Actions table
+- **Practitioner Analytics** (`/practitioners`) — Practitioner compliance table with color-coded badges and legend
+
+### Compliance Overview Redesign
+
+- **Service Workflow Compliance** section rewritten as a vertical timeline with light cards (`bg-white`, subtle shadow)
+- Each parent step shows: title (from action-order API), completion %, full-width progress bar, "X of Y completed · Z missing" stats
+- Child steps (sub-actions) rendered as sub-timeline graph nodes (vertical dot + connector pattern, similar to Protocol Journey) instead of grid boxes
+- Bold timeline dots (`h-5 w-5`, solid color, `shadow-md`, `ring-4 ring-white`) — green=100%, amber=≥50%, red=<50%
+- Sub-action dots are 10px with `ring-2 ring-white`, connected by a vertical line
+
+### Dashboard
+
+- Metric cards renamed: **Tracked Cohort**, **Compliant Care Journeys**, **Non-Compliant Care Journeys**
+- Chart titles no longer display "(30 days)" — they use the global date filter
+- Added facility/practitioner summary cards
+
+### Patient Detail
+
+- **Source color-coded pills** in Protocol Journey (spice=purple, openmrs=sky, dhis2=teal, fhir=indigo, hl7=pink)
+- Removed mandatory/policy badges from step indicators
+
+### Facility Analytics
+
+- Renamed "At-Risk Hotspots" → **"Non-Compliant Hotspots"**
+- Compliance column now color-coded (🟢 ≥80%, 🟡 50-79%, 🔴 <50%)
+- Legend added below table
+
+### Patient List
+
+- Only **Compliant** and **Non-Compliant** filter buttons (removed "At Risk")
+- Badge labels updated to "Compliant" / "Non-Compliant"
+
+## Technical Changes
+
+- **Pagination normalization**: `apiGetPaginated` now handles both camelCase (`hasMore`/`nextCursor`) and snake_case (`has_more`/`next_cursor`) from the API
+- **New API modules**: `dashboard.ts`, `intelligence.ts`, `practitioners.ts`
+- **New hooks**: `useDashboard.ts`, `useIntelligence.ts`, `usePractitioners.ts`
+- **Sidebar navigation updated**: Dashboard → Compliance → Facilities → Practitioners → Deviations → Intelligence → Patients → Events → Ingestion → Exports
+- **Removed unused code**: `DonutRing` component from ComplianceOverview, unused imports
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_DEFAULT_DATE_RANGE_DAYS` | `180` | Default date range (changed from 30) |
+
+---
+
+---
+
 # Release Notes — CCE Insights UI v1.0.0
 
 **Release Date:** 2026-03-31

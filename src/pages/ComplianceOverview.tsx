@@ -192,7 +192,7 @@ export default function ComplianceOverview() {
                   return (
                     <div className="space-y-0 relative">
                       {/* Vertical connector line */}
-                      <div className="absolute left-4 top-6 bottom-6 w-0.5 bg-gray-200" />
+                      <div className="absolute left-[11px] top-6 bottom-6 w-0.5 bg-gray-200" />
 
                       {topLevel.map((step) => {
                         const denom = denominators.get(step.actionId) ?? step.totalInstances;
@@ -201,55 +201,64 @@ export default function ComplianceOverview() {
                         const label = titleMap.get(step.actionId) || step.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                         const children = childrenOf(step.actionId);
                         const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-                        const pctColor = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600';
-                        const dotColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-gray-300';
+                        const pctColor = pct >= 80 ? 'text-green-700' : pct >= 50 ? 'text-amber-700' : 'text-red-700';
+                        const dotColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-400';
 
                         return (
                           <div key={step.actionId} className="relative pl-10 pb-4">
-                            {/* Timeline dot */}
-                            <div className={`absolute left-2.5 top-5 h-3 w-3 rounded-full border-2 border-white ${dotColor} ring-2 ring-gray-200 z-10`} />
+                            {/* Timeline dot - bold & bright */}
+                            <div className={`absolute left-1 top-5 h-5 w-5 rounded-full ${dotColor} shadow-md z-10 ring-4 ring-white`} />
 
-                            <div className="rounded-xl border border-gray-200 bg-gray-900 p-4">
+                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                               {/* Header row */}
                               <div className="flex items-center justify-between">
-                                <h5 className="text-sm font-semibold text-white">{label}</h5>
+                                <h5 className="text-sm font-bold text-gray-900">{label}</h5>
                                 <span className={`text-lg font-bold ${pctColor}`}>{pct}%</span>
                               </div>
 
                               {/* Progress bar */}
-                              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
                                 <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                               </div>
 
                               {/* Stats */}
                               <div className="mt-2 flex items-center gap-2 text-xs">
-                                <span className="text-gray-300">{step.completedCount} of {denom} completed</span>
+                                <span className="text-gray-600">{step.completedCount} of {denom} completed</span>
                                 {missing > 0 && (
-                                  <span className="text-red-400">· {missing} missing</span>
+                                  <span className="text-red-500 font-medium">· {missing} missing</span>
                                 )}
                               </div>
 
-                              {/* Child steps (sub-actions) */}
+                              {/* Child steps as sub-timeline nodes */}
                               {children.length > 0 && (
-                                <div className="mt-3 border-t border-gray-700 pt-3">
-                                  <p className="mb-2 text-[10px] font-medium uppercase text-gray-400">Sub-actions</p>
-                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                <div className="mt-3 border-t border-gray-100 pt-3">
+                                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Sub-actions</p>
+                                  <div className="relative ml-2">
+                                    {/* Sub-action connector line */}
+                                    <div className="absolute left-[7px] top-3 bottom-3 w-px bg-gray-200" />
                                     {children.map((child) => {
                                       const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
                                       const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
                                       const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-                                      const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-                                      const childPctColor = childPct >= 80 ? 'text-green-600' : childPct >= 50 ? 'text-amber-600' : 'text-red-600';
+                                      const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
+                                      const childDotColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
+                                      const childPctColor = childPct >= 80 ? 'text-green-700' : childPct >= 50 ? 'text-amber-700' : 'text-red-700';
 
                                       return (
-                                        <div key={child.actionId} className="rounded-lg border border-gray-700 bg-gray-800 p-2.5">
-                                          <div className="flex items-center justify-between">
-                                            <span className={`text-sm font-bold ${childPctColor}`}>{childPct}%</span>
-                                            <span className="text-[10px] text-gray-400">{child.completedCount}/{childDenom}</span>
-                                          </div>
-                                          <p className="mt-0.5 text-xs text-gray-300">{childLabel}</p>
-                                          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-gray-700">
-                                            <div className={`h-full rounded-full ${childBarColor}`} style={{ width: `${childPct}%` }} />
+                                        <div key={child.actionId} className="relative flex items-start gap-3 py-2 pl-6">
+                                          {/* Sub-action dot */}
+                                          <div className={`absolute left-[4px] top-3.5 h-[10px] w-[10px] rounded-full ${childDotColor} ring-2 ring-white`} />
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-xs font-semibold text-gray-800">{childLabel}</p>
+                                              <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold ${childPctColor}`}>{childPct}%</span>
+                                                <span className="text-[10px] text-gray-400">{child.completedCount}/{childDenom}</span>
+                                              </div>
+                                            </div>
+                                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                              <div className={`h-full rounded-full ${childBarColor}`} style={{ width: `${childPct}%` }} />
+                                            </div>
                                           </div>
                                         </div>
                                       );

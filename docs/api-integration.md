@@ -1,7 +1,8 @@
 # API Integration Reference
 
 > **CCE Insights UI** — Complete mapping of UI features to Insights Service APIs  
-> All 38 endpoints (33 analytics + 5 lookup) consumed from the Insights Service (`port 8084`) or via the CCE Gateway (`port 8060`).
+> All endpoints consumed from the Insights Service (`port 8084`) or via the CCE Gateway (`port 8060`).  
+> Compliance categories are binary: `on_track` (Compliant) and `non_compliant` (Non-Compliant).
 
 ---
 
@@ -22,7 +23,7 @@
 
 ```typescript
 // src/api/client.ts
-import { keycloak } from '../auth/keycloak';
+import type { ErrorResponse, PaginatedResponse } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -51,7 +52,6 @@ function authHeaders(): Record<string, string> {
   if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
     const token =
       import.meta.env.VITE_AUTH_TOKEN ||
-      keycloak.token ||
       sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
@@ -82,6 +82,7 @@ export async function apiGet<T>(
 
 /**
  * Fetch paginated responses using the CCE cursor-based pagination envelope.
+ * Normalizes both camelCase and snake_case pagination fields from the API.
  */
 export async function apiGetPaginated<T>(
   path: string,
@@ -89,9 +90,16 @@ export async function apiGetPaginated<T>(
 ): Promise<PaginatedResponse<T>> {
   const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
   const json = await handleResponse(res);
+  const p = json.pagination;
   return {
     data: json.data,
-    pagination: json.pagination ?? { limit: 50, next_cursor: null, has_more: false },
+    pagination: p
+      ? {
+          limit: p.limit ?? 50,
+          next_cursor: p.next_cursor ?? p.nextCursor ?? null,
+          has_more: p.has_more ?? p.hasMore ?? false,
+        }
+      : { limit: 50, next_cursor: null, has_more: false },
   };
 }
 
@@ -188,7 +196,7 @@ export interface PatientCompliance {
 }
 
 export type ProtocolInstanceStatus = 'ACTIVE' | 'COMPLETED' | 'WITHDRAWN' | 'EXPIRED';
-export type ComplianceCategory = 'on_track' | 'at_risk' | 'non_compliant';
+export type ComplianceCategory = 'on_track' | 'non_compliant';
 
 // ─── Patient Compliance ──────────────────────────────────────
 
