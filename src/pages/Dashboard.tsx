@@ -42,18 +42,18 @@ export default function Dashboard() {
       <div className="rounded-xl border border-gray-200 p-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Tracked Patients"
+          title="Tracked Cohort"
           description="Total patients enrolled and tracked across all protocols."
           value={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
-          title="Compliant Patients"
+          title="Compliant Care Journeys"
           description="Patients with no active deviations across all protocols."
           value={formatNumber(patients?.compliantPatients ?? 0)}
           denomination={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
-          title="Non-Compliant Patients"
+          title="Non-Compliant Care Journeys"
           description="Patients with at least one active deviation across all protocols."
           value={formatNumber(patients?.nonCompliantPatients ?? 0)}
           denomination={formatNumber(patients?.trackedPatients ?? 0)}

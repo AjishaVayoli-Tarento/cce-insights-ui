@@ -24,6 +24,18 @@ const JOURNEY_STATUS: Record<JourneyDisplayStatus, { bg: string; text: string; d
   DEVIATION:   { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Deviation' },
 };
 
+const SOURCE_COLORS: Record<string, string> = {
+  spice: 'bg-purple-100 text-purple-700',
+  openmrs: 'bg-sky-100 text-sky-700',
+  dhis2: 'bg-teal-100 text-teal-700',
+  fhir: 'bg-indigo-100 text-indigo-700',
+  hl7: 'bg-pink-100 text-pink-700',
+};
+
+function getSourceColor(source: string): string {
+  return SOURCE_COLORS[source.toLowerCase()] ?? 'bg-gray-100 text-gray-700';
+}
+
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = id ?? '';
@@ -161,16 +173,7 @@ export default function PatientDetail() {
                     <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-300 bg-white" />
                     <span className="text-xs text-gray-600">Not started</span>
                   </div>
-                  <div className="ml-2 border-l border-gray-300 pl-3 flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">mandatory</span>
-                      <span className="text-xs text-gray-500">always tracked</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">policy</span>
-                      <span className="text-xs text-gray-500">policy-defined</span>
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="space-y-0">
@@ -223,16 +226,7 @@ export default function PatientDetail() {
                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${info.bg} ${info.text}`}>
                               {info.label}
                             </span>
-                            {step.requiredBehavior === 'must' && (
-                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">
-                                mandatory
-                              </span>
-                            )}
-                            {step.requiredBehavior === 'could' && (
-                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">
-                                policy
-                              </span>
-                            )}
+
                             {step.completionCount > 1 && (
                               <span className="text-xs text-gray-400">×{step.completionCount}</span>
                             )}
@@ -260,7 +254,9 @@ export default function PatientDetail() {
                               </span>
                             )}
                             {step.source && (
-                              <span className="text-xs text-gray-500">Source: {step.source}</span>
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                {step.source}
+                              </span>
                             )}
                             {step.practitioner && (
                               <span className="text-xs text-gray-500">Practitioner: {step.practitioner}</span>

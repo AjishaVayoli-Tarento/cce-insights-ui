@@ -6,7 +6,8 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { useIntelligenceSummary } from '../hooks/useIntelligence';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { useActionOrder } from '../hooks/useProtocols';
+import { formatNumber } from '../utils/formatters';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -20,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Intelligence() {
   const [protocolId, setProtocolId] = useState('');
   const { data, isLoading, error } = useIntelligenceSummary();
+  const actionOrder = useActionOrder(protocolId);
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorAlert error={error} />;
@@ -37,41 +39,37 @@ export default function Intelligence() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MetricCard title="Total Deliveries" value={formatNumber(data.total)} description="Total number of intelligence delivery attempts (alerts, notifications, recommendations) sent to external systems." />
+        <MetricCard title="Total Action Instances" value={formatNumber(data.total)} description="Total number of intelligence delivery attempts (alerts, notifications, recommendations) sent to external systems." />
         <MetricCard title="Delivered" value={formatNumber(data.delivered)} description="Deliveries that were successfully received and acknowledged by the target system." />
         <MetricCard title="Failed" value={formatNumber(data.failed)} description="Deliveries that failed due to target system errors, timeouts, or connectivity issues." />
         <MetricCard title="Pending" value={formatNumber(data.pending)} description="Deliveries currently queued or in-progress, awaiting confirmation from the target system." />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <MetricCard title="Success Rate" value={formatPercentage(data.successRate)} description="Percentage of deliveries that were successfully delivered out of all attempted deliveries." />
-        <MetricCard title="Avg Latency" value={data.avgLatencySeconds != null ? `${data.avgLatencySeconds.toFixed(1)}s` : '—'} description="Average time from delivery initiation to successful acknowledgement by the target system." />
-      </div>
+      {/* Three sections in a single row */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Success / Failure Rate */}
+        <Card title="Success / Failure Rate">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                  {donutData.map((entry) => (
+                    <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#8884d8'} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
 
-      {/* Donut Chart */}
-      <Card title="Success / Failure Rate" className="mt-6">
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={donutData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2}>
-                {donutData.map((entry) => (
-                  <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#8884d8'} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Deliveries by Destination */}
         <Card title="Deliveries by Destination">
           <div className="space-y-2">
             {data.byDestination.map((d) => (
               <div key={d.destination} className="flex items-center gap-3">
-                <span className="w-48 truncate text-sm text-gray-700">{d.destination}</span>
+                <span className="w-36 truncate text-sm text-gray-700">{d.destination}</span>
                 <div className="flex-1">
                   <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                     <div className="h-full rounded-full bg-blue-500" style={{ width: `${data.total > 0 ? (d.count / data.total) * 100 : 0}%` }} />
@@ -115,6 +113,40 @@ export default function Intelligence() {
           </div>
         </Card>
       </div>
+
+      {/* Intelligence Actions */}
+      <Card title="Intelligence Actions" className="mt-6">
+        {!protocolId ? (
+          <p className="py-4 text-center text-sm text-gray-400">Select a protocol to view intelligence actions.</p>
+        ) : actionOrder.isLoading ? (
+          <LoadingSpinner />
+        ) : actionOrder.error ? (
+          <ErrorAlert error={actionOrder.error} />
+        ) : actionOrder.data && actionOrder.data.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b text-xs font-medium uppercase text-gray-500">
+                  <th className="pb-2 pr-4">#</th>
+                  <th className="pb-2 pr-4">Action ID</th>
+                  <th className="pb-2">Parent Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {actionOrder.data.map((action, idx) => (
+                  <tr key={action.actionId} className="hover:bg-gray-50">
+                    <td className="py-2 pr-4 text-gray-400">{idx + 1}</td>
+                    <td className="py-2 pr-4 font-medium text-gray-900">{action.actionId}</td>
+                    <td className="py-2 text-gray-600">{action.parentActionId ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="py-4 text-center text-sm text-gray-400">No intelligence actions defined for this protocol.</p>
+        )}
+      </Card>
     </>
   );
 }

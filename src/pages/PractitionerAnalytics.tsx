@@ -127,6 +127,12 @@ export default function PractitionerAnalytics() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+              <span className="font-medium">Compliance:</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> ≥ 80%</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> 50–79%</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> &lt; 50%</span>
+            </div>
           </>
         ) : null}
       </Card>
