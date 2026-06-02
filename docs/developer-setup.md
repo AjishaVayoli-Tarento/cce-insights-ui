@@ -1,7 +1,7 @@
 # Developer Setup & Configuration
 
 > **CCE Insights UI** — Local development guide  
-> **Version**: 1.0.0 | **Last Updated**: 2026-04-01
+> **Version**: 2.0.0 | **Last Updated**: 2026-06-02
 
 ---
 
@@ -68,7 +68,7 @@ Default `.env`:
 VITE_API_BASE_URL=http://localhost:8084
 VITE_AUTH_ENABLED=false
 VITE_POLLING_INTERVAL=60000
-VITE_DEFAULT_DATE_RANGE_DAYS=30
+VITE_DEFAULT_DATE_RANGE_DAYS=180
 ```
 
 ### 2.4 Start Development Server
@@ -95,12 +95,9 @@ The dashboard should load metrics from the Insights Service. If you see "Cannot 
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://localhost:8084` | Insights Service URL. Set to empty string `""` when using Vite proxy. |
 | `VITE_AUTH_ENABLED` | `false` | Enable OAuth token injection. `false` for demo mode. |
-| `VITE_AUTH_TOKEN` | _(empty)_ | Static bearer token override. Falls back to Keycloak token or `sessionStorage('access_token')`. |
-| `VITE_KEYCLOAK_URL` | _(empty)_ | Keycloak server URL (e.g. `https://keycloak.example.com`). Enables OIDC flow when set with `VITE_AUTH_ENABLED=true`. |
-| `VITE_KEYCLOAK_REALM` | _(empty)_ | Keycloak realm name (e.g. `cce`). |
-| `VITE_KEYCLOAK_CLIENT_ID` | _(empty)_ | Keycloak client ID (e.g. `cce-insights-ui`). Must be a public client with PKCE. |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Static bearer token override. Falls back to `sessionStorage('access_token')`. |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval in milliseconds. `0` to disable. |
-| `VITE_DEFAULT_DATE_RANGE_DAYS` | `30` | Default date range for dashboard (days back from today). |
+| `VITE_DEFAULT_DATE_RANGE_DAYS` | `180` | Default date range for dashboard (days back from today). |
 
 ---
 
@@ -113,7 +110,7 @@ npm create vite@latest cce-insights-ui -- --template react-ts
 cd cce-insights-ui
 
 # Core dependencies
-npm install react-router-dom @tanstack/react-query recharts date-fns @heroicons/react keycloak-js
+npm install react-router-dom @tanstack/react-query recharts date-fns @heroicons/react
 
 # Dev dependencies
 npm install -D tailwindcss @tailwindcss/vite vitest jsdom @testing-library/react @testing-library/jest-dom msw

@@ -1,7 +1,8 @@
 # UI Pages & Wireframes
 
 > **CCE Insights UI** — Page-by-page design reference with ASCII wireframes  
-> Each page maps to one or more Insights Service API endpoints (38 total: 33 analytics + 5 lookup).
+> Each page maps to one or more Insights Service API endpoints. Compliance categories are binary: **Compliant** (`on_track`) and **Non-Compliant** (`non_compliant`).
+> Default date range: **180 days**.
 
 ---
 
@@ -16,27 +17,27 @@
 7. [Event Volume](#7-event-volume)
 8. [Source Comparison](#8-source-comparison)
 9. [Facility Analytics](#9-facility-analytics)
-10. [Ingestion Pipeline](#10-ingestion-pipeline)
-11. [Exports](#11-exports)
-12. [Shared Components](#12-shared-components)
+10. [Practitioner Analytics](#10-practitioner-analytics)
+11. [Intelligence](#11-intelligence)
+12. [Ingestion Pipeline](#12-ingestion-pipeline)
+13. [Exports](#13-exports)
+14. [Shared Components](#14-shared-components)
 
 ---
 
 ## 1. Dashboard
 
 **Route:** `/`  
-**Purpose:** Landing page — high-level operational metrics, trend snapshots, and quick navigation to detailed views.
+**Purpose:** Landing page — high-level operational metrics, trend snapshots. Default 180-day date range.
 
 ### APIs Used
 
 | Endpoint | Purpose |
 |----------|---------|  
-| `GET /v1/insights/events/summary` | Total events, processing status, top resource types |
-| `GET /v1/insights/intelligence/summary` | Deviation counts by type, recent activity |
-| `GET /v1/insights/deviations/trends` | Deviation trend for sparkline (last 30 days) |
-| `GET /v1/insights/events/trends` | Event volume trend for sparkline |
-| `GET /v1/insights/ingestion/pipeline-loss` | Pipeline loss rate |
-| `GET /v1/insights/patients/at-risk-hotspots` | At-risk patient count (top facility) |
+| `GET /v1/insights/dashboard/overview` | Summary metrics (events, deviations, etc.) |
+| `GET /v1/insights/dashboard/compliance-summary` | Patient/facility/practitioner compliance |
+| `GET /v1/insights/deviations/trends` | Deviation trend sparkline |
+| `GET /v1/insights/events/trends` | Event volume trend sparkline |
 | `GET /v1/insights/lookups/protocols` | Protocol list for selectors |
 | `GET /v1/insights/lookups/facilities` | Facility list for global filter |
 
@@ -45,49 +46,35 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ┌──────────┐                                                                 │
-│ │ CCE      │  Dashboard                    [📅 Last 30 days ▼] [🏥 All ▼]  │
+│ │ CCE      │  Dashboard                              [📅 180 days ▼]        │
 │ │ Insights │                                                                 │
 │ ├──────────┤  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   │
-│ │          │  │ 📊 Total    │ │ ⚠ Active   │ │ 🏥 Facilities│ │ 🔴 Pipeline│   │
-│ │ Overview │  │ Events     │ │ Deviations │ │ Tracked    │ │ Loss Rate  │   │
-│ │ ● Dash   │  │   12,480   │ │     270    │ │     15     │ │   0.2%     │   │
-│ │          │  │ ▲ 8.2%     │ │ ▲ 12 new   │ │            │ │ 30 events  │   │
-│ │ Compliance│  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
-│ │ ○ Overview│                                                                │
-│ │ ○ Patients│  ┌────────────┐ ┌────────────┐                                │
-│ │          │  │ ✅ Match    │ │ 🔴 At-Risk  │                                │
-│ │ Events   │  │ Rate       │ │ Patients   │                                │
-│ │ ○ Volume │  │   78.7%    │ │     62     │                                │
-│ │ ○ Sources│  │ MATCHED    │ │ across 5   │                                │
-│ │          │  └────────────┘ └────────────┘                                │
-│ │ Deviations│                                                               │
-│ │ ○ Trends │  ┌─────────────────────────────┐ ┌─────────────────────────┐   │
-│ │          │  │ Deviation Trends (30 days)  │ │ Event Volume (30 days)  │   │
-│ │ Facilities│  │                             │ │                         │   │
-│ │ ○ Ranking│  │   ╱╲    ╱╲                  │ │   ▄▄▆▆██▇▇▆▆▄▄██▆▆    │   │
-│ │          │  │  ╱  ╲──╱  ╲──╱╲            │ │   Encounter ■           │   │
-│ │ Operations│  │ ╱              ╲           │ │   Observation ■         │   │
-│ │ ○ Ingest │  │ overdue ── missed ──       │ │   Condition ■           │   │
+│ │          │  │ Tracked    │ │ Compliant  │ │ Non-Compl. │ │ Active     │   │
+│ │ Dashboard│  │ Cohort     │ │ Care       │ │ Care       │ │ Protocols  │   │
+│ │ ● Dash   │  │   248      │ │ Journeys   │ │ Journeys   │ │    3       │   │
+│ │          │  │            │ │    180     │ │    68      │ │            │   │
+│ │Compliance│  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
+│ │Facilities│                                                                 │
+│ │Practition│  ┌─────────────────────────────┐ ┌─────────────────────────┐   │
+│ │Deviations│  │ Deviation Trends            │ │ Event Volume            │   │
+│ │Intelligen│  │                             │ │                         │   │
+│ │ Patients │  │   ╱╲    ╱╲                  │ │   ▄▄▆▆██▇▇▆▆▄▄██▆▆    │   │
+│ │ Events   │  │  ╱  ╲──╱  ╲──╱╲            │ │   Encounter ■           │   │
+│ │ Ingestion│  │ ╱              ╲           │ │   Observation ■         │   │
+│ │ Exports  │  │ overdue ── missed ──       │ │   Condition ■           │   │
 │ │          │  └─────────────────────────────┘ └─────────────────────────┘   │
-│ │ Exports  │                                                                 │
-│ │ ○ Export │  Quick Navigation                                              │
-│ │          │  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌──────────────┐   │
-│ └──────────┘  │ Compliance│ │ Facility  │ │ Ingestion │ │ Export Data │   │
-│               │ Overview →│ │ Rankings →│ │ Health  → │ │           → │   │
-│               └───────────┘ └───────────┘ └───────────┘ └──────────────┘   │
+│ └──────────┘                                                                 │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### MetricCard Details
 
-| Card | Value Source | Trend Indicator |
-|------|-------------|-----------------|
-| Total Events | `events/summary → totalEvents` | Compare to previous period |
-| Active Deviations | `intelligence/summary → totalDeviations` | `recentActivity.last24Hours` new |
-| Facilities Tracked | `events/summary → byFacility.length` | Static count |
-| Pipeline Loss Rate | `ingestion/pipeline-loss → lossRate` | `lostEvents` count |
-| Match Rate | `events/summary → processingStatusBreakdown.matched / total` | Percentage |
-| At-Risk Patients | `patients/at-risk-hotspots → SUM(atRisk.count + nonCompliant.count)` | Facility count |
+| Card | Value Source | Description |
+|------|-------------|-------------|
+| Tracked Cohort | `dashboard/compliance-summary → patients.trackedPatients` | Total patients enrolled |
+| Compliant Care Journeys | `patients.compliantPatients` | No active deviations |
+| Non-Compliant Care Journeys | `patients.nonCompliantPatients` | Has active deviations |
+| Active Protocols | `dashboard/compliance-summary → activeProtocols` | Protocols being tracked |
 
 ---
 
@@ -108,36 +95,45 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Sidebar │  Compliance Overview              [📅 Last 30 days ▼] [🏥 All ▼] │
+│ Sidebar │  Compliance Overview              [📅 180 days ▼]                 │
 │         │                                                                    │
-│         │  ┌─ Protocol Compliance ─────────────────────────────────────────┐ │
-│         │  │ Select Protocol: [ANC High-Risk v2.1              ▼]         │ │
-│         │  │                                                               │ │
-│         │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐    │ │
-│         │  │  │ Enrolled │ │ Compliance│ │ Active   │ │ Deviation   │    │ │
-│         │  │  │   248    │ │   72%    │ │   180    │ │    270      │    │ │
-│         │  │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘    │ │
-│         │  │                                                               │ │
-│         │  │  Status Breakdown        Step Metrics                        │ │
-│         │  │  ████████████░░░░        ████████░░░░░░░░                    │ │
-│         │  │  ■ Active  180 (73%)     ■ Completed  680                    │ │
-│         │  │  ■ Completed 52 (21%)    ■ On Time    520                    │ │
-│         │  │  ■ Withdrawn  8  (3%)    ■ Late       120                    │ │
-│         │  │  ■ Expired    8  (3%)    ■ Overdue    180                    │ │
-│         │  │                          ■ Missed      90                    │ │
-│         │  │                          ■ Pending    290                    │ │
-│         │  │                                                               │ │
-│         │  │               [View Protocol Analytics →]                    │ │
-│         │  └───────────────────────────────────────────────────────────────┘ │
+│         │  Select Protocol: [ANC High-Risk v2.1              ▼]             │
+│         │                                                                    │
+│         │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐         │
+│         │  │ Enrolled │ │Compliance│ │ Active   │ │ Deviations   │         │
+│         │  │   248    │ │   72%    │ │   180    │ │    270       │         │
+│         │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘         │
+│         │                                                                    │
+│         │  ┌─ SERVICE WORKFLOW COMPLIANCE (vertical timeline) ────────────┐  │
+│         │  │                                                              │  │
+│         │  │  ⬤───┌──────────────────────────────────────────────┐       │  │
+│         │  │  │   │ 🟢 ANC Visit 1                    92%       │ light │  │
+│         │  │  │   │ ████████████████████████████████░░       │ card  │  │
+│         │  │  │   │ 210 of 228 completed · 18 missing       │ bg-   │  │
+│         │  │  │   │                                              │ white │  │
+│         │  │  │   │ Sub-actions (node timeline):                 │shadow │  │
+│         │  │  │   │   ● 88% — Weight measurement                 │       │  │
+│         │  │  │   │   │                                          │       │  │
+│         │  │  │   │   ● 92% — Blood pressure check               │       │  │
+│         │  │  │   │   │                                          │       │  │
+│         │  │  │   │   ● 85% — Urine analysis                     │       │  │
+│         │  │  │   └──────────────────────────────────────────────┘       │  │
+│         │  │  │                                                        │  │
+│         │  │  ⬤───┌──────────────────────────────────────────────┐       │  │
+│         │  │  │   │ 🟡 ANC Visit 2                    65%       │       │  │
+│         │  │  │   │ ████████████████████░░░░░░░░░░░░       │       │  │
+│         │  │  │   │ 136 of 210 completed · 74 missing       │       │  │
+│         │  │  │   └──────────────────────────────────────────────┘       │  │
+│         │  │                                                              │  │
+│         │  └──────────────────────────────────────────────────────────────┘  │
 │         │                                                                    │
 │         │  ┌─ Patient Compliance ──────────────────────────────────────────┐ │
-│         │  │ Filter: [All ▼] [on_track] [at_risk] [non_compliant]        │ │
+│         │  │ Filter: [Compliant] [Non-Compliant]                          │ │
 │         │  │                                                               │ │
-│         │  │ Patient ID         │ Status     │ Rate │ Steps │ Deviations  │ │
-│         │  │ 260225-0002-5501   │ 🟠 at_risk │ 50%  │ 3/6   │ 1           │ │
-│         │  │ 260115-0001-7823   │ 🟢 on_track│ 85%  │ 5/6   │ 0           │ │
-│         │  │ 260310-0008-4421   │ 🔴 non_comp│ 25%  │ 1/4   │ 3           │ │
-│         │  │                                  ◀ 1 of 5 ▶                  │ │
+│         │  │ Patient ID        │ Status        │ Rate │ Steps │ Deviat.   │ │
+│         │  │ 260225-0002-5501  │ 🟢 Compliant  │ 85%  │ 5/6   │ 0         │ │
+│         │  │ 260310-0008-4421  │ 🔴 Non-Compl. │ 25%  │ 1/4   │ 3         │ │
+│         │  │                                 ◀ 1 of 5 ▶                   │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -146,7 +142,7 @@
 
 | Action | Behavior |
 |--------|----------|
-| Select protocol from dropdown | Fetch compliance summary for that protocol |
+| Select protocol from dropdown | Fetch compliance summary + step analytics + action order |
 | Click "View Protocol Analytics →" | Navigate to `/compliance/protocols/{id}` |
 | Click patient row | Navigate to `/compliance/patients/{patientId}` |
 | Switch compliance filter tabs | Re-query patient list with `status` parameter |
@@ -229,39 +225,30 @@
 ## 4. Patient List
 
 **Route:** `/compliance/patients`  
-**Purpose:** Browse patients by compliance category. View at-risk hotspots by facility.
+**Purpose:** Browse patients by compliance category (Compliant / Non-Compliant only).
 
 ### APIs Used
 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /v1/insights/protocols/{id}/patients` | Patient list with compliance status |
-| `GET /v1/insights/patients/at-risk-hotspots` | Risk concentration by facility |
+| `GET /v1/insights/patients/at-risk-hotspots` | Non-compliant concentration by facility |
 | `GET /v1/insights/patients/repeat-deviations` | High-risk patients |
 
 ### Wireframe
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Sidebar │  Patient Compliance             [📅 Last 30 days ▼] [🏥 All ▼]   │
-│         │                                                                    │
-│         │  ┌─ Risk Hotspots by Facility ───────────────────────────────────┐ │
-│         │  │                                                               │ │
-│         │  │  Facility 0008  ████████████████████░░░░░░░░░░  29% │ 39% │ 32% │
-│         │  │  Facility 0002  ████████████████████████████░░░  61% │ 24% │ 15% │
-│         │  │  Facility 0015  ██████████████████████████████░  71% │ 18% │ 11% │
-│         │  │                 ■ On Track   ■ At Risk   ■ Non-Compliant     │ │
-│         │  └───────────────────────────────────────────────────────────────┘ │
+│ Sidebar │  Patient Compliance              [📅 180 days ▼]                   │
 │         │                                                                    │
 │         │  ┌─ Patient List ────────────────────────────────────────────────┐ │
-│         │  │ Protocol: [ANC High-Risk ▼]  Status: [All ▼]                │ │
-│         │  │ Min Deviations: [  3  ] (for repeat deviations view)        │ │
+│         │  │ Protocol: [ANC High-Risk ▼]                                  │ │
+│         │  │ Status: [Compliant] [Non-Compliant]                          │ │
 │         │  │                                                               │ │
-│         │  │ Patient ID        │ Category      │ Rate │ Steps │ Deviations│ │
-│         │  │ 260225-0002-5501  │ 🔴 non_compli │ 25%  │ 1/4   │ 7         │ │
-│         │  │ 260310-0008-4421  │ 🟠 at_risk    │ 50%  │ 3/6   │ 4         │ │
-│         │  │ 260115-0001-7823  │ 🟢 on_track   │ 85%  │ 5/6   │ 0         │ │
-│         │  │                                    ◀ 1 of 5 ▶               │ │
+│         │  │ Patient ID        │ Category        │ Rate │ Steps │ Deviat. │ │
+│         │  │ 260225-0002-5501  │ 🔴 Non-Compliant│ 25%  │ 1/4   │ 7       │ │
+│         │  │ 260115-0001-7823  │ 🟢 Compliant    │ 85%  │ 5/6   │ 0       │ │
+│         │  │                                      ◀ 1 of 5 ▶              │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -516,52 +503,118 @@
 ## 9. Facility Analytics
 
 **Route:** `/facilities`  
-**Purpose:** Facility leaderboard by compliance rate, deviation count, or event volume. Combined with at-risk hotspots.
+**Purpose:** Facility leaderboard by compliance rate, deviation count, or event volume. Color-coded compliance column with legend. Non-Compliant Hotspots section (binary: Compliant / Non-Compliant).
 
 ### APIs Used
 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /v1/insights/facilities/ranking` | Facility leaderboard |
-| `GET /v1/insights/patients/at-risk-hotspots` | Risk concentration by facility |
+| `GET /v1/insights/patients/at-risk-hotspots` | Non-compliant concentration by facility |
 
 ### Wireframe
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Sidebar │  Facility Analytics               [📅 Last 30 days ▼]            │
+│ Sidebar │  Facility Analytics               [📅 180 days ▼]                 │
 │         │                                                                    │
 │         │  Rank By: [Compliance Rate •] [Deviation Count] [Event Volume]    │
-│         │  Order:   [Best First •] [Worst First]                            │
 │         │  Protocol: [All Protocols ▼]                                      │
-│         │                                                                    │
-│         │  ┌─ Facility Ranking ────────────────────────────────────────────┐ │
-│         │  │                                                               │ │
-│         │  │ #1  Facility 0015  ████████████████████  82%  ·  5 devs     │ │
-│         │  │ #2  Facility 0002  ███████████████████   74%  · 12 devs     │ │
-│         │  │ #3  Facility 0008  ██████████████        58%  · 22 devs     │ │
-│         │  │                                                               │ │
-│         │  └───────────────────────────────────────────────────────────────┘ │
 │         │                                                                    │
 │         │  ┌─ Facility Ranking Table ──────────────────────────────────────┐ │
 │         │  │ Rank │ Facility │ Enrollments │ Compliance │ Deviations│Events│ │
-│         │  │  1   │ 0015     │ 89          │ 82%        │ 5         │ 2800 │ │
-│         │  │  2   │ 0002     │ 156         │ 74%        │ 12        │ 3200 │ │
-│         │  │  3   │ 0008     │ 62          │ 58%        │ 22        │ 2100 │ │
+│         │  │  1   │ 0015     │ 89          │ 🟢 82%     │ 5         │ 2800 │ │
+│         │  │  2   │ 0002     │ 156         │ 🟡 74%     │ 12        │ 3200 │ │
+│         │  │  3   │ 0008     │ 62          │ 🔴 58%     │ 22        │ 2100 │ │
+│         │  │                                                              │ │
+│         │  │  Legend: 🟢 ≥80%  🟡 50-79%  🔴 <50%                         │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
 │         │                                                                    │
-│         │  ┌─ At-Risk Hotspots ────────────────────────────────────────────┐ │
-│         │  │ Facility │ Total │ On Track │ At Risk │ Non-Compliant        │ │
-│         │  │ 0008     │  62   │ 18 (29%) │ 24 (39%)│ 20 (32%)            │ │
-│         │  │ 0002     │ 156   │ 95 (61%) │ 38 (24%)│ 23 (15%)            │ │
-│         │  │ 0015     │  89   │ 63 (71%) │ 16 (18%)│ 10 (11%)            │ │
+│         │  ┌─ Non-Compliant Hotspots ──────────────────────────────────────┐ │
+│         │  │ Facility │ Total │ Compliant      │ Non-Compliant            │ │
+│         │  │ 0008     │  62   │ 🟢 18 (29%)    │ 🔴 44 (71%)              │ │
+│         │  │ 0002     │ 156   │ 🟢 95 (61%)    │ 🔴 61 (39%)              │ │
+│         │  │ 0015     │  89   │ 🟢 63 (71%)    │ 🔴 26 (29%)              │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 10. Ingestion Pipeline
+## 10. Practitioner Analytics
+
+**Route:** `/practitioners`  
+**Purpose:** Practitioner compliance table with color-coded compliance percentage and legend.
+
+### APIs Used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /v1/insights/practitioners/ranking` | Practitioner leaderboard |
+
+### Wireframe
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Sidebar │  Practitioner Analytics           [📅 180 days ▼]                 │
+│         │                                                                    │
+│         │  Protocol: [All Protocols ▼]  Facility: [All ▼]                  │
+│         │                                                                    │
+│         │  ┌─ Practitioner Table ──────────────────────────────────────────┐ │
+│         │  │ Practitioner    │ Facility │ Enrollments │ Compliance│Deviat. │ │
+│         │  │ Dr. A           │ 0015     │ 45          │ 🟢 88%    │ 2      │ │
+│         │  │ Dr. B           │ 0002     │ 72          │ 🟡 71%    │ 8      │ │
+│         │  │ Nurse C         │ 0008     │ 30          │ 🔴 43%    │ 12     │ │
+│         │  │                                                              │ │
+│         │  │  Legend: 🟢 ≥80%  🟡 50-79%  🔴 <50%                         │ │
+│         │  └───────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 11. Intelligence
+
+**Route:** `/intelligence`  
+**Purpose:** Intelligence delivery analytics — action instances, delivery status donut, destinations, adaptors, and actions table.
+
+### APIs Used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /v1/insights/intelligence/summary` | Intelligence delivery summary |
+| `GET /v1/insights/protocols/{id}/action-order` | Action definitions for protocol |
+
+### Wireframe
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Sidebar │  Intelligence                                                      │
+│         │                                                                    │
+│         │  ┌────────────────┐                                               │
+│         │  │ Total Action   │                                               │
+│         │  │ Instances      │                                               │
+│         │  │   1,240        │                                               │
+│         │  └────────────────┘                                               │
+│         │                                                                    │
+│         │  ┌──────────┐  ┌───────────────────┐  ┌──────────────────┐       │
+│         │  │  Donut   │  │ Destinations      │  │ Adaptors         │       │
+│         │  │  Chart   │  │ dest-1  │ 450     │  │ adaptor-a │ 600  │       │
+│         │  │  (status │  │ dest-2  │ 320     │  │ adaptor-b │ 400  │       │
+│         │  │  breakdown)│ │ dest-3  │ 270     │  │ adaptor-c │ 240  │       │
+│         │  └──────────┘  └───────────────────┘  └──────────────────┘       │
+│         │                                                                    │
+│         │  ┌─ Intelligence Actions ────────────────────────────────────────┐ │
+│         │  │ Action ID       │ Type │ Title           │ Deliveries │ Rate  │ │
+│         │  │ alert-overdue   │ alert│ Overdue Alert   │ 320        │ 95%   │ │
+│         │  │ notify-provider │ push │ Provider Notify │ 280        │ 88%   │ │
+│         │  └───────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 12. Ingestion Pipeline
 
 **Route:** `/ingestion`  
 **Purpose:** Ingestion health monitoring — acceptance/rejection funnel, rejection reasons, source quality, pipeline loss detection.
@@ -617,7 +670,7 @@
 
 ---
 
-## 11. Exports
+## 13. Exports
 
 **Route:** `/exports`  
 **Purpose:** Download compliance data as CSV or JSON with filter options.
@@ -649,7 +702,7 @@
 
 ---
 
-## 12. Shared Components
+## 14. Shared Components
 
 ### MetricCard
 
@@ -668,7 +721,7 @@ Props: `label`, `value`, `icon`, `trend?` (up/down/neutral), `trendLabel?`
 ### StatusBadge
 
 Unified badge component (`StatusBadge.tsx`) for compliance categories, step states, deviation types, processing status, and protocol statuses. Color-coded pills with consistent styling:
-- Compliance: `on_track` (green), `at_risk` (amber), `non_compliant` (red)
+- Compliance: `on_track` (green), `non_compliant` (red)
 - Step states: PENDING (gray), DUE (blue), OVERDUE (amber), MISSED (red), COMPLETED (green), SKIPPED (slate)
 - Deviation types: `OVERDUE` (amber), `MISSED` (red)
 - Processing: `MATCHED` (green), `ZERO_MATCH` (amber), `DUPLICATE` (gray)
