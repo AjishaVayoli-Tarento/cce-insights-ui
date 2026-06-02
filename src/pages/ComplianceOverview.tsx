@@ -19,7 +19,7 @@ function SubActionsPanel({
   denominators: Map<string, number>;
   titleMap: Map<string, string | null>;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   return (
     <div className="mt-3 border-t border-gray-100 pt-3">
