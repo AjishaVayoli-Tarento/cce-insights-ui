@@ -5,7 +5,7 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
+import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations, usePatientEvents } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
 import { STATUS_COLORS, STATE_COLORS } from '../utils/colors';
@@ -50,11 +50,21 @@ export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = id ?? '';
   const [selectedProtocol, setSelectedProtocol] = useState('');
+  const [activeTab, setActiveTab] = useState<'journey' | 'outbound'>('journey');
 
   const tracking = usePatientProtocolTracking(patientId);
   const timeline = usePatientTimeline(patientId);
   const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
+  const events = usePatientEvents(patientId);
+
+  const outboundEvents = useMemo(() => {
+    if (!events.data) return [];
+    return events.data.filter((e) =>
+      e.actionId?.toLowerCase().includes('anc') &&
+      e.actionId?.toLowerCase().includes('initiated')
+    );
+  }, [events.data]);
 
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
   const deviationActionIds = useMemo(() => {
@@ -175,17 +185,42 @@ export default function PatientDetail() {
       )}
 
       {timeline.data && timeline.data.protocols.length > 0 && (
-        <Card title="Protocol Journey" className="mt-6">
-          <div className="space-y-6">
-            {timeline.data.protocols.map((proto) => (
-              <div key={`journey-${proto.protocolInstanceId}`}>
-                <div className="mb-3 flex items-center gap-2">
-                  <StatusBadge
-                    label={proto.status}
-                    color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                  />
-                  <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
-                </div>
+        <div className="mt-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('journey')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'journey'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Protocol Journey
+            </button>
+            <button
+              onClick={() => setActiveTab('outbound')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'outbound'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Outbound Events
+            </button>
+          </div>
+
+          {activeTab === 'journey' && (
+            <Card title="Protocol Journey" className="mt-4">
+              <div className="space-y-6">
+                {timeline.data.protocols.map((proto) => (
+                  <div key={`journey-${proto.protocolInstanceId}`}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <StatusBadge
+                        label={proto.status}
+                        color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                      />
+                      <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
+                    </div>
 
                 {/* Legend */}
                 <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
@@ -308,7 +343,52 @@ export default function PatientDetail() {
               </div>
             ))}
           </div>
-        </Card>
+            </Card>
+          )}
+
+          {activeTab === 'outbound' && (
+            <Card title="Outbound Events — ANC Visit Initiated" className="mt-4">
+              {events.isLoading ? <LoadingSpinner /> : events.error ? <ErrorAlert error={events.error} /> : outboundEvents.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                        <th className="pb-2 pr-4">Action</th>
+                        <th className="pb-2 pr-4">Event Type</th>
+                        <th className="pb-2 pr-4">Source</th>
+                        <th className="pb-2 pr-4">Status</th>
+                        <th className="pb-2 pr-4">Facility</th>
+                        <th className="pb-2">Event Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {outboundEvents.map((e) => (
+                        <tr key={e.eventId} className="hover:bg-gray-50">
+                          <td className="py-2 pr-4 font-medium text-gray-900">{e.actionId}</td>
+                          <td className="py-2 pr-4 text-gray-600">{e.type}</td>
+                          <td className="py-2 pr-4">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(e.source)}`}>
+                              {e.source}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4">
+                            <span className={`text-xs font-bold ${e.processingStatus === 'MATCHED' ? 'text-green-600' : e.processingStatus === 'DUPLICATE' ? 'text-amber-600' : 'text-red-600'}`}>
+                              {e.processingStatus}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600">{e.facilityId || '—'}</td>
+                          <td className="py-2 text-gray-600">{formatDateTime(e.eventTime)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="py-4 text-center text-sm text-gray-400">No outbound events found for ANC Visit Initiated steps.</p>
+              )}
+            </Card>
+          )}
+        </div>
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
