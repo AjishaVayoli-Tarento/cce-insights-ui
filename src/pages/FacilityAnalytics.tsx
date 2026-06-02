@@ -6,7 +6,6 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
-import { RiskHotspotChart } from '../components/charts/RiskHotspotChart';
 import { useFacilityRanking } from '../hooks/useFacilities';
 import { useDashboardComplianceSummary } from '../hooks/useDashboard';
 import { useAtRiskHotspots } from '../hooks/usePatients';
@@ -197,26 +196,40 @@ export default function FacilityAnalytics() {
       <Card title="Non-Compliant Hotspots" className="mt-6">
         {hotspots.isLoading ? <LoadingSpinner /> : hotspots.error ? <ErrorAlert error={hotspots.error} /> : hotspots.data ? (
           <>
-            <RiskHotspotChart data={hotspots.data.data} />
-            <div className="mt-4 overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Facility</th>
                     <th className="pb-2 pr-4">Total</th>
+                    <th className="pb-2 pr-4">Compliance Rate</th>
                     <th className="pb-2 pr-4">Compliant</th>
                     <th className="pb-2">Non-Compliant</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {hotspots.data.data.map((h) => (
-                    <tr key={h.facilityId} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
-                      <td className="py-2 pr-4">{formatNumber(h.totalPatients)}</td>
-                      <td className="py-2 pr-4 text-green-600">{h.onTrack.count} ({formatPercentage(h.onTrack.percentage)})</td>
-                      <td className="py-2 text-red-600">{(h.atRisk.count + h.nonCompliant.count)} ({formatPercentage(h.atRisk.percentage + h.nonCompliant.percentage)})</td>
-                    </tr>
-                  ))}
+                  {hotspots.data.data.map((h) => {
+                    const compliancePct = h.onTrack.percentage;
+                    const barColor = compliancePct >= 80 ? 'bg-green-500' : compliancePct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                    return (
+                      <tr key={h.facilityId} className="hover:bg-gray-50">
+                        <td className="py-2.5 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
+                        <td className="py-2.5 pr-4">{formatNumber(h.totalPatients)}</td>
+                        <td className="py-2.5 pr-4 w-48">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                              <div className={`h-full rounded-full ${barColor}`} style={{ width: `${compliancePct}%` }} />
+                            </div>
+                            <span className={`text-xs font-semibold ${compliancePct >= 80 ? 'text-green-700' : compliancePct >= 50 ? 'text-amber-700' : 'text-red-700'}`}>
+                              {formatPercentage(compliancePct)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 pr-4 text-green-600">{h.onTrack.count}</td>
+                        <td className="py-2.5 text-red-600">{h.atRisk.count + h.nonCompliant.count}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
