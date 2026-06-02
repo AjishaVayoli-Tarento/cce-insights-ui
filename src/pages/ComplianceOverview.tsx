@@ -9,6 +9,75 @@ import { useStepAnalytics, useActionOrder } from '../hooks/useProtocols';
 import { useProtocols, useFacilityLookup } from '../hooks/useLookups';
 import { formatNumber, formatRate } from '../utils/formatters';
 
+/* Collapsible sub-actions panel for the Service Workflow Compliance timeline */
+function SubActionsPanel({
+  children,
+  denominators,
+  titleMap,
+}: {
+  children: { actionId: string; totalInstances: number; completedCount: number }[];
+  denominators: Map<string, number>;
+  titleMap: Map<string, string | null>;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="mt-3 border-t border-gray-100 pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-1.5 text-left"
+      >
+        <svg
+          className={`h-3 w-3 text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          Sub-actions ({children.length})
+        </span>
+      </button>
+      {open && (
+        <div className="relative ml-2 mt-2">
+          {/* Sub-action connector line */}
+          <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-200" />
+          {children.map((child) => {
+            const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
+            const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
+            const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
+            const childDotColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
+            const childPctColor = childPct >= 80 ? 'text-green-700' : childPct >= 50 ? 'text-amber-700' : 'text-red-700';
+
+            return (
+              <div key={child.actionId} className="relative flex items-start gap-3 py-1.5 pl-5">
+                {/* Sub-action dot */}
+                <div className={`absolute left-[2px] top-[10px] h-[8px] w-[8px] rounded-full ${childDotColor} ring-2 ring-white`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-medium text-gray-700">{childLabel}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[11px] font-bold ${childPctColor}`}>{childPct}%</span>
+                      <span className="text-[10px] text-gray-400">{child.completedCount}/{childDenom}</span>
+                    </div>
+                  </div>
+                  <div className="mt-0.5 h-1 w-4/5 overflow-hidden rounded-full bg-gray-100">
+                    <div className={`h-full rounded-full ${childBarColor}`} style={{ width: `${childPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ComplianceOverview() {
   const [protocolId, setProtocolId] = useState('');
   const [facilityId, setFacilityId] = useState('');
@@ -202,12 +271,12 @@ export default function ComplianceOverview() {
                         const children = childrenOf(step.actionId);
                         const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
                         const pctColor = pct >= 80 ? 'text-green-700' : pct >= 50 ? 'text-amber-700' : 'text-red-700';
-                        const dotColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-400';
+                        const dotColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-400';
 
                         return (
                           <div key={step.actionId} className="relative pl-10 pb-4">
                             {/* Timeline dot - bold & bright */}
-                            <div className={`absolute left-1 top-5 h-5 w-5 rounded-full ${dotColor} shadow-md z-10 ring-4 ring-white`} />
+                            <div className={`absolute left-1.5 top-5 h-4 w-4 rounded-full ${dotColor} shadow-md z-10 ring-3 ring-white`} />
 
                             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                               {/* Header row */}
@@ -229,42 +298,9 @@ export default function ComplianceOverview() {
                                 )}
                               </div>
 
-                              {/* Child steps as sub-timeline nodes */}
+                              {/* Collapsible child steps as sub-timeline nodes */}
                               {children.length > 0 && (
-                                <div className="mt-3 border-t border-gray-100 pt-3">
-                                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Sub-actions</p>
-                                  <div className="relative ml-2">
-                                    {/* Sub-action connector line */}
-                                    <div className="absolute left-[7px] top-3 bottom-3 w-px bg-gray-200" />
-                                    {children.map((child) => {
-                                      const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
-                                      const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
-                                      const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-                                      const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
-                                      const childDotColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
-                                      const childPctColor = childPct >= 80 ? 'text-green-700' : childPct >= 50 ? 'text-amber-700' : 'text-red-700';
-
-                                      return (
-                                        <div key={child.actionId} className="relative flex items-start gap-3 py-2 pl-6">
-                                          {/* Sub-action dot */}
-                                          <div className={`absolute left-[4px] top-3.5 h-[10px] w-[10px] rounded-full ${childDotColor} ring-2 ring-white`} />
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between">
-                                              <p className="text-xs font-semibold text-gray-800">{childLabel}</p>
-                                              <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-bold ${childPctColor}`}>{childPct}%</span>
-                                                <span className="text-[10px] text-gray-400">{child.completedCount}/{childDenom}</span>
-                                              </div>
-                                            </div>
-                                            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                                              <div className={`h-full rounded-full ${childBarColor}`} style={{ width: `${childPct}%` }} />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                                <SubActionsPanel children={children} denominators={denominators} titleMap={titleMap} />
                               )}
                             </div>
                           </div>
