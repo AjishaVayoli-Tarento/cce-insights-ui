@@ -142,9 +142,18 @@ export interface TimelineEntry {
   effectiveDateTime?: string;
 }
 
+export interface RelatedArtifact {
+  type: string;
+  label: string;
+  display: string;
+  url: string;
+}
+
 export interface ProtocolTracking {
   protocolInstanceId: string;
   protocolCanonical: string;
+  protocolTitle?: string;
+  relatedArtifact?: RelatedArtifact[];
   enrolledAt: string;
   status: ProtocolInstanceStatus;
   complianceRate: number;

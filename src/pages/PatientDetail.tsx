@@ -77,25 +77,46 @@ export default function PatientDetail() {
         )}
         {tracking.data && (
           <div className="space-y-3">
-            {tracking.data.map((p) => (
+            {tracking.data.map((p) => {
+              const docArtifact = p.relatedArtifact?.find(a => a.type === 'documentation');
+              const thumbArtifact = p.relatedArtifact?.find(a => a.type === 'thumbnail');
+              const displayTitle = p.protocolTitle || p.protocolCanonical;
+              return (
               <div key={p.protocolInstanceId} className="rounded-lg border border-gray-200 p-4">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge
-                        label={p.status}
-                        color={STATUS_COLORS[p.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                      />
-                      <span className="text-sm font-semibold text-gray-900">{p.protocolCanonical}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Tracking Since: {formatDate(p.enrolledAt)} · Rate: {formatPercentage(p.complianceRate)} · Steps: {p.stepsCompleted}/{p.totalSteps}
-                    </p>
-                    <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-200">
-                      <div
-                        className="h-full rounded-full bg-blue-500"
-                        style={{ width: `${(p.stepsCompleted / Math.max(p.totalSteps, 1)) * 100}%` }}
-                      />
+                  <div className="flex items-start gap-3">
+                    {thumbArtifact && (
+                      <a href={docArtifact?.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                        <img
+                          src={thumbArtifact.url}
+                          alt={thumbArtifact.display}
+                          className="h-10 w-10 rounded object-cover border border-gray-200"
+                        />
+                      </a>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <StatusBadge
+                          label={p.status}
+                          color={STATUS_COLORS[p.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                        />
+                        {docArtifact ? (
+                          <a href={docArtifact.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-blue-700 hover:underline">
+                            {displayTitle}
+                          </a>
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-900">{displayTitle}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Tracking Since: {formatDate(p.enrolledAt)} · Rate: {formatPercentage(p.complianceRate)} · Steps: {p.stepsCompleted}/{p.totalSteps}
+                      </p>
+                      <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          className="h-full rounded-full bg-blue-500"
+                          style={{ width: `${(p.stepsCompleted / Math.max(p.totalSteps, 1)) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <button
@@ -106,7 +127,8 @@ export default function PatientDetail() {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>
