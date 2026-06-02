@@ -193,7 +193,7 @@ export default function FacilityAnalytics() {
         ) : null}
       </Card>
 
-      <Card title="Non-Compliant Hotspots" subtitle="Facilities with the highest non-compliant patient counts" className="mt-6">
+      <Card title="Non-Compliant Hotspots" description="Facilities with the highest non-compliant patient counts" className="mt-6">
         {hotspots.isLoading ? <LoadingSpinner /> : hotspots.error ? <ErrorAlert error={hotspots.error} /> : hotspots.data ? (
           <>
             <div className="overflow-x-auto">
