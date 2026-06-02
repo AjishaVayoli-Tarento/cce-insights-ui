@@ -1,6 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
+import { CcnSidebar } from './components/layout/CcnSidebar';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { DateRangeFilter } from './components/shared/DateRangeFilter';
 
@@ -17,11 +18,15 @@ const PractitionerAnalytics = lazy(() => import('./pages/PractitionerAnalytics')
 const IngestionPipeline = lazy(() => import('./pages/IngestionPipeline'));
 const Exports = lazy(() => import('./pages/Exports'));
 const Intelligence = lazy(() => import('./pages/Intelligence'));
+const CcnDeviations = lazy(() => import('./pages/CcnDeviations'));
 
 export function App() {
+  const location = useLocation();
+  const isCcn = location.pathname.startsWith('/ccn');
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      {isCcn ? <CcnSidebar /> : <Sidebar />}
       <div className="ml-56 flex-1">
         <header className="sticky top-0 z-20 flex items-center justify-end gap-4 border-b border-gray-200 bg-white px-6 py-2.5">
           <DateRangeFilter />
@@ -42,6 +47,9 @@ export function App() {
               <Route path="/ingestion" element={<IngestionPipeline />} />
               <Route path="/intelligence" element={<Intelligence />} />
               <Route path="/exports" element={<Exports />} />
+              {/* CCN View */}
+              <Route path="/ccn" element={<Dashboard />} />
+              <Route path="/ccn/deviations" element={<CcnDeviations />} />
             </Routes>
           </Suspense>
         </main>
