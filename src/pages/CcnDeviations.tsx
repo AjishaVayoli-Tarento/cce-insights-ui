@@ -8,6 +8,8 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { useDeviationTrends, useDeviationsByAction } from '../hooks/useDeviations';
+import { useActionOrder } from '../hooks/useProtocols';
+import { useProtocols } from '../hooks/useLookups';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { getDeviations } from '../api/deviations';
 import { formatNumber } from '../utils/formatters';
@@ -27,6 +29,19 @@ export default function CcnDeviations() {
 
   const trends = useDeviationTrends(interval);
   const byAction = useDeviationsByAction();
+  const protocols = useProtocols();
+  const protocolId = protocols.data?.[0]?.id ?? '';
+  const actionOrder = useActionOrder(protocolId);
+
+  const actionNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    actionOrder.data?.forEach((a) => {
+      if (a.title) map.set(a.actionId, a.title);
+    });
+    return map;
+  }, [actionOrder.data]);
+
+  const getActionName = (actionId: string) => actionNameMap.get(actionId) || actionId;
 
   const filteredByAction = useMemo(
     () => byAction.data?.filter((a) => ACTION_FILTER(a.actionId)) ?? [],
@@ -69,8 +84,14 @@ export default function CcnDeviations() {
       <PageHeader title="Deviation Analytics" description="ANC Visit Referral Closure deviations" />
 
       {disputeMsg && (
-        <div className="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm font-medium text-green-800">
-          {disputeMsg}
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-5 py-3 shadow-lg">
+          <span className="text-sm font-medium text-green-800">{disputeMsg}</span>
+          <button
+            onClick={() => setDisputeMsg(null)}
+            className="text-green-600 hover:text-green-800 text-lg font-bold leading-none"
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -124,7 +145,7 @@ export default function CcnDeviations() {
                 <tbody className="divide-y divide-gray-100">
                   {filteredByAction.map((a) => (
                     <tr key={a.actionId} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{a.actionId}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{getActionName(a.actionId)}</td>
                       <td className="py-2 pr-4">{formatNumber(a.totalDeviations)}</td>
                       <td className="py-2 pr-4 text-amber-600">{formatNumber(a.overdueCount)}</td>
                       <td className="py-2 pr-4 text-red-600">{formatNumber(a.missedCount)}</td>
@@ -179,7 +200,7 @@ export default function CcnDeviations() {
                   {filteredList.map((d) => (
                     <tr key={d.deviationId} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-medium text-gray-900">{d.patientId}</td>
-                      <td className="py-2 pr-4">{d.actionId}</td>
+                      <td className="py-2 pr-4">{getActionName(d.actionId)}</td>
                       <td className="py-2 pr-4">
                         <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
                           {d.deviationType}
@@ -192,7 +213,7 @@ export default function CcnDeviations() {
                           onClick={handleDispute}
                           className="rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 transition-colors"
                         >
-                          Raise Dispute
+                          Request Follow-up
                         </button>
                       </td>
                     </tr>
