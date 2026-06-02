@@ -122,21 +122,23 @@ export default function Intelligence() {
           <LoadingSpinner />
         ) : actionOrder.error ? (
           <ErrorAlert error={actionOrder.error} />
-        ) : actionOrder.data && actionOrder.data.length > 0 ? (
+        ) : actionOrder.data && actionOrder.data.filter((a) => a.type === 'fire-event').length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b text-xs font-medium uppercase text-gray-500">
                   <th className="pb-2 pr-4">#</th>
-                  <th className="pb-2 pr-4">Action ID</th>
-                  <th className="pb-2">Parent Action</th>
+                  <th className="pb-2 pr-4">Action</th>
+                  <th className="pb-2 pr-4">Trigger</th>
+                  <th className="pb-2">Parent Step</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {actionOrder.data.map((action, idx) => (
+                {actionOrder.data.filter((a) => a.type === 'fire-event').map((action, idx) => (
                   <tr key={action.actionId} className="hover:bg-gray-50">
                     <td className="py-2 pr-4 text-gray-400">{idx + 1}</td>
-                    <td className="py-2 pr-4 font-medium text-gray-900">{action.actionId}</td>
+                    <td className="py-2 pr-4 font-medium text-gray-900">{action.title || action.actionId}</td>
+                    <td className="py-2 pr-4 text-gray-600">{action.actionId}</td>
                     <td className="py-2 text-gray-600">{action.parentActionId ?? '—'}</td>
                   </tr>
                 ))}
