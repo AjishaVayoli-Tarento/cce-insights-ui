@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getStepAnalytics, getCompletionFunnel, getOutcomeDistribution, getEnrollmentTrends, getActionOrder } from '../api/protocols';
 import { useGlobalFilters } from './useGlobalFilters';
 
-export function useStepAnalytics(protocolDefinitionId: string) {
+export function useStepAnalytics(protocolDefinitionId: string, facilityId?: string) {
   const filters = useGlobalFilters();
+  const effectiveFilters = { ...filters, ...(facilityId ? { facilityId } : {}) };
   return useQuery({
-    queryKey: ['protocols', 'step-analytics', protocolDefinitionId, filters],
-    queryFn: () => getStepAnalytics(protocolDefinitionId, filters),
+    queryKey: ['protocols', 'step-analytics', protocolDefinitionId, effectiveFilters],
+    queryFn: () => getStepAnalytics(protocolDefinitionId, effectiveFilters),
     enabled: !!protocolDefinitionId,
   });
 }

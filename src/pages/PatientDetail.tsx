@@ -13,6 +13,13 @@ import type { ProtocolInstanceStatus, StepState, JourneyStep } from '../api/type
 
 type JourneyDisplayStatus = JourneyStep['status'] | 'DEVIATION';
 
+/** Convert Google Drive share URLs to direct-serve image URLs */
+function toDirectImageUrl(url: string): string {
+  const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  return url;
+}
+
 const JOURNEY_STATUS: Record<JourneyDisplayStatus, { bg: string; text: string; dot: string; label: string }> = {
   COMPLETED:   { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Completed' },
   PENDING:     { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-400',   label: 'Pending' },
@@ -88,7 +95,7 @@ export default function PatientDetail() {
                     {thumbArtifact && (
                       <a href={docArtifact?.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                         <img
-                          src={thumbArtifact.url}
+                          src={toDirectImageUrl(thumbArtifact.url)}
                           alt={thumbArtifact.display}
                           className="h-10 w-10 rounded object-cover border border-gray-200"
                         />
