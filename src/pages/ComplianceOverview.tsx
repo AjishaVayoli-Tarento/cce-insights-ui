@@ -145,115 +145,130 @@ export default function ComplianceOverview() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-semibold text-gray-500 uppercase">Service Workflow Compliance</h4>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {(() => {
-                    const order = actionOrder.data ?? [];
-                    const orderMap = new Map(order.map((e, idx) => [e.actionId, idx]));
-                    const parentMap = new Map(order.map((e) => [e.actionId, e.parentActionId]));
+                {(() => {
+                  const order = actionOrder.data ?? [];
+                  const orderMap = new Map(order.map((e, idx) => [e.actionId, idx]));
+                  const parentMap = new Map(order.map((e) => [e.actionId, e.parentActionId]));
+                  const titleMap = new Map(order.map((e) => [e.actionId, e.title]));
 
-                    const sortedSteps = [...stepAnalytics.data.steps]
-                      .filter((s) => s.totalInstances > 0)
-                      .sort((a, b) => (orderMap.get(a.actionId) ?? 999) - (orderMap.get(b.actionId) ?? 999));
+                  const sortedSteps = [...stepAnalytics.data.steps]
+                    .filter((s) => s.totalInstances > 0)
+                    .sort((a, b) => (orderMap.get(a.actionId) ?? 999) - (orderMap.get(b.actionId) ?? 999));
 
-                    const completedMap = new Map(sortedSteps.map((s) => [s.actionId, s.completedCount]));
+                  const completedMap = new Map(sortedSteps.map((s) => [s.actionId, s.completedCount]));
 
-                    // Compute denominator for each step based on hierarchy
-                    const denominators = new Map<string, number>();
-                    let prevTopLevel: string | null = null;
-                    const prevSiblingByParent = new Map<string, string>();
+                  // Compute denominator for each step
+                  const denominators = new Map<string, number>();
+                  let prevTopLevel: string | null = null;
+                  const prevSiblingByParent = new Map<string, string>();
 
-                    for (const step of sortedSteps) {
-                      const parent = parentMap.get(step.actionId) ?? null;
-                      if (!parent) {
-                        if (prevTopLevel === null) {
-                          denominators.set(step.actionId, data.totalEnrollments);
-                        } else {
-                          denominators.set(step.actionId, completedMap.get(prevTopLevel) ?? step.totalInstances);
-                        }
-                        prevTopLevel = step.actionId;
+                  for (const step of sortedSteps) {
+                    const parent = parentMap.get(step.actionId) ?? null;
+                    if (!parent) {
+                      if (prevTopLevel === null) {
+                        denominators.set(step.actionId, data.totalEnrollments);
                       } else {
-                        const prevSibling = prevSiblingByParent.get(parent);
-                        if (prevSibling) {
-                          denominators.set(step.actionId, completedMap.get(prevSibling) ?? step.totalInstances);
-                        } else {
-                          denominators.set(step.actionId, completedMap.get(parent) ?? step.totalInstances);
-                        }
+                        denominators.set(step.actionId, completedMap.get(prevTopLevel) ?? step.totalInstances);
                       }
-                      if (parent) {
-                        prevSiblingByParent.set(parent, step.actionId);
+                      prevTopLevel = step.actionId;
+                    } else {
+                      const prevSibling = prevSiblingByParent.get(parent);
+                      if (prevSibling) {
+                        denominators.set(step.actionId, completedMap.get(prevSibling) ?? step.totalInstances);
+                      } else {
+                        denominators.set(step.actionId, completedMap.get(parent) ?? step.totalInstances);
                       }
                     }
+                    if (parent) {
+                      prevSiblingByParent.set(parent, step.actionId);
+                    }
+                  }
 
-                    return sortedSteps.map((step) => {
-                      const denom = denominators.get(step.actionId) ?? step.totalInstances;
-                      const pct = denom > 0 ? Math.round((step.completedCount / denom) * 100) : 0;
-                      const missing = denom - step.completedCount;
-                      const label = step.actionId
-                        .replace(/-/g, ' ')
-                        .replace(/\b\w/g, (c) => c.toUpperCase());
-                      return (
-                        <div key={step.actionId} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-3">
-                          <DonutRing pct={pct} size={80} />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-medium text-gray-700 truncate">{label}</p>
-                              {step.requiredBehavior === 'must' && (
-                                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 bg-amber-50">
-                                  mandatory
-                                </span>
-                              )}
-                              {step.requiredBehavior === 'could' && (
-                                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400 bg-white">
-                                  policy
-                                </span>
+                  // Group into top-level and children
+                  const topLevel = sortedSteps.filter((s) => !parentMap.get(s.actionId));
+                  const childrenOf = (parentId: string) =>
+                    sortedSteps.filter((s) => parentMap.get(s.actionId) === parentId);
+
+                  return (
+                    <div className="space-y-0 relative">
+                      {/* Vertical connector line */}
+                      <div className="absolute left-4 top-6 bottom-6 w-0.5 bg-gray-200" />
+
+                      {topLevel.map((step) => {
+                        const denom = denominators.get(step.actionId) ?? step.totalInstances;
+                        const pct = denom > 0 ? Math.round((step.completedCount / denom) * 100) : 0;
+                        const missing = denom - step.completedCount;
+                        const label = titleMap.get(step.actionId) || step.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                        const children = childrenOf(step.actionId);
+                        const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                        const pctColor = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600';
+                        const dotColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-gray-300';
+
+                        return (
+                          <div key={step.actionId} className="relative pl-10 pb-4">
+                            {/* Timeline dot */}
+                            <div className={`absolute left-2.5 top-5 h-3 w-3 rounded-full border-2 border-white ${dotColor} ring-2 ring-gray-200 z-10`} />
+
+                            <div className="rounded-xl border border-gray-200 bg-gray-900 p-4">
+                              {/* Header row */}
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-sm font-semibold text-white">{label}</h5>
+                                <span className={`text-lg font-bold ${pctColor}`}>{pct}%</span>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                              </div>
+
+                              {/* Stats */}
+                              <div className="mt-2 flex items-center gap-2 text-xs">
+                                <span className="text-gray-300">{step.completedCount} of {denom} completed</span>
+                                {missing > 0 && (
+                                  <span className="text-red-400">· {missing} missing</span>
+                                )}
+                              </div>
+
+                              {/* Child steps (sub-actions) */}
+                              {children.length > 0 && (
+                                <div className="mt-3 border-t border-gray-700 pt-3">
+                                  <p className="mb-2 text-[10px] font-medium uppercase text-gray-400">Sub-actions</p>
+                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                    {children.map((child) => {
+                                      const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
+                                      const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
+                                      const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                                      const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                                      const childPctColor = childPct >= 80 ? 'text-green-600' : childPct >= 50 ? 'text-amber-600' : 'text-red-600';
+
+                                      return (
+                                        <div key={child.actionId} className="rounded-lg border border-gray-700 bg-gray-800 p-2.5">
+                                          <div className="flex items-center justify-between">
+                                            <span className={`text-sm font-bold ${childPctColor}`}>{childPct}%</span>
+                                            <span className="text-[10px] text-gray-400">{child.completedCount}/{childDenom}</span>
+                                          </div>
+                                          <p className="mt-0.5 text-xs text-gray-300">{childLabel}</p>
+                                          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-gray-700">
+                                            <div className={`h-full rounded-full ${childBarColor}`} style={{ width: `${childPct}%` }} />
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">
-                              <span className="font-semibold text-gray-900">{step.completedCount}</span>
-                              {' / '}
-                              <span className="font-semibold text-gray-900">{denom}</span>
-                              {' completed'}
-                            </p>
-                            {missing > 0 && (
-                              <p className="text-xs text-red-500 mt-0.5">
-                                {missing} patient{missing !== 1 ? 's' : ''} missing
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </>
         )}
       </Card>
     </>
-  );
-}
-
-function DonutRing({ pct, size = 80 }: { pct: number; size?: number }) {
-  const stroke = 8;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (pct / 100) * circumference;
-  const color = pct >= 80 ? '#0d9488' : pct >= 50 ? '#ca8a04' : '#dc2626';
-
-  return (
-    <svg width={size} height={size} className="flex-shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
-      <circle
-        cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={circumference} strokeDashoffset={offset}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-      />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="text-sm font-bold" fill={color}>
-        {pct}%
-      </text>
-    </svg>
   );
 }
