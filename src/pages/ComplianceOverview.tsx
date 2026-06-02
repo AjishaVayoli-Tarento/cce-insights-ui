@@ -276,7 +276,7 @@ export default function ComplianceOverview() {
                         return (
                           <div key={step.actionId} className="relative pl-10 pb-4">
                             {/* Timeline dot - bold & bright */}
-                            <div className={`absolute left-1 top-5 h-5 w-5 rounded-full ${dotColor} shadow-md z-10 ring-4 ring-white`} />
+                            <div className={`absolute left-1.5 top-5 h-4 w-4 rounded-full ${dotColor} shadow-md z-10 ring-3 ring-white`} />
 
                             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                               {/* Header row */}
