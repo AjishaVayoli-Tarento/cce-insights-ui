@@ -57,12 +57,12 @@ export default function FacilityAnalytics() {
         <MetricCard
           title="Total Facilities"
           description="All healthcare facilities being tracked."
-          value={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          value={formatNumber((facilityMetrics?.trackedFacilities ?? 0) + 2)}
         />
         <MetricCard
           title="Active Facilities"
           description="Facilities with patient enrollments in the period."
-          value={formatNumber((facilityMetrics?.trackedFacilities ?? 0) - 2)}
+          value={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
           bgColor="bg-green-50"
         />
         <MetricCard
@@ -75,7 +75,7 @@ export default function FacilityAnalytics() {
           title="> 90% Compliance"
           description="Facilities with compliance rate above 90%."
           value={formatNumber(facilityMetrics?.above90 ?? 0)}
-          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          denomination={formatNumber((facilityMetrics?.trackedFacilities ?? 0) + 2)}
           bgColor="bg-emerald-50"
         />
       </div>
