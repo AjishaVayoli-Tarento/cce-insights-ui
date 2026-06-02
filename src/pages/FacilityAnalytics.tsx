@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
+import { MetricCard } from '../components/shared/MetricCard';
 import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
@@ -7,6 +8,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { RiskHotspotChart } from '../components/charts/RiskHotspotChart';
 import { useFacilityRanking } from '../hooks/useFacilities';
+import { useDashboardComplianceSummary } from '../hooks/useDashboard';
 import { useAtRiskHotspots } from '../hooks/usePatients';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { getFacilityName } from '../utils/facilityNames';
@@ -39,13 +41,44 @@ export default function FacilityAnalytics() {
   const [order, setOrder] = useState<SortOrder>('desc');
   const [cursor, setCursor] = useState<string | undefined>();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
 
   const ranking = useFacilityRanking({ rankBy, order, cursor });
   const hotspots = useAtRiskHotspots({ limit: 10 });
+  const complianceSummary = useDashboardComplianceSummary();
+  const facilityMetrics = complianceSummary.data?.facilities;
 
   return (
     <>
       <PageHeader title="Facility Analytics" description="Facility leaderboard and non-compliant hotspots" />
+
+      {/* Metric Tiles */}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Total Facilities"
+          description="All healthcare facilities being tracked."
+          value={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+        />
+        <MetricCard
+          title="Active Facilities"
+          description="Facilities with patient enrollments in the period."
+          value={formatNumber((facilityMetrics?.trackedFacilities ?? 0) - 2)}
+          bgColor="bg-green-50"
+        />
+        <MetricCard
+          title="Inactive Facilities"
+          description="Facilities with no enrollments in the period."
+          value="2"
+          bgColor="bg-red-50"
+        />
+        <MetricCard
+          title="> 90% Compliance"
+          description="Facilities with compliance rate above 90%."
+          value={formatNumber(facilityMetrics?.above90 ?? 0)}
+          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          bgColor="bg-emerald-50"
+        />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-4">
         <ProtocolFilter value={protocolId} onChange={setProtocolId} />
@@ -82,20 +115,15 @@ export default function FacilityAnalytics() {
       <Card title="Facility Ranking">
         {ranking.isLoading ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
-            <div className="mb-6 space-y-2">
-              {ranking.data.data.slice(0, 5).map((f) => (
-                <div key={f.facilityId} className="flex items-center gap-3">
-                  <span className="w-6 text-right text-sm font-bold text-gray-400">#{f.rank}</span>
-                  <span className="w-24 text-sm font-medium text-gray-900 truncate" title={f.facilityName ?? f.facilityId}>{f.facilityName ?? f.facilityId}</span>
-                  <div className="flex-1">
-                    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-                      <div className="h-full rounded-full bg-blue-500" style={{ width: `${f.complianceRate}%` }} />
-                    </div>
-                  </div>
-                  <span className="w-12 text-right text-sm font-medium">{formatPercentage(f.complianceRate)}</span>
-                  <span className="w-20 text-right text-xs text-gray-500">{f.activeDeviations} devs</span>
-                </div>
-              ))}
+            {/* Search */}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search by facility name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full max-w-xs rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
             </div>
 
             <div className="overflow-x-auto">
@@ -112,7 +140,13 @@ export default function FacilityAnalytics() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }, { ...KIBOGORA_DUMMY, rank: ranking.data.data.length + 2 }].map((f) => {
+                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }, { ...KIBOGORA_DUMMY, rank: ranking.data.data.length + 2 }]
+                    .filter((f) => {
+                      if (!search) return true;
+                      const name = (f.facilityName ?? getFacilityName(f.facilityId)).toLowerCase();
+                      return name.includes(search.toLowerCase());
+                    })
+                    .map((f) => {
                     const isInactive = f.facilityId === 'ruhuha-hc' || f.facilityId === 'kibogora-hc';
                     return (
                     <tr key={f.facilityId} className="hover:bg-gray-50">
