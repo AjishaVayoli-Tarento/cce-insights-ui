@@ -391,6 +391,8 @@ export interface StepAnalytics {
 export interface ActionOrderEntry {
   actionId: string;
   parentActionId: string | null;
+  type: string | null;
+  title: string | null;
 }
 
 export interface CompletionFunnel {
