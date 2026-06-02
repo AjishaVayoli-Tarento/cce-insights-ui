@@ -86,15 +86,17 @@ export default function PractitionerAnalytics() {
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-4">
-        <ProtocolFilter value={protocolId} onChange={setProtocolId} />
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">Rank By:</span>
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
+          <ProtocolFilter value={protocolId} onChange={setProtocolId} />
+        </div>
+        <div className="flex gap-2 items-end">
           {RANK_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setRankBy(opt.value)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 rankBy === opt.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -102,13 +104,12 @@ export default function PractitionerAnalytics() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">Order:</span>
+        <div className="flex gap-2 items-end">
           {ORDER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setOrder(opt.value)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 order === opt.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -116,13 +117,15 @@ export default function PractitionerAnalytics() {
             </button>
           ))}
         </div>
-        <div className="ml-auto">
+        <div className="flex-1" />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Search Practitioner</label>
           <input
             type="text"
-            placeholder="Search by practitioner name..."
+            placeholder="Enter practitioner name..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-60 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
       </div>

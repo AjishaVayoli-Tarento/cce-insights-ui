@@ -34,6 +34,7 @@ export default function Intelligence() {
       <PageHeader title="Intelligence" description="Delivery analytics — success rates, destinations, active adaptors" />
 
       <div className="mb-4">
+        <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
         <ProtocolFilter value={protocolId} onChange={setProtocolId} />
       </div>
 

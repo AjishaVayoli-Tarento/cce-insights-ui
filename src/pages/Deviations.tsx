@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { useIntelligenceSummary, useDeviationTrends, useDeviationsByAction } from '../hooks/useDeviations';
+import { useActionOrder } from '../hooks/useProtocols';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
 import { getDeviations } from '../api/deviations';
 import { formatNumber } from '../utils/formatters';
@@ -27,6 +28,17 @@ export default function Deviations() {
   const intel = useIntelligenceSummary();
   const trends = useDeviationTrends(interval);
   const byAction = useDeviationsByAction();
+  const actionOrder = useActionOrder(protocolId);
+
+  const actionNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    actionOrder.data?.forEach((a) => {
+      if (a.title) map.set(a.actionId, a.title);
+    });
+    return map;
+  }, [actionOrder.data]);
+
+  const getActionName = (actionId: string) => actionNameMap.get(actionId) || actionId;
 
   const deviationList = useQuery({
     queryKey: ['deviations', 'list', { deviationType, cursor, ...filters }],
@@ -42,6 +54,7 @@ export default function Deviations() {
       <PageHeader title="Deviation Analytics" description="Trends, most-deviated steps, resolution rate" />
 
       <div className="mb-4">
+        <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
         <ProtocolFilter value={protocolId} onChange={setProtocolId} />
       </div>
 
@@ -86,7 +99,7 @@ export default function Deviations() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Action</th>
-                    <th className="pb-2 pr-4">Total</th>
+                    <th className="pb-2 pr-4">Total Deviations</th>
                     <th className="pb-2 pr-4">Overdue</th>
                     <th className="pb-2 pr-4">Missed</th>
                     <th className="pb-2">Order Violation</th>
@@ -95,7 +108,7 @@ export default function Deviations() {
                 <tbody className="divide-y divide-gray-100">
                   {byAction.data.map((a) => (
                     <tr key={a.actionId} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{a.actionId}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{getActionName(a.actionId)}</td>
                       <td className="py-2 pr-4">{formatNumber(a.totalDeviations)}</td>
                       <td className="py-2 pr-4 text-amber-600">{formatNumber(a.overdueCount)}</td>
                       <td className="py-2 pr-4 text-red-600">{formatNumber(a.missedCount)}</td>
@@ -150,7 +163,7 @@ export default function Deviations() {
                           {d.patientId}
                         </Link>
                       </td>
-                      <td className="py-2 pr-4">{d.actionId}</td>
+                      <td className="py-2 pr-4">{getActionName(d.actionId)}</td>
                       <td className="py-2 pr-4">
                         <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
                           {d.deviationType}
