@@ -23,9 +23,9 @@ Major UX refresh focused on binary compliance model (Compliant / Non-Compliant o
 
 - **Service Workflow Compliance** section rewritten as a vertical timeline with light cards (`bg-white`, subtle shadow)
 - Each parent step shows: title (from action-order API), completion %, full-width progress bar, "X of Y completed · Z missing" stats
-- Child steps (sub-actions) rendered as sub-timeline graph nodes (vertical dot + connector pattern, similar to Protocol Journey) instead of grid boxes
-- Bold timeline dots (`h-5 w-5`, solid color, `shadow-md`, `ring-4 ring-white`) — green=100%, amber=≥50%, red=<50%
-- Sub-action dots are 10px with `ring-2 ring-white`, connected by a vertical line
+- Child steps (sub-actions) rendered as collapsible sub-timeline graph nodes (expanded by default, togglable)
+- Timeline dots: `h-4 w-4`, solid color, `shadow-md`, `ring-3 ring-white` — green=≥80%, amber=≥50%, red=<50%
+- Sub-action dots are 8px with thinner progress bars (`h-1`, `w-4/5`) to reduce visual competition with parent steps
 
 ### Dashboard
 
@@ -37,6 +37,7 @@ Major UX refresh focused on binary compliance model (Compliant / Non-Compliant o
 
 - **Source color-coded pills** in Protocol Journey (spice=purple, openmrs=sky, dhis2=teal, fhir=indigo, hl7=pink)
 - Removed mandatory/policy badges from step indicators
+- **Protocol thumbnail images** from Google Drive now display correctly (auto-converts share/uc URLs to thumbnail API)
 
 ### Facility Analytics
 
