@@ -3,14 +3,14 @@ import {
   ChartBarIcon,
   ExclamationTriangleIcon,
   BuildingOffice2Icon,
-  UserGroupIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 
 const NAV_ITEMS = [
   { to: '/ccn', label: 'Dashboard', icon: ChartBarIcon },
   { to: '/ccn/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
-  { to: '/ccn/practitioners', label: 'Practitioners', icon: UserGroupIcon },
   { to: '/ccn/deviations', label: 'Deviations', icon: ExclamationTriangleIcon },
+  { to: '/ccn/disputes', label: 'Disputes', icon: ChatBubbleLeftRightIcon },
 ];
 
 export function CcnSidebar() {
@@ -20,7 +20,7 @@ export function CcnSidebar() {
         <div className="h-7 w-7 rounded-lg bg-teal-600 flex items-center justify-center">
           <span className="text-xs font-bold text-white">C</span>
         </div>
-        <span className="text-sm font-bold text-gray-900">Care Coordination Networks</span>
+        <span className="text-sm font-bold text-gray-900">Care Coordination Networks Admin</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
