@@ -207,13 +207,13 @@ export default function CcnDeviations() {
                           {d.deviationType}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-gray-600">SLA Breached</td>
+                      <td className="py-2 pr-4 text-red-600 font-medium">SLA Breached</td>
                       <td className="py-2 pr-4 text-gray-600">{d.facilityId}</td>
                       <td className="py-2 pr-4 text-gray-600">{formatDate(d.detectedAt)}</td>
                       <td className="py-2">
                         <button
                           onClick={handleDispute}
-                          className="rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 transition-colors"
+                          className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 transition-colors"
                         >
                           Request Follow-up
                         </button>
