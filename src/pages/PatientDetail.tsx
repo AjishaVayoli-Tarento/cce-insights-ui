@@ -370,7 +370,6 @@ export default function PatientDetail() {
                         <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                           <th className="pb-2 pr-4">Step</th>
                           <th className="pb-2 pr-4">Source</th>
-                          <th className="pb-2 pr-4">Practitioner</th>
                           <th className="pb-2 pr-4">Facility</th>
                           <th className="pb-2">Initiated On</th>
                         </tr>
@@ -386,7 +385,6 @@ export default function PatientDetail() {
                                 </span>
                               ) : '—'}
                             </td>
-                            <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
                             <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
                             <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
                           </tr>
@@ -407,7 +405,6 @@ export default function PatientDetail() {
                         <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                           <th className="pb-2 pr-4">Step</th>
                           <th className="pb-2 pr-4">Source</th>
-                          <th className="pb-2 pr-4">Practitioner</th>
                           <th className="pb-2 pr-4">Facility</th>
                           <th className="pb-2">Closed On</th>
                         </tr>
@@ -423,7 +420,6 @@ export default function PatientDetail() {
                                 </span>
                               ) : '—'}
                             </td>
-                            <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
                             <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
                             <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
                           </tr>
