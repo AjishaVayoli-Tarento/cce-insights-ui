@@ -2,10 +2,14 @@ import { NavLink } from 'react-router-dom';
 import {
   ChartBarIcon,
   ExclamationTriangleIcon,
+  BuildingOffice2Icon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
 const NAV_ITEMS = [
   { to: '/ccn', label: 'Dashboard', icon: ChartBarIcon },
+  { to: '/ccn/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
+  { to: '/ccn/practitioners', label: 'Practitioners', icon: UserGroupIcon },
   { to: '/ccn/deviations', label: 'Deviations', icon: ExclamationTriangleIcon },
 ];
 

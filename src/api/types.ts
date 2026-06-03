@@ -449,6 +449,8 @@ export interface FacilityRanking {
   complianceRate: number;
   activeDeviations: number;
   totalEvents: number;
+  outboundEvents: number;
+  inboundEvents: number;
   patientsFromHIE: number;
 }
 
