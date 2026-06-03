@@ -61,8 +61,9 @@ export default function PatientDetail() {
   const outboundEvents = useMemo(() => {
     if (!events.data) return [];
     return events.data.filter((e) =>
-      e.actionId?.toLowerCase().includes('anc') &&
-      e.actionId?.toLowerCase().includes('initiated')
+      e.actionId?.toLowerCase().includes('referral') &&
+      !e.actionId?.toLowerCase().includes('consultation') &&
+      !e.actionId?.toLowerCase().includes('ack')
     );
   }, [events.data]);
 
@@ -347,7 +348,7 @@ export default function PatientDetail() {
           )}
 
           {activeTab === 'outbound' && (
-            <Card title="Outbound Events — ANC Visit Initiated" className="mt-4">
+            <Card title="Outbound Events — ANC Visit Referral Initiated" className="mt-4">
               {events.isLoading ? <LoadingSpinner /> : events.error ? <ErrorAlert error={events.error} /> : outboundEvents.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
@@ -384,13 +385,14 @@ export default function PatientDetail() {
                   </table>
                 </div>
               ) : (
-                <p className="py-4 text-center text-sm text-gray-400">No outbound events found for ANC Visit Initiated steps.</p>
+                <p className="py-4 text-center text-sm text-gray-400">No outbound events found for ANC Visit Referral Initiated steps.</p>
               )}
             </Card>
           )}
         </div>
       )}
 
+      {activeTab === 'journey' && (
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Deviations">
           {deviations.isLoading ? <LoadingSpinner /> : deviations.error ? <ErrorAlert error={deviations.error} /> : deviations.data && deviations.data.length > 0 ? (
@@ -437,6 +439,7 @@ export default function PatientDetail() {
           )}
         </Card>
       </div>
+      )}
     </>
   );
 }

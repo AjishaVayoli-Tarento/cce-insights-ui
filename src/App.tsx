@@ -21,6 +21,7 @@ const Intelligence = lazy(() => import('./pages/Intelligence'));
 const CcnDeviations = lazy(() => import('./pages/CcnDeviations'));
 const CcnFacilityAnalytics = lazy(() => import('./pages/CcnFacilityAnalytics'));
 const CcnPractitionerAnalytics = lazy(() => import('./pages/CcnPractitionerAnalytics'));
+const CcnDisputes = lazy(() => import('./pages/CcnDisputes'));
 
 export function App() {
   const location = useLocation();
@@ -54,6 +55,7 @@ export function App() {
               <Route path="/ccn/deviations" element={<CcnDeviations />} />
               <Route path="/ccn/facilities" element={<CcnFacilityAnalytics />} />
               <Route path="/ccn/practitioners" element={<CcnPractitionerAnalytics />} />
+              <Route path="/ccn/disputes" element={<CcnDisputes />} />
             </Routes>
           </Suspense>
         </main>
