@@ -357,22 +357,16 @@ export default function PatientDetail() {
                     <thead>
                       <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                         <th className="pb-2 pr-4">Step</th>
-                        <th className="pb-2 pr-4">Status</th>
                         <th className="pb-2 pr-4">Source</th>
                         <th className="pb-2 pr-4">Practitioner</th>
                         <th className="pb-2 pr-4">Facility</th>
-                        <th className="pb-2">Completed</th>
+                        <th className="pb-2">Initiated On</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {outboundSteps.map((step, idx) => (
                         <tr key={`outbound-${idx}`} className="hover:bg-gray-50">
                           <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
-                          <td className="py-2 pr-4">
-                            <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                              Completed
-                            </span>
-                          </td>
                           <td className="py-2 pr-4">
                             {step.source ? (
                               <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
