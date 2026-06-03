@@ -99,17 +99,17 @@ export default function PatientDetail() {
           <div className="space-y-3">
             {tracking.data.map((p) => {
               const docArtifact = p.relatedArtifact?.find(a => a.type === 'documentation');
-              const thumbArtifact = p.relatedArtifact?.find(a => a.type === 'thumbnail');
+              const thumbnailUrl = docArtifact?.extension?.find(e => e.url === 'http://openphc.org/fhir/thumbnail')?.valueCode;
               const displayTitle = p.protocolTitle || p.protocolCanonical;
               return (
               <div key={p.protocolInstanceId} className="rounded-lg border border-gray-200 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    {thumbArtifact && (
+                    {thumbnailUrl && (
                       <a href={docArtifact?.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                         <img
-                          src={toDirectImageUrl(thumbArtifact.url)}
-                          alt={thumbArtifact.display}
+                          src={toDirectImageUrl(thumbnailUrl)}
+                          alt={docArtifact?.display || 'Protocol thumbnail'}
                           className="h-10 w-10 rounded object-cover border border-gray-200"
                         />
                       </a>

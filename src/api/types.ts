@@ -142,11 +142,17 @@ export interface TimelineEntry {
   effectiveDateTime?: string;
 }
 
+export interface RelatedArtifactExtension {
+  url: string;
+  valueCode: string;
+}
+
 export interface RelatedArtifact {
   type: string;
   label: string;
   display: string;
   url: string;
+  extension?: RelatedArtifactExtension[];
 }
 
 export interface ProtocolTracking {
