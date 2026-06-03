@@ -5,7 +5,7 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations, usePatientEvents } from '../hooks/usePatients';
+import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
 import { formatPercentage } from '../utils/formatters';
 import { STATUS_COLORS, STATE_COLORS } from '../utils/colors';
@@ -56,16 +56,18 @@ export default function PatientDetail() {
   const timeline = usePatientTimeline(patientId);
   const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
-  const events = usePatientEvents(patientId);
 
-  const outboundEvents = useMemo(() => {
-    if (!events.data) return [];
-    return events.data.filter((e) =>
-      e.actionId?.toLowerCase().includes('referral') &&
-      !e.actionId?.toLowerCase().includes('consultation') &&
-      !e.actionId?.toLowerCase().includes('ack')
+  const outboundSteps = useMemo(() => {
+    if (!timeline.data) return [];
+    return timeline.data.protocols.flatMap((proto) =>
+      (proto.journey ?? []).filter((step) =>
+        step.actionId?.toLowerCase().includes('referral') &&
+        !step.actionId?.toLowerCase().includes('consultation') &&
+        !step.actionId?.toLowerCase().includes('ack') &&
+        step.status === 'COMPLETED'
+      )
     );
-  }, [events.data]);
+  }, [timeline.data]);
 
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
   const deviationActionIds = useMemo(() => {
@@ -349,43 +351,45 @@ export default function PatientDetail() {
 
           {activeTab === 'outbound' && (
             <Card title="Outbound Events — ANC Visit Referral Initiated" className="mt-4">
-              {events.isLoading ? <LoadingSpinner /> : events.error ? <ErrorAlert error={events.error} /> : outboundEvents.length > 0 ? (
+              {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : outboundSteps.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                        <th className="pb-2 pr-4">Action</th>
-                        <th className="pb-2 pr-4">Event Type</th>
-                        <th className="pb-2 pr-4">Source</th>
+                        <th className="pb-2 pr-4">Step</th>
                         <th className="pb-2 pr-4">Status</th>
+                        <th className="pb-2 pr-4">Source</th>
+                        <th className="pb-2 pr-4">Practitioner</th>
                         <th className="pb-2 pr-4">Facility</th>
-                        <th className="pb-2">Event Time</th>
+                        <th className="pb-2">Completed</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {outboundEvents.map((e) => (
-                        <tr key={e.eventId} className="hover:bg-gray-50">
-                          <td className="py-2 pr-4 font-medium text-gray-900">{e.actionId}</td>
-                          <td className="py-2 pr-4 text-gray-600">{e.type}</td>
+                      {outboundSteps.map((step, idx) => (
+                        <tr key={`outbound-${idx}`} className="hover:bg-gray-50">
+                          <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
                           <td className="py-2 pr-4">
-                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(e.source)}`}>
-                              {e.source}
+                            <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                              Completed
                             </span>
                           </td>
                           <td className="py-2 pr-4">
-                            <span className={`text-xs font-bold ${e.processingStatus === 'MATCHED' ? 'text-green-600' : e.processingStatus === 'DUPLICATE' ? 'text-amber-600' : 'text-red-600'}`}>
-                              {e.processingStatus}
-                            </span>
+                            {step.source ? (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                {step.source}
+                              </span>
+                            ) : '—'}
                           </td>
-                          <td className="py-2 pr-4 text-gray-600">{e.facilityId || '—'}</td>
-                          <td className="py-2 text-gray-600">{formatDateTime(e.eventTime)}</td>
+                          <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
+                          <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
+                          <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="py-4 text-center text-sm text-gray-400">No outbound events found for ANC Visit Referral Initiated steps.</p>
+                <p className="py-4 text-center text-sm text-gray-400">No completed referral initiated steps found.</p>
               )}
             </Card>
           )}

@@ -20,7 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function CcnDisputes() {
   return (
     <>
-      <PageHeader title="Disputes" description="Disputes raised on sub-action deviations" />
+      <PageHeader title="Disputes" description="Disputes raised on deviations" />
 
       <Card title="Dispute List">
         <div className="overflow-x-auto">
