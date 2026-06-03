@@ -124,6 +124,9 @@ export default function Intelligence() {
         ) : actionOrder.error ? (
           <ErrorAlert error={actionOrder.error} />
         ) : actionOrder.data && actionOrder.data.filter((a) => a.type === 'fire-event').length > 0 ? (
+          (() => {
+            const nameMap = new Map(actionOrder.data.map((a) => [a.actionId, a.title || a.actionId]));
+            return (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
@@ -139,13 +142,15 @@ export default function Intelligence() {
                   <tr key={action.actionId} className="hover:bg-gray-50">
                     <td className="py-2 pr-4 text-gray-400">{idx + 1}</td>
                     <td className="py-2 pr-4 font-medium text-gray-900">{action.title || action.actionId}</td>
-                    <td className="py-2 pr-4 text-gray-600">{action.actionId}</td>
-                    <td className="py-2 text-gray-600">{action.parentActionId ?? '—'}</td>
+                    <td className="py-2 pr-4 text-gray-600">{nameMap.get(action.actionId) ?? action.actionId}</td>
+                    <td className="py-2 text-gray-600">{action.parentActionId ? (nameMap.get(action.parentActionId) ?? action.parentActionId) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+            );
+          })()
         ) : (
           <p className="py-4 text-center text-sm text-gray-400">No intelligence actions defined for this protocol.</p>
         )}
