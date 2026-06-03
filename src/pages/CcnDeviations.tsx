@@ -75,7 +75,7 @@ export default function CcnDeviations() {
   );
 
   const handleDispute = () => {
-    setDisputeMsg('Notification Triggered!');
+    setDisputeMsg('Facility Notified.');
     setTimeout(() => setDisputeMsg(null), 3000);
   };
 
@@ -84,7 +84,7 @@ export default function CcnDeviations() {
       <PageHeader title="Deviation Analytics" description="ANC Visit Referral Closure deviations" />
 
       {disputeMsg && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-5 py-3 shadow-lg">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-5 py-3 shadow-lg">
           <span className="text-sm font-medium text-green-800">{disputeMsg}</span>
           <button
             onClick={() => setDisputeMsg(null)}
@@ -191,6 +191,7 @@ export default function CcnDeviations() {
                     <th className="pb-2 pr-4">Patient</th>
                     <th className="pb-2 pr-4">Action</th>
                     <th className="pb-2 pr-4">Type</th>
+                    <th className="pb-2 pr-4">Reason</th>
                     <th className="pb-2 pr-4">Facility</th>
                     <th className="pb-2 pr-4">Detected</th>
                     <th className="pb-2"></th>
@@ -206,6 +207,7 @@ export default function CcnDeviations() {
                           {d.deviationType}
                         </span>
                       </td>
+                      <td className="py-2 pr-4 text-gray-600">SLA Breached</td>
                       <td className="py-2 pr-4 text-gray-600">{d.facilityId}</td>
                       <td className="py-2 pr-4 text-gray-600">{formatDate(d.detectedAt)}</td>
                       <td className="py-2">
