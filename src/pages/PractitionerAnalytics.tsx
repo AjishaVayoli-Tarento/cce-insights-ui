@@ -153,7 +153,7 @@ export default function PractitionerAnalytics() {
                       <td className="py-2 pr-4 font-medium text-gray-900">
                         {formatPractitionerName(p.practitionerRef, p.practitionerName)}
                       </td>
-                      <td className="py-2 pr-4 text-gray-600">{p.facilityId ?? '—'}</td>
+                      <td className="py-2 pr-4 text-gray-600">{p.facilityName ?? p.facilityId ?? '—'}</td>
                       <td className="py-2 pr-4">{formatNumber(p.totalPatients)}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${

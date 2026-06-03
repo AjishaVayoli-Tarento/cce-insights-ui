@@ -470,6 +470,7 @@ export interface PractitionerRanking {
   practitionerRef: string;
   practitionerName: string | null;
   facilityId: string | null;
+  facilityName: string | null;
   totalPatients: number;
   complianceRate: number;
   totalSteps: number;
