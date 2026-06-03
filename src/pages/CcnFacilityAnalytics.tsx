@@ -38,7 +38,7 @@ const KIBOGORA_DUMMY: FacilityRanking = {
   patientsFromHIE: 0,
 };
 
-export default function FacilityAnalytics() {
+export default function CcnFacilityAnalytics() {
   const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
   const [order, setOrder] = useState<SortOrder>('desc');

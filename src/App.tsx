@@ -19,6 +19,8 @@ const IngestionPipeline = lazy(() => import('./pages/IngestionPipeline'));
 const Exports = lazy(() => import('./pages/Exports'));
 const Intelligence = lazy(() => import('./pages/Intelligence'));
 const CcnDeviations = lazy(() => import('./pages/CcnDeviations'));
+const CcnFacilityAnalytics = lazy(() => import('./pages/CcnFacilityAnalytics'));
+const CcnPractitionerAnalytics = lazy(() => import('./pages/CcnPractitionerAnalytics'));
 
 export function App() {
   const location = useLocation();
@@ -50,6 +52,8 @@ export function App() {
               {/* CCN View */}
               <Route path="/ccn" element={<Dashboard />} />
               <Route path="/ccn/deviations" element={<CcnDeviations />} />
+              <Route path="/ccn/facilities" element={<CcnFacilityAnalytics />} />
+              <Route path="/ccn/practitioners" element={<CcnPractitionerAnalytics />} />
             </Routes>
           </Suspense>
         </main>
