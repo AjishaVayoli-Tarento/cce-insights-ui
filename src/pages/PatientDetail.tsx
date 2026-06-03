@@ -69,6 +69,17 @@ export default function PatientDetail() {
     );
   }, [timeline.data]);
 
+  const inboundSteps = useMemo(() => {
+    if (!timeline.data) return [];
+    return timeline.data.protocols.flatMap((proto) =>
+      (proto.journey ?? []).filter((step) =>
+        step.actionId?.toLowerCase().includes('referral') &&
+        step.actionId?.toLowerCase().includes('ack') &&
+        step.status === 'COMPLETED'
+      )
+    );
+  }, [timeline.data]);
+
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
   const deviationActionIds = useMemo(() => {
     const ids = new Set<string>();
@@ -208,7 +219,7 @@ export default function PatientDetail() {
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Outbound Events
+              Referral Events
             </button>
           </div>
 
@@ -350,42 +361,81 @@ export default function PatientDetail() {
           )}
 
           {activeTab === 'outbound' && (
-            <Card title="Outbound Events — ANC Visit Referral Initiated" className="mt-4">
-              {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : outboundSteps.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                        <th className="pb-2 pr-4">Step</th>
-                        <th className="pb-2 pr-4">Source</th>
-                        <th className="pb-2 pr-4">Practitioner</th>
-                        <th className="pb-2 pr-4">Facility</th>
-                        <th className="pb-2">Initiated On</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {outboundSteps.map((step, idx) => (
-                        <tr key={`outbound-${idx}`} className="hover:bg-gray-50">
-                          <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
-                          <td className="py-2 pr-4">
-                            {step.source ? (
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
-                                {step.source}
-                              </span>
-                            ) : '—'}
-                          </td>
-                          <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
-                          <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
-                          <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
+            <>
+              <Card title="Outbound Events — Referral Initiated" className="mt-4">
+                {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : outboundSteps.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                          <th className="pb-2 pr-4">Step</th>
+                          <th className="pb-2 pr-4">Source</th>
+                          <th className="pb-2 pr-4">Practitioner</th>
+                          <th className="pb-2 pr-4">Facility</th>
+                          <th className="pb-2">Initiated On</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="py-4 text-center text-sm text-gray-400">No completed referral initiated steps found.</p>
-              )}
-            </Card>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {outboundSteps.map((step, idx) => (
+                          <tr key={`outbound-${idx}`} className="hover:bg-gray-50">
+                            <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
+                            <td className="py-2 pr-4">
+                              {step.source ? (
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                  {step.source}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
+                            <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
+                            <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-gray-400">No completed referral initiated steps found.</p>
+                )}
+              </Card>
+
+              <Card title="Inbound Events — Referral Closure" className="mt-4">
+                {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : inboundSteps.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                          <th className="pb-2 pr-4">Step</th>
+                          <th className="pb-2 pr-4">Source</th>
+                          <th className="pb-2 pr-4">Practitioner</th>
+                          <th className="pb-2 pr-4">Facility</th>
+                          <th className="pb-2">Closed On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {inboundSteps.map((step, idx) => (
+                          <tr key={`inbound-${idx}`} className="hover:bg-gray-50">
+                            <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
+                            <td className="py-2 pr-4">
+                              {step.source ? (
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                  {step.source}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-600">{step.practitioner || '—'}</td>
+                            <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
+                            <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-gray-400">No completed referral closure steps found.</p>
+                )}
+              </Card>
+            </>
           )}
         </div>
       )}
