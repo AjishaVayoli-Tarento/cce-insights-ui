@@ -258,7 +258,7 @@ export default function PatientDetail() {
                       // Root step: hide if any later root step has actually been worked on
                       for (let j = i + 1; j < arr.length; j++) {
                         const s = arr[j];
-                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING') return false;
+                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING' && s.status !== 'DUE') return false;
                       }
                     }
                     return true;
