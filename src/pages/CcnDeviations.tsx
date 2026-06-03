@@ -83,17 +83,6 @@ export default function CcnDeviations() {
     <>
       <PageHeader title="Deviation Analytics" description="ANC Visit Referral Closure deviations" />
 
-      {disputeMsg && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-5 py-3 shadow-lg">
-          <span className="text-sm font-medium text-green-800">{disputeMsg}</span>
-          <button
-            onClick={() => setDisputeMsg(null)}
-            className="text-green-600 hover:text-green-800 text-lg font-bold leading-none"
-          >
-            &times;
-          </button>
-        </div>
-      )}
 
       {byAction.isLoading ? <LoadingSpinner /> : byAction.error ? <ErrorAlert error={byAction.error} /> : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -162,7 +151,19 @@ export default function CcnDeviations() {
         </Card>
       </div>
 
-      <Card title="Deviation List" className="mt-6">
+      <div className="relative mt-6">
+        {disputeMsg && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 px-5 py-2 shadow-lg">
+            <span className="text-sm font-medium text-green-800">{disputeMsg}</span>
+            <button
+              onClick={() => setDisputeMsg(null)}
+              className="text-green-600 hover:text-green-800 text-lg font-bold leading-none"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+      <Card title="Deviation List">
         <div className="mb-4 flex gap-2">
           {[{ value: '', label: 'All Types' }, { value: 'OVERDUE', label: 'Overdue' }, { value: 'MISSED', label: 'Missed' }, { value: 'ORDER_VIOLATION', label: 'Order Violation' }].map((t) => (
             <button
@@ -236,6 +237,7 @@ export default function CcnDeviations() {
           </>
         )}
       </Card>
+      </div>
     </>
   );
 }
