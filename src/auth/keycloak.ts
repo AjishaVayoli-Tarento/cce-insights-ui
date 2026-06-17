@@ -18,8 +18,15 @@ let keycloak: Keycloak | undefined;
 export async function initAuth(): Promise<void> {
   if (!authEnabled) return;
 
+  // The UI, Keycloak (/auth) and the gateway (/v1) are served on the SAME domain, so by
+  // default derive the Keycloak URL from the current origin (e.g. https://cce.moh.gov.rw/auth).
+  // This keeps the built image environment-agnostic — the same image works on UAT and PROD.
+  // VITE_KEYCLOAK_URL is only needed as an override (e.g. local dev against a remote Keycloak).
+  const keycloakUrl =
+    import.meta.env.VITE_KEYCLOAK_URL || `${window.location.origin}/auth`;
+
   keycloak = new Keycloak({
-    url: import.meta.env.VITE_KEYCLOAK_URL, // e.g. https://cceuat.moh.gov.rw/auth
+    url: keycloakUrl,
     realm: import.meta.env.VITE_KEYCLOAK_REALM || 'cce',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'cce-insights-ui',
   });
