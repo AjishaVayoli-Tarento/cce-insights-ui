@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { DateRangeFilter } from './components/shared/DateRangeFilter';
+import { authEnabled, getUsername, logout } from './auth/keycloak';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ComplianceOverview = lazy(() => import('./pages/ComplianceOverview'));
@@ -25,6 +26,18 @@ export function App() {
       <div className="ml-56 flex-1">
         <header className="sticky top-0 z-20 flex items-center justify-end gap-4 border-b border-gray-200 bg-white px-6 py-2.5">
           <DateRangeFilter />
+          {authEnabled && (
+            <div className="flex items-center gap-3 border-l border-gray-200 pl-4">
+              <span className="text-sm text-gray-600">{getUsername()}</span>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
         </header>
         <main className="p-6">
           <Suspense fallback={<LoadingSpinner />}>

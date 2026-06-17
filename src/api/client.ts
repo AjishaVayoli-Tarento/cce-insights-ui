@@ -1,4 +1,5 @@
 import type { ErrorResponse, PaginatedResponse } from './types';
+import { authEnabled, getToken } from '../auth/keycloak';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -24,10 +25,10 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token =
-      import.meta.env.VITE_AUTH_TOKEN ||
-      sessionStorage.getItem('access_token');
+  if (authEnabled) {
+    // Live Keycloak access token (kept fresh by initAuth's refresh loop). VITE_AUTH_TOKEN is a
+    // static fallback for local testing without a login.
+    const token = getToken() || import.meta.env.VITE_AUTH_TOKEN;
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
