@@ -54,7 +54,20 @@ jobs:
         echo "Version tag for this build: ${VERSION_TAG}"
 
     - name: Build container image
-      run: docker build -t ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} .
+      # Bake the Keycloak config so the SPA performs OIDC login and sends a Bearer token to
+      # the gateway-protected /v1/insights API. Without VITE_AUTH_ENABLED=true the auth code
+      # is tree-shaken out at build time.
+      #
+      # Configurable via repo/org Actions Variables (Settings -> Secrets and variables ->
+      # Actions -> Variables); each falls back to the RW UAT default if the variable is unset:
+      #   VITE_AUTH_ENABLED, VITE_KEYCLOAK_URL, VITE_KEYCLOAK_REALM, VITE_KEYCLOAK_CLIENT_ID
+      run: |
+        docker build \
+          --build-arg VITE_AUTH_ENABLED="${{ vars.VITE_AUTH_ENABLED || 'true' }}" \
+          --build-arg VITE_KEYCLOAK_URL="${{ vars.VITE_KEYCLOAK_URL || 'https://cceuat.moh.gov.rw/auth' }}" \
+          --build-arg VITE_KEYCLOAK_REALM="${{ vars.VITE_KEYCLOAK_REALM || 'cce' }}" \
+          --build-arg VITE_KEYCLOAK_CLIENT_ID="${{ vars.VITE_KEYCLOAK_CLIENT_ID || 'cce-insights-ui' }}" \
+          -t ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} .
 
     - name: Tag image as latest
       run: docker tag ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} ${IMAGE_URI}:${LATEST_TAG}
