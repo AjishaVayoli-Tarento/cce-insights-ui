@@ -70,6 +70,7 @@ jobs:
           --build-arg VITE_KEYCLOAK_URL="${{ vars.VITE_KEYCLOAK_URL || '' }}" \
           --build-arg VITE_KEYCLOAK_REALM="${{ vars.VITE_KEYCLOAK_REALM || 'cce' }}" \
           --build-arg VITE_KEYCLOAK_CLIENT_ID="${{ vars.VITE_KEYCLOAK_CLIENT_ID || 'cce-insights-ui' }}" \
+          --build-arg VITE_ROUTER_BASE="${{ vars.VITE_ROUTER_BASE || '/insights' }}" \
           -t ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} .
 
     - name: Tag image as latest
