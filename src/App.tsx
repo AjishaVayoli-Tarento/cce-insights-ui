@@ -4,6 +4,8 @@ import { Sidebar } from './components/layout/Sidebar';
 import { CcnSidebar } from './components/layout/CcnSidebar';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { DateRangeFilter } from './components/shared/DateRangeFilter';
+import { useAuth } from './auth/AuthContext';
+import { getEnv } from './env';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ComplianceOverview = lazy(() => import('./pages/ComplianceOverview'));
@@ -23,8 +25,10 @@ const CcnFacilityAnalytics = lazy(() => import('./pages/CcnFacilityAnalytics'));
 const CcnPractitionerAnalytics = lazy(() => import('./pages/CcnPractitionerAnalytics'));
 const CcnDisputes = lazy(() => import('./pages/CcnDisputes'));
 
-export function App() {
+function ProtectedLayout() {
   const location = useLocation();
+  const { logout } = useAuth();
+  const authEnabled = getEnv('VITE_AUTH_ENABLED') === 'true';
   const isCcn = location.pathname.startsWith('/ccn');
 
   return (
@@ -33,6 +37,14 @@ export function App() {
       <div className="ml-56 flex-1">
         <header className="sticky top-0 z-20 flex items-center justify-end gap-4 border-b border-gray-200 bg-white px-6 py-2.5">
           <DateRangeFilter />
+          {authEnabled && (
+            <button
+              onClick={logout}
+              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+            >
+              Sign out
+            </button>
+          )}
         </header>
         <main className="p-6">
           <Suspense fallback={<LoadingSpinner />}>
@@ -61,5 +73,13 @@ export function App() {
         </main>
       </div>
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/*" element={<ProtectedLayout />} />
+    </Routes>
   );
 }
