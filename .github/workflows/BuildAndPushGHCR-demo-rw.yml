@@ -54,7 +54,23 @@ jobs:
         echo "Version tag for this build: ${VERSION_TAG}"
 
     - name: Build container image
-      run: docker build -t ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} .
+      # Bake the Keycloak config so the SPA performs OIDC login and sends a Bearer token to
+      # the gateway-protected /v1/insights API. Without VITE_AUTH_ENABLED=true the auth code
+      # is tree-shaken out at build time.
+      #
+      # These values are the SAME across environments, so they are safe to bake:
+      #   - realm + client are identical on UAT and PROD
+      #   - the Keycloak URL is DERIVED at runtime from the browser origin (same domain as the
+      #     UI), so it is intentionally left empty here -> the same image works on UAT and PROD.
+      # All are overridable via repo/org Actions Variables (Settings -> Secrets and variables
+      # -> Actions -> Variables) if a build ever needs a fixed/remote Keycloak URL.
+      run: |
+        docker build \
+          --build-arg VITE_AUTH_ENABLED="${{ vars.VITE_AUTH_ENABLED || 'true' }}" \
+          --build-arg VITE_KEYCLOAK_URL="${{ vars.VITE_KEYCLOAK_URL || '' }}" \
+          --build-arg VITE_KEYCLOAK_REALM="${{ vars.VITE_KEYCLOAK_REALM || 'cce' }}" \
+          --build-arg VITE_KEYCLOAK_CLIENT_ID="${{ vars.VITE_KEYCLOAK_CLIENT_ID || 'cce-insights-ui' }}" \
+          -t ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} .
 
     - name: Tag image as latest
       run: docker tag ${IMAGE_URI}:${{ steps.version.outputs.version_tag }} ${IMAGE_URI}:${LATEST_TAG}
