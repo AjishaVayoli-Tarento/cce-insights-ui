@@ -1,6 +1,8 @@
 import type { ErrorResponse, PaginatedResponse } from './types';
+import keycloak from '../auth/keycloak';
+import { getEnv } from '../env';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = getEnv('VITE_API_BASE_URL', '');
 
 export class ApiError extends Error {
   constructor(
@@ -22,13 +24,19 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
   return url.toString();
 }
 
-function authHeaders(): Record<string, string> {
+async function authHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token =
-      import.meta.env.VITE_AUTH_TOKEN ||
-      sessionStorage.getItem('access_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (getEnv('VITE_AUTH_ENABLED') === 'true') {
+    try {
+      await keycloak.updateToken(30);
+    } catch {
+      // Refresh token expired — send back to Keycloak login.
+      keycloak.login();
+      return headers;
+    }
+    if (keycloak.token) {
+      headers['Authorization'] = `Bearer ${keycloak.token}`;
+    }
   }
   return headers;
 }
@@ -39,7 +47,6 @@ async function handleResponse(res: Response) {
       code: 'UNKNOWN',
       message: `HTTP ${res.status}`,
     }));
-    // API wraps errors as { error: { code, message } }
     const body = raw.error ?? raw;
     throw new ApiError(res.status, body);
   }
@@ -50,7 +57,7 @@ export async function apiGet<T>(
   path: string,
   params?: Record<string, string | undefined>,
 ): Promise<T> {
-  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const res = await fetch(buildUrl(path, params), { headers: await authHeaders() });
   const json = await handleResponse(res);
   return json.data !== undefined ? json.data : json;
 }
@@ -59,7 +66,7 @@ export async function apiGetPaginated<T>(
   path: string,
   params?: Record<string, string | undefined>,
 ): Promise<PaginatedResponse<T>> {
-  const res = await fetch(buildUrl(path, params), { headers: authHeaders() });
+  const res = await fetch(buildUrl(path, params), { headers: await authHeaders() });
   const json = await handleResponse(res);
   const p = json.pagination;
   return {
