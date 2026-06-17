@@ -9,6 +9,24 @@ RUN npm ci --ignore-scripts
 
 # Copy source and build
 COPY . .
+
+# Build-time config (Vite inlines VITE_* into the bundle). Pass per-environment via
+# --build-arg. Example for RW UAT:
+#   --build-arg VITE_AUTH_ENABLED=true \
+#   --build-arg VITE_KEYCLOAK_URL=https://cceuat.moh.gov.rw/auth \
+#   --build-arg VITE_KEYCLOAK_REALM=cce \
+#   --build-arg VITE_KEYCLOAK_CLIENT_ID=cce-insights-ui
+ARG VITE_API_BASE_URL=""
+ARG VITE_AUTH_ENABLED="false"
+ARG VITE_KEYCLOAK_URL=""
+ARG VITE_KEYCLOAK_REALM="cce"
+ARG VITE_KEYCLOAK_CLIENT_ID="cce-insights-ui"
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_AUTH_ENABLED=$VITE_AUTH_ENABLED \
+    VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL \
+    VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
+    VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
+
 RUN npm run build
 
 # ── Stage 2: Serve ──────────────────────────────────────────
