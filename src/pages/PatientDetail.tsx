@@ -7,7 +7,8 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
 import { formatDate, formatDateTime } from '../utils/dates';
-import { formatPercentage } from '../utils/formatters';
+import { formatPercentage, formatPractitionerName } from '../utils/formatters';
+import { useFacilityName } from '../hooks/useFacilityName';
 import { STATUS_COLORS, STATE_COLORS } from '../utils/colors';
 import type { ProtocolInstanceStatus, StepState, JourneyStep } from '../api/types';
 
@@ -55,6 +56,7 @@ export default function PatientDetail() {
   const timeline = usePatientTimeline(patientId);
   const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
+  const facilityName = useFacilityName();
 
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
   const deviationActionIds = useMemo(() => {
@@ -291,10 +293,10 @@ export default function PatientDetail() {
                               </span>
                             )}
                             {step.practitioner && (
-                              <span className="text-xs text-gray-500">Practitioner: {step.practitioner}</span>
+                              <span className="text-xs text-gray-500">Practitioner: {formatPractitionerName(step.practitioner)}</span>
                             )}
                             {(step.facilityName || step.facilityId) && (
-                              <span className="text-xs text-gray-500">Facility: {step.facilityName || step.facilityId}</span>
+                              <span className="text-xs text-gray-500">Facility: {step.facilityName || facilityName(step.facilityId)}</span>
                             )}
                           </div>
                           {isDeviation && step.description && (

@@ -12,6 +12,7 @@ import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { useIntelligenceSummary, useDeviationTrends, useDeviationsByAction } from '../hooks/useDeviations';
 import { useActionOrder } from '../hooks/useProtocols';
 import { useGlobalFilters } from '../hooks/useGlobalFilters';
+import { useFacilityName } from '../hooks/useFacilityName';
 import { getDeviations } from '../api/deviations';
 import { formatNumber } from '../utils/formatters';
 import { formatDate } from '../utils/dates';
@@ -29,6 +30,7 @@ export default function Deviations() {
   const trends = useDeviationTrends(interval);
   const byAction = useDeviationsByAction();
   const actionOrder = useActionOrder(protocolId);
+  const facilityName = useFacilityName();
 
   const actionNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -169,7 +171,7 @@ export default function Deviations() {
                           {d.deviationType}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-gray-600">{d.facilityId}</td>
+                      <td className="py-2 pr-4 text-gray-600">{facilityName(d.facilityId)}</td>
                       <td className="py-2 text-gray-600">{formatDate(d.detectedAt)}</td>
                     </tr>
                   ))}

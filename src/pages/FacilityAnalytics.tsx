@@ -10,29 +10,9 @@ import { useFacilityRanking } from '../hooks/useFacilities';
 import { useDashboardComplianceSummary } from '../hooks/useDashboard';
 import { useAtRiskHotspots } from '../hooks/usePatients';
 import { formatNumber, formatPercentage } from '../utils/formatters';
-import { getFacilityName } from '../utils/facilityNames';
+import { useFacilityName } from '../hooks/useFacilityName';
 import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
-import type { RankBy, SortOrder, FacilityRanking } from '../api/types';
-
-const RUHUHA_DUMMY: FacilityRanking = {
-  rank: 0,
-  facilityId: 'ruhuha-hc',
-  totalEnrollments: 0,
-  complianceRate: 0,
-  activeDeviations: 0,
-  totalEvents: 0,
-  patientsFromHIE: 0,
-};
-
-const KIBOGORA_DUMMY: FacilityRanking = {
-  rank: 0,
-  facilityId: 'kibogora-hc',
-  totalEnrollments: 0,
-  complianceRate: 0,
-  activeDeviations: 0,
-  totalEvents: 0,
-  patientsFromHIE: 0,
-};
+import type { RankBy, SortOrder } from '../api/types';
 
 export default function FacilityAnalytics() {
   const [protocolId, setProtocolId] = useState('');
@@ -46,6 +26,7 @@ export default function FacilityAnalytics() {
   const hotspots = useAtRiskHotspots({ limit: 10 });
   const complianceSummary = useDashboardComplianceSummary();
   const facilityMetrics = complianceSummary.data?.facilities;
+  const facilityName = useFacilityName();
 
   return (
     <>
@@ -56,26 +37,28 @@ export default function FacilityAnalytics() {
         <MetricCard
           title="Total Facilities"
           description="All healthcare facilities being tracked."
-          value={formatNumber((facilityMetrics?.trackedFacilities ?? 0) + 2)}
-        />
-        <MetricCard
-          title="Active Facilities"
-          description="Facilities with patient enrollments in the period."
           value={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
-          bgColor="bg-green-50"
-        />
-        <MetricCard
-          title="Inactive Facilities"
-          description="Facilities with no enrollments in the period."
-          value="2"
-          bgColor="bg-red-50"
         />
         <MetricCard
           title="> 90% Compliance"
           description="Facilities with compliance rate above 90%."
           value={formatNumber(facilityMetrics?.above90 ?? 0)}
-          denomination={formatNumber((facilityMetrics?.trackedFacilities ?? 0) + 2)}
-          bgColor="bg-emerald-50"
+          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          bgColor="bg-green-50"
+        />
+        <MetricCard
+          title="75–90% Compliance"
+          description="Facilities with compliance rate between 75% and 90%."
+          value={formatNumber(facilityMetrics?.between75And90 ?? 0)}
+          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          bgColor="bg-amber-50"
+        />
+        <MetricCard
+          title="< 75% Compliance"
+          description="Facilities with compliance rate below 75%."
+          value={formatNumber(facilityMetrics?.below75 ?? 0)}
+          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          bgColor="bg-red-50"
         />
       </div>
 
@@ -135,23 +118,20 @@ export default function FacilityAnalytics() {
                     <th className="pb-2 pr-4">Tracked Patients</th>
                     <th className="pb-2 pr-4">Compliance</th>
                     <th className="pb-2 pr-4">Deviations</th>
-                    <th className="pb-2 pr-4">Events</th>
-                    <th className="pb-2">Status</th>
+                    <th className="pb-2">Events</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {[...ranking.data.data, { ...RUHUHA_DUMMY, rank: ranking.data.data.length + 1 }, { ...KIBOGORA_DUMMY, rank: ranking.data.data.length + 2 }]
+                  {ranking.data.data
                     .filter((f) => {
                       if (!search) return true;
-                      const name = (f.facilityName ?? getFacilityName(f.facilityId)).toLowerCase();
+                      const name = (f.facilityName ?? facilityName(f.facilityId)).toLowerCase();
                       return name.includes(search.toLowerCase());
                     })
-                    .map((f) => {
-                    const isInactive = f.facilityId === 'ruhuha-hc' || f.facilityId === 'kibogora-hc';
-                    return (
+                    .map((f) => (
                     <tr key={f.facilityId} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
-                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? getFacilityName(f.facilityId)}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? facilityName(f.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -163,19 +143,9 @@ export default function FacilityAnalytics() {
                         </span>
                       </td>
                       <td className="py-2 pr-4">{formatNumber(f.activeDeviations)}</td>
-                      <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
-                      <td className="py-2">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          isInactive
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-green-50 text-green-700'
-                        }`}>
-                          {isInactive ? 'Inactive' : 'Active'}
-                        </span>
-                      </td>
+                      <td className="py-2">{formatNumber(f.totalEvents)}</td>
                     </tr>
-                    );
-                  })}
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -216,7 +186,7 @@ export default function FacilityAnalytics() {
                     const barColor = compliancePct >= 80 ? 'bg-green-500' : compliancePct >= 50 ? 'bg-amber-500' : 'bg-red-500';
                     return (
                       <tr key={h.facilityId} className="hover:bg-gray-50">
-                        <td className="py-2.5 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
+                        <td className="py-2.5 pr-4 font-medium text-gray-900">{h.facilityName ?? facilityName(h.facilityId)}</td>
                         <td className="py-2.5 pr-4">{formatNumber(h.totalPatients)}</td>
                         <td className="py-2.5 pr-4 w-48">
                           <div className="flex items-center gap-2">

@@ -13,7 +13,8 @@ import {
   useEventSummary, useEventTrends, useEventsByResourceType,
   useEventsByFacility, useEventsByPractitioner, useEventsBySource, useProcessingQuality,
 } from '../hooks/useEventVolume';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { formatNumber, formatPercentage, formatPractitionerName } from '../utils/formatters';
+import { useFacilityName } from '../hooks/useFacilityName';
 import { INTERVAL_OPTIONS } from '../config';
 
 type Tab = 'resource-type' | 'facility' | 'practitioner' | 'source' | 'processing-quality';
@@ -33,6 +34,7 @@ export default function EventVolume() {
   const byPractitioner = useEventsByPractitioner({ cursor: practCursor });
   const bySource = useEventsBySource();
   const quality = useProcessingQuality();
+  const facilityName = useFacilityName();
 
   const events = summary.data;
 
@@ -121,7 +123,7 @@ export default function EventVolume() {
                       <tbody className="divide-y divide-gray-100">
                         {byFacility.data.data.map((f) => (
                           <tr key={f.facilityId} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityId}</td>
+                            <td className="py-2 pr-4 font-medium text-gray-900">{facilityName(f.facilityId)}</td>
                             <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
                             <td className="py-2 text-gray-600">{f.byResourceType.map((r) => `${r.resourceType}: ${r.count}`).join(', ')}</td>
                           </tr>
@@ -150,7 +152,7 @@ export default function EventVolume() {
                       <thead>
                         <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                           <th className="pb-2 pr-4">Practitioner</th>
-                          <th className="pb-2 pr-4">Display Name</th>
+                          <th className="pb-2 pr-4">Reference</th>
                           <th className="pb-2 pr-4">Facility</th>
                           <th className="pb-2">Total Events</th>
                         </tr>
@@ -158,9 +160,9 @@ export default function EventVolume() {
                       <tbody className="divide-y divide-gray-100">
                         {byPractitioner.data.data.map((p) => (
                           <tr key={p.practitionerRef} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{p.practitionerRef}</td>
-                            <td className="py-2 pr-4 text-gray-600">{p.practitionerDisplay || '—'}</td>
-                            <td className="py-2 pr-4 text-gray-600">{p.facilityId}</td>
+                            <td className="py-2 pr-4 font-medium text-gray-900">{formatPractitionerName(p.practitionerRef, p.practitionerDisplay)}</td>
+                            <td className="py-2 pr-4 text-gray-600">{p.practitionerRef}</td>
+                            <td className="py-2 pr-4 text-gray-600">{facilityName(p.facilityId)}</td>
                             <td className="py-2">{formatNumber(p.totalEvents)}</td>
                           </tr>
                         ))}

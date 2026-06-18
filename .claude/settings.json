@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"function \\\\|export default\\\\|=> {$\\\\|const.*= \\(\" src/pages/PatientDetail.tsx)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(git --no-pager diff --stat)"
+    ]
+  }
+}
