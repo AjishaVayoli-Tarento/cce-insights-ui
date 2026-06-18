@@ -7,7 +7,8 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { usePractitionerRanking } from '../hooks/usePractitioners';
 import { useDashboardComplianceSummary } from '../hooks/useDashboard';
-import { formatNumber, formatPercentage } from '../utils/formatters';
+import { useFacilityName } from '../hooks/useFacilityName';
+import { formatNumber, formatPercentage, formatPractitionerName } from '../utils/formatters';
 import type { PractitionerRankBy, SortOrder } from '../api/types';
 
 const RANK_OPTIONS: { value: PractitionerRankBy; label: string }[] = [
@@ -20,13 +21,6 @@ const ORDER_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: 'asc', label: 'Lowest First' },
 ];
 
-function formatPractitionerName(ref: string, display: string | null): string {
-  if (display) return display;
-  // Extract ID from reference like "Practitioner/HLC-PRAC-2025-00005"
-  const parts = ref.split('/');
-  return parts.length > 1 ? parts[1] : ref;
-}
-
 export default function PractitionerAnalytics() {
   const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<PractitionerRankBy>('complianceRate');
@@ -38,6 +32,7 @@ export default function PractitionerAnalytics() {
   const ranking = usePractitionerRanking({ rankBy, order, limit: 200 });
   const complianceSummary = useDashboardComplianceSummary();
   const practitionerMetrics = complianceSummary.data?.practitioners;
+  const facilityName = useFacilityName();
 
   const filtered = useMemo(() => {
     if (!ranking.data) return [];
@@ -153,7 +148,7 @@ export default function PractitionerAnalytics() {
                       <td className="py-2 pr-4 font-medium text-gray-900">
                         {formatPractitionerName(p.practitionerRef, p.practitionerName)}
                       </td>
-                      <td className="py-2 pr-4 text-gray-600">{p.facilityId ?? '—'}</td>
+                      <td className="py-2 pr-4 text-gray-600">{facilityName(p.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(p.totalPatients)}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${

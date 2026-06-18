@@ -8,6 +8,7 @@ import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { useEventTrends } from '../hooks/useEventVolume';
 import { useDeviationTrends } from '../hooks/useDeviations';
 import { useDashboardOverview, useDashboardComplianceSummary } from '../hooks/useDashboard';
+import { useFacilityName } from '../hooks/useFacilityName';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import {
   ArrowTrendingUpIcon,
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const eventTrends = useEventTrends('daily');
   const overview = useDashboardOverview();
   const complianceSummary = useDashboardComplianceSummary();
+  const facilityName = useFacilityName();
 
   const isLoading = overview.isLoading || complianceSummary.isLoading;
 
@@ -104,7 +106,7 @@ export default function Dashboard() {
           <Card title="Top 3 Facilities" subtitle="by compliance rate">
             <div className="space-y-3">
               {dash.topFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" displayName={facilityName(f.facilityId)} />
               ))}
               {(!dash.topFacilities || dash.topFacilities.length === 0) && (
                 <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
@@ -114,7 +116,7 @@ export default function Dashboard() {
           <Card title="Bottom 3 Facilities" subtitle="by compliance rate">
             <div className="space-y-3">
               {dash.bottomFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" displayName={facilityName(f.facilityId)} />
               ))}
               {(!dash.bottomFacilities || dash.bottomFacilities.length === 0) && (
                 <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
@@ -177,10 +179,11 @@ export default function Dashboard() {
   );
 }
 
-function FacilityRow({ facility, index, variant }: {
+function FacilityRow({ facility, index, variant, displayName }: {
   facility: { facilityId: string; facilityName?: string; complianceRate: number; activeDeviations: number; totalEvents: number; totalEnrollments: number };
   index: number;
   variant: 'top' | 'bottom';
+  displayName: string;
 }) {
   const Icon = variant === 'top' ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
   const accentColor = variant === 'top' ? 'text-green-600' : 'text-red-600';
@@ -193,7 +196,7 @@ function FacilityRow({ facility, index, variant }: {
           {index + 1}
         </span>
         <div>
-          <p className="text-sm font-medium text-gray-800">{facility.facilityName || facility.facilityId}</p>
+          <p className="text-sm font-medium text-gray-800">{facility.facilityName || displayName}</p>
           <p className="text-xs text-gray-500">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
         </div>
       </div>
