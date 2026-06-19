@@ -250,33 +250,14 @@ export default function PatientDetail() {
                     <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
                     <span className="text-xs text-gray-600">Deviation</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-300 bg-white" />
-                    <span className="text-xs text-gray-600">Not started</span>
-                  </div>
-
                 </div>
 
                 <div className="space-y-0">
-                  {(proto.journey ?? []).filter((step, i, arr) => {
+                  {(proto.journey ?? []).filter((step) => {
                     // Demo: show sub-steps only (hide root-level steps)
                     if ((step.depth ?? 0) === 0) return false;
-                    if (step.status !== 'NOT_STARTED') return true;
-                    const depth = step.depth ?? 0;
-                    if (depth > 0) {
-                      // Sub-step: hide if parent is COMPLETED
-                      let parentStatus = '';
-                      for (let j = i - 1; j >= 0; j--) {
-                        if ((arr[j].depth ?? 0) < depth) { parentStatus = arr[j].status; break; }
-                      }
-                      if (parentStatus === 'COMPLETED') return false;
-                    } else {
-                      // Root step: hide if any later root step has actually been worked on
-                      for (let j = i + 1; j < arr.length; j++) {
-                        const s = arr[j];
-                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING' && s.status !== 'DUE') return false;
-                      }
-                    }
+                    // Demo: hide steps that haven't started yet
+                    if (step.status === 'NOT_STARTED') return false;
                     return true;
                   }).map((step, i, arr) => {
                     const hasDeviation = deviationActionIds.has(step.actionId);
