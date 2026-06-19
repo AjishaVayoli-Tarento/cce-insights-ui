@@ -35,18 +35,6 @@ const JOURNEY_STATUS: Record<JourneyDisplayStatus, { bg: string; text: string; d
   DEVIATION:   { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Deviation' },
 };
 
-const SOURCE_COLORS: Record<string, string> = {
-  spice: 'bg-purple-100 text-purple-700',
-  openmrs: 'bg-sky-100 text-sky-700',
-  dhis2: 'bg-teal-100 text-teal-700',
-  fhir: 'bg-indigo-100 text-indigo-700',
-  hl7: 'bg-pink-100 text-pink-700',
-};
-
-function getSourceColor(source: string): string {
-  return SOURCE_COLORS[source.toLowerCase()] ?? 'bg-gray-100 text-gray-700';
-}
-
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = id ?? '';
@@ -285,11 +273,6 @@ export default function PatientDetail() {
                             {step.completionStatus === 'ON_TIME' && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
                                 ON TIME
-                              </span>
-                            )}
-                            {step.source && (
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
-                                {step.source}
                               </span>
                             )}
                             {step.practitioner && (
