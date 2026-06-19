@@ -5,7 +5,6 @@ import {
   ExclamationTriangleIcon,
   SignalIcon,
   BuildingOffice2Icon,
-  UserGroupIcon,
   CogIcon,
 } from '@heroicons/react/24/outline';
 
@@ -13,7 +12,6 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: ChartBarIcon },
   { to: '/compliance', label: 'Compliance', icon: ClipboardDocumentCheckIcon },
   { to: '/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
-  { to: '/practitioners', label: 'Practitioners', icon: UserGroupIcon },
   { to: '/deviations', label: 'Deviations', icon: ExclamationTriangleIcon },
   { to: '/compliance/patients', label: 'Patients', icon: ClipboardDocumentCheckIcon },
   { to: '/events', label: 'Events', icon: SignalIcon },
