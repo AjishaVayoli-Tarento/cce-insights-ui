@@ -5,23 +5,17 @@ import {
   ExclamationTriangleIcon,
   SignalIcon,
   BuildingOffice2Icon,
-  UserGroupIcon,
   CogIcon,
-  ArrowDownTrayIcon,
-  BoltIcon,
 } from '@heroicons/react/24/outline';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: ChartBarIcon },
   { to: '/compliance', label: 'Compliance', icon: ClipboardDocumentCheckIcon },
   { to: '/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
-  { to: '/practitioners', label: 'Practitioners', icon: UserGroupIcon },
   { to: '/deviations', label: 'Deviations', icon: ExclamationTriangleIcon },
-  { to: '/intelligence', label: 'Intelligence', icon: BoltIcon },
   { to: '/compliance/patients', label: 'Patients', icon: ClipboardDocumentCheckIcon },
   { to: '/events', label: 'Events', icon: SignalIcon },
   { to: '/ingestion', label: 'Ingestion', icon: CogIcon },
-  { to: '/exports', label: 'Exports', icon: ArrowDownTrayIcon },
 ];
 
 export function Sidebar() {
