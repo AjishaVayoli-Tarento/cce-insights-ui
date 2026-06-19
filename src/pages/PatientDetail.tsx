@@ -259,6 +259,8 @@ export default function PatientDetail() {
 
                 <div className="space-y-0">
                   {(proto.journey ?? []).filter((step, i, arr) => {
+                    // Demo: show sub-steps only (hide root-level steps)
+                    if ((step.depth ?? 0) === 0) return false;
                     if (step.status !== 'NOT_STARTED') return true;
                     const depth = step.depth ?? 0;
                     if (depth > 0) {
