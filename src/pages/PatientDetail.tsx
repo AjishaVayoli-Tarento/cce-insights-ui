@@ -253,13 +253,7 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="space-y-0">
-                  {(proto.journey ?? []).filter((step) => {
-                    // Demo: show sub-steps only (hide root-level steps)
-                    if ((step.depth ?? 0) === 0) return false;
-                    // Demo: hide steps that haven't started yet
-                    if (step.status === 'NOT_STARTED') return false;
-                    return true;
-                  }).map((step, i, arr) => {
+                  {(proto.journey ?? []).map((step, i, arr) => {
                     const hasDeviation = deviationActionIds.has(step.actionId);
                     const displayStatus: JourneyDisplayStatus = hasDeviation && step.status !== 'COMPLETED' && step.status !== 'SKIPPED'
                       ? 'DEVIATION'
