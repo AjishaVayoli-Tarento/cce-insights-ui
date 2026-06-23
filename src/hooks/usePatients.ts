@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getPatientTimeline, getPatientProtocolTracking,
   getPatientProtocolTrackingDetail, getPatientEvents, getPatientDeviations,
-  getAtRiskHotspots, getRepeatDeviations,
+  getPatientIntelligenceDeliveries, getAtRiskHotspots, getRepeatDeviations,
 } from '../api/patients';
 import { useGlobalFilters } from './useGlobalFilters';
 
@@ -47,6 +47,14 @@ export function usePatientDeviations(patientId: string, params?: { deviationType
   return useQuery({
     queryKey: ['patients', 'deviations', patientId, { ...restParams, ...effectiveFilters }],
     queryFn: () => getPatientDeviations(patientId, { ...restParams, ...effectiveFilters }),
+    enabled: !!patientId,
+  });
+}
+
+export function usePatientIntelligenceDeliveries(patientId: string) {
+  return useQuery({
+    queryKey: ['patients', 'intelligence-deliveries', patientId],
+    queryFn: () => getPatientIntelligenceDeliveries(patientId),
     enabled: !!patientId,
   });
 }

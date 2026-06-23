@@ -2,7 +2,8 @@ import { apiGet } from './client';
 import { apiGetPaginated } from './client';
 import type {
   PatientTimeline, ProtocolTracking, ProtocolTrackingDetail,
-  PatientEvent, PatientDeviation, AtRiskHotspot, RepeatDeviationPatient,
+  PatientEvent, PatientDeviation, PatientIntelligenceDelivery,
+  AtRiskHotspot, RepeatDeviationPatient,
 } from './types';
 
 export function getPatientTimeline(
@@ -56,6 +57,10 @@ export function getPatientDeviations(
     startDate: params?.startDate,
     endDate: params?.endDate,
   });
+}
+
+export function getPatientIntelligenceDeliveries(patientId: string): Promise<PatientIntelligenceDelivery[]> {
+  return apiGet(`/patients/${encodeURIComponent(patientId)}/intelligence-deliveries`);
 }
 
 export function getAtRiskHotspots(params?: {

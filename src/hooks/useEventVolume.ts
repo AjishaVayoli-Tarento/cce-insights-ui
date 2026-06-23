@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getEventSummary, getEventTrends, getEventsByResourceType, getEventsByFacility, getEventsByPractitioner, getEventsBySource, getProcessingQuality } from '../api/events';
+import { getEventSummary, getEventTrends, getEventsByResourceType, getEventsByFacility, getEventsByPractitioner, getEventsBySource, getProcessingQuality, getEventKpis } from '../api/events';
 import { useGlobalFilters } from './useGlobalFilters';
 
 const POLLING_INTERVAL = Number(import.meta.env.VITE_POLLING_INTERVAL || 60000);
@@ -58,6 +58,14 @@ export function useProcessingQuality() {
   return useQuery({
     queryKey: ['events', 'processing-quality', filters],
     queryFn: () => getProcessingQuality(filters),
+  });
+}
+
+export function useEventKpis() {
+  return useQuery({
+    queryKey: ['events', 'kpis'],
+    queryFn: () => getEventKpis(),
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 

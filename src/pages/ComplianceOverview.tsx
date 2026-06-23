@@ -7,7 +7,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { useProtocolComplianceSummary } from '../hooks/useComplianceSummary';
 import { useStepAnalytics, useActionOrder } from '../hooks/useProtocols';
 import { useProtocols, useFacilityLookup } from '../hooks/useLookups';
-import { formatNumber, formatRate } from '../utils/formatters';
+import { formatNumber, formatPercentage } from '../utils/formatters';
 
 /* Collapsible sub-actions panel for the Service Workflow Compliance timeline */
 function SubActionsPanel({
@@ -142,7 +142,7 @@ export default function ComplianceOverview() {
               <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
               <MetricCard title="Compliant Patients" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />
               <MetricCard title="Non-Compliant Patients" value={formatNumber(data.totalEnrollments - data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with at least one deviation (overdue, missed, or order violation) under this protocol." />
-              <MetricCard title="Compliance Rate" value={formatRate(data.complianceRate)} description="Percentage of compliant patients out of total tracked patients under this protocol." />
+              <MetricCard title="Compliance Rate" value={formatPercentage(data.complianceRate)} description="Percentage of compliant patients out of total tracked patients under this protocol." />
             </div>
 
             <div className="mt-1">

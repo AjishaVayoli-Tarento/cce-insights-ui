@@ -1,7 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { getFacilityRanking } from '../api/facilities';
+import {
+  getFacilityRanking, getFacilityActivitySummary,
+  getFacilityReference, getAdoptionKpis,
+} from '../api/facilities';
 import { useGlobalFilters } from './useGlobalFilters';
 import type { RankBy, SortOrder } from '../api/types';
+
+export function useFacilityActivitySummary() {
+  const filters = useGlobalFilters();
+  return useQuery({
+    queryKey: ['facilities', 'activity-summary', filters],
+    queryFn: () => getFacilityActivitySummary({ startDate: filters.startDate, endDate: filters.endDate }),
+    refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
+  });
+}
+
+export function useFacilityReference() {
+  return useQuery({
+    queryKey: ['facilities', 'reference'],
+    queryFn: () => getFacilityReference(),
+    staleTime: 60 * 60 * 1000, // reference table is static — refresh hourly
+  });
+}
+
+export function useAdoptionKpis() {
+  const filters = useGlobalFilters();
+  return useQuery({
+    queryKey: ['facilities', 'adoption', filters],
+    queryFn: () => getAdoptionKpis({ startDate: filters.startDate, endDate: filters.endDate }),
+  });
+}
 
 export function useFacilityRanking(params?: {
   protocolDefinitionId?: string;
