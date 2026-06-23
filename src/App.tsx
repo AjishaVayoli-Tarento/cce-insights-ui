@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { LoadingSpinner } from './components/shared/LoadingSpinner';
 import { DateRangeFilter } from './components/shared/DateRangeFilter';
-import { authEnabled, getUsername, logout } from './auth/keycloak';
+import { authEnabled, logout } from './auth/keycloak';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ComplianceOverview = lazy(() => import('./pages/ComplianceOverview'));
@@ -28,7 +28,6 @@ export function App() {
           <DateRangeFilter />
           {authEnabled && (
             <div className="flex items-center gap-3 border-l border-gray-200 pl-4">
-              <span className="text-sm text-gray-600">{getUsername()}</span>
               <button
                 type="button"
                 onClick={() => logout()}
