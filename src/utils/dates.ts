@@ -1,11 +1,28 @@
-import { format, formatDistanceToNow, differenceInDays, subDays } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, subDays } from 'date-fns';
 
+// Filters send UTC day boundaries (T00:00:00Z..T23:59:59Z) and the API filters/stores
+// timestamps in UTC, so dates are rendered in UTC to stay consistent with the selected
+// range. Rendering in the browser's local timezone would shift a UTC timestamp onto an
+// adjacent calendar day (e.g. 2026-06-22T20:00:00Z -> "Jun 23" in IST).
 export function formatDate(dateStr: string): string {
-  return format(new Date(dateStr), 'MMM d, yyyy');
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 export function formatDateTime(dateStr: string): string {
-  return format(new Date(dateStr), 'MMM d, yyyy HH:mm');
+  return new Date(dateStr).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  });
 }
 
 export function formatRelative(dateStr: string): string {
