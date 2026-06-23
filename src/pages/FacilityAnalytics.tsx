@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { ProtocolFilter } from '../components/shared/ProtocolFilter';
@@ -6,13 +6,14 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
-import { useFacilityRanking } from '../hooks/useFacilities';
-import { useDashboardComplianceSummary } from '../hooks/useDashboard';
+import { useFacilityRanking, useFacilityActivitySummary, useAdoptionKpis } from '../hooks/useFacilities';
 import { useAtRiskHotspots } from '../hooks/usePatients';
 import { formatNumber, formatPercentage } from '../utils/formatters';
-import { useFacilityName } from '../hooks/useFacilityName';
+import { getFacilityName } from '../utils/facilityNames';
 import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
 import type { RankBy, SortOrder } from '../api/types';
+
+const ADOPTION_PAGE_SIZE = 20;
 
 export default function FacilityAnalytics() {
   const [protocolId, setProtocolId] = useState('');
@@ -21,46 +22,126 @@ export default function FacilityAnalytics() {
   const [cursor, setCursor] = useState<string | undefined>();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [adoptionPage, setAdoptionPage] = useState(1);
 
-  const ranking = useFacilityRanking({ rankBy, order, cursor });
+  const ranking = useFacilityRanking({ rankBy, order, cursor, protocolDefinitionId: protocolId || undefined });
   const hotspots = useAtRiskHotspots({ limit: 10 });
-  const complianceSummary = useDashboardComplianceSummary();
-  const facilityMetrics = complianceSummary.data?.facilities;
-  const facilityName = useFacilityName();
+  const activitySummary = useFacilityActivitySummary();
+  const adoption = useAdoptionKpis();
+
+  useEffect(() => { setAdoptionPage(1); }, [adoption.data]);
 
   return (
     <>
       <PageHeader title="Facility Analytics" description="Facility leaderboard and non-compliant hotspots" />
 
       {/* Metric Tiles */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {activitySummary.error && <ErrorAlert error={activitySummary.error} />}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard
           title="Total Facilities"
-          description="All healthcare facilities being tracked."
-          value={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          description="All in-scope healthcare facilities in the facility reference list."
+          value={activitySummary.isLoading ? '…' : activitySummary.error ? '—' : formatNumber(activitySummary.data?.totalInScope ?? 0)}
         />
         <MetricCard
-          title="> 90% Compliance"
-          description="Facilities with compliance rate above 90%."
-          value={formatNumber(facilityMetrics?.above90 ?? 0)}
-          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          title="Active Facilities"
+          description="Facilities that transmitted at least one HIE event within the selected period."
+          value={activitySummary.isLoading ? '…' : activitySummary.error ? '—' : formatNumber(activitySummary.data?.activeFacilities ?? 0)}
           bgColor="bg-green-50"
         />
         <MetricCard
-          title="75–90% Compliance"
-          description="Facilities with compliance rate between 75% and 90%."
-          value={formatNumber(facilityMetrics?.between75And90 ?? 0)}
-          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
-          bgColor="bg-amber-50"
-        />
-        <MetricCard
-          title="< 75% Compliance"
-          description="Facilities with compliance rate below 75%."
-          value={formatNumber(facilityMetrics?.below75 ?? 0)}
-          denomination={formatNumber(facilityMetrics?.trackedFacilities ?? 0)}
+          title="Inactive Facilities"
+          description="In-scope facilities with no HIE events transmitted within the selected period."
+          value={activitySummary.isLoading ? '…' : activitySummary.error ? '—' : formatNumber(activitySummary.data?.inactiveFacilities ?? 0)}
           bgColor="bg-red-50"
         />
       </div>
+
+      <Card title="e-Buzima Adoption" description="Per-facility expected vs. actual patient reporting — sorted by worst under-reporters first" className="mb-6">
+        {adoption.isLoading ? <LoadingSpinner /> : adoption.error ? <ErrorAlert error={adoption.error} /> : adoption.data ? (
+          adoption.data.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-500">No adoption data available for this period</p>
+          ) : (() => {
+            const totalAdoptionPages = Math.max(1, Math.ceil(adoption.data.length / ADOPTION_PAGE_SIZE));
+            const pagedRows = adoption.data.slice((adoptionPage - 1) * ADOPTION_PAGE_SIZE, adoptionPage * ADOPTION_PAGE_SIZE);
+            return (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full table-fixed text-sm">
+                    <colgroup>
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '13%' }} />
+                      <col style={{ width: '13%' }} />
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '14%' }} />
+                    </colgroup>
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                        <th className="pb-2 pr-4">Facility</th>
+                        <th className="pb-2 pr-4">Expected / Day</th>
+                        <th className="pb-2 pr-4">Actual Patients</th>
+                        <th className="pb-2 pr-4">Adoption Rate</th>
+                        <th className="pb-2 pr-4">Reporting Gap</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {pagedRows.map((f) => {
+                        const rate = f.adoptionRate;
+                        const rateColor = rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-amber-700' : 'text-red-700';
+                        const barColor = rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                        return (
+                          <tr key={getFacilityName(f.facilityId)} className="hover:bg-gray-50">
+                            <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">{f.facilityName || getFacilityName(f.facilityId)}</td>
+                            <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedPatientsPerDay)}</td>
+                            <td className="py-2.5 pr-4">{formatNumber(f.actualPatients)}</td>
+                            <td className="py-2.5 pr-4">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
+                                </div>
+                                <span className={`w-10 shrink-0 text-xs font-semibold ${rateColor}`}>
+                                  {rate}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className={`py-2.5 pr-4 font-medium ${f.reportingGap > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {f.reportingGap > 0 ? `−${formatNumber(f.reportingGap)}` : `+${formatNumber(Math.abs(f.reportingGap))}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalAdoptionPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
+                    <p className="text-sm text-gray-600">
+                      Showing {(adoptionPage - 1) * ADOPTION_PAGE_SIZE + 1}–{Math.min(adoptionPage * ADOPTION_PAGE_SIZE, adoption.data.length)} of {adoption.data.length} facilities
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAdoptionPage((p) => Math.max(1, p - 1))}
+                        disabled={adoptionPage === 1}
+                        className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">Page {adoptionPage} of {totalAdoptionPages}</span>
+                      <button
+                        onClick={() => setAdoptionPage((p) => Math.min(totalAdoptionPages, p + 1))}
+                        disabled={adoptionPage >= totalAdoptionPages}
+                        className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()
+        ) : null}
+      </Card>
 
       <div className="mb-4 flex flex-wrap items-end gap-4">
         <div>
@@ -95,7 +176,7 @@ export default function FacilityAnalytics() {
         </div>
         <div className="flex-1" />
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Search Facility</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Search Facility <span className="font-normal text-gray-400">(current page)</span></label>
           <input
             type="text"
             placeholder="Enter facility name..."
@@ -118,20 +199,20 @@ export default function FacilityAnalytics() {
                     <th className="pb-2 pr-4">Tracked Patients</th>
                     <th className="pb-2 pr-4">Compliance</th>
                     <th className="pb-2 pr-4">Deviations</th>
-                    <th className="pb-2">Events</th>
+                    <th className="pb-2">Events (period)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {ranking.data.data
                     .filter((f) => {
                       if (!search) return true;
-                      const name = (f.facilityName ?? facilityName(f.facilityId)).toLowerCase();
+                      const name = (f.facilityName ?? getFacilityName(f.facilityId)).toLowerCase();
                       return name.includes(search.toLowerCase());
                     })
                     .map((f) => (
-                    <tr key={f.facilityId} className="hover:bg-gray-50">
+                    <tr key={getFacilityName(f.facilityId)} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
-                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? facilityName(f.facilityId)}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? getFacilityName(f.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -143,7 +224,7 @@ export default function FacilityAnalytics() {
                         </span>
                       </td>
                       <td className="py-2 pr-4">{formatNumber(f.activeDeviations)}</td>
-                      <td className="py-2">{formatNumber(f.totalEvents)}</td>
+                      <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -166,49 +247,58 @@ export default function FacilityAnalytics() {
         ) : null}
       </Card>
 
-      <Card title="Non-Compliant Hotspots" description="Facilities with the highest non-compliant patient counts" className="mt-6">
+      <Card title="Non-Compliant Hotspots" description="Facilities ranked by non-compliant patient count" className="mt-6">
         {hotspots.isLoading ? <LoadingSpinner /> : hotspots.error ? <ErrorAlert error={hotspots.error} /> : hotspots.data ? (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                    <th className="pb-2 pr-4">Facility</th>
-                    <th className="pb-2 pr-4">Total</th>
-                    <th className="pb-2 pr-4">Compliance Rate</th>
-                    <th className="pb-2 pr-4">Compliant</th>
-                    <th className="pb-2">Non-Compliant</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {hotspots.data.data.map((h) => {
-                    const compliancePct = h.onTrack.percentage;
-                    const barColor = compliancePct >= 80 ? 'bg-green-500' : compliancePct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-                    return (
-                      <tr key={h.facilityId} className="hover:bg-gray-50">
-                        <td className="py-2.5 pr-4 font-medium text-gray-900">{h.facilityName ?? facilityName(h.facilityId)}</td>
-                        <td className="py-2.5 pr-4">{formatNumber(h.totalPatients)}</td>
-                        <td className="py-2.5 pr-4 w-48">
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-                              <div className={`h-full rounded-full ${barColor}`} style={{ width: `${compliancePct}%` }} />
+          (() => {
+            const withNonCompliant = hotspots.data.data.filter(
+              (h) => (h.atRisk.count + h.nonCompliant.count) > 0
+            );
+            if (withNonCompliant.length === 0) {
+              return <p className="py-8 text-center text-sm text-green-600">All tracked patients are compliant — no hotspots detected</p>;
+            }
+            return (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                      <th className="pb-2 pr-4">Facility</th>
+                      <th className="pb-2 pr-4">Total</th>
+                      <th className="pb-2 pr-4">Compliance Rate</th>
+                      <th className="pb-2 pr-4">Compliant</th>
+                      <th className="pb-2">Non-Compliant</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {withNonCompliant.map((h) => {
+                      const compliancePct = h.onTrack.percentage;
+                      const barColor = compliancePct >= 80 ? 'bg-green-500' : compliancePct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                      return (
+                        <tr key={h.facilityId} className="hover:bg-gray-50">
+                          <td className="py-2.5 pr-4 font-medium text-gray-900">{h.facilityName ?? h.facilityId}</td>
+                          <td className="py-2.5 pr-4">{formatNumber(h.totalPatients)}</td>
+                          <td className="py-2.5 pr-4 w-48">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${compliancePct}%` }} />
+                              </div>
+                              <span className={`text-xs font-semibold ${compliancePct >= 80 ? 'text-green-700' : compliancePct >= 50 ? 'text-amber-700' : 'text-red-700'}`}>
+                                {formatPercentage(compliancePct)}
+                              </span>
                             </div>
-                            <span className={`text-xs font-semibold ${compliancePct >= 80 ? 'text-green-700' : compliancePct >= 50 ? 'text-amber-700' : 'text-red-700'}`}>
-                              {formatPercentage(compliancePct)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 pr-4 text-green-600">{h.onTrack.count}</td>
-                        <td className="py-2.5 text-red-600">{h.atRisk.count + h.nonCompliant.count}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+                          </td>
+                          <td className="py-2.5 pr-4 text-green-600">{h.onTrack.count}</td>
+                          <td className="py-2.5 font-semibold text-red-600">{h.atRisk.count + h.nonCompliant.count}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()
         ) : null}
       </Card>
+
     </>
   );
 }

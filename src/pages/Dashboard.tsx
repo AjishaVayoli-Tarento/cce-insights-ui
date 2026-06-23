@@ -8,7 +8,7 @@ import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { useEventTrends } from '../hooks/useEventVolume';
 import { useDeviationTrends } from '../hooks/useDeviations';
 import { useDashboardOverview, useDashboardComplianceSummary } from '../hooks/useDashboard';
-import { useFacilityName } from '../hooks/useFacilityName';
+import { useFacilityActivitySummary } from '../hooks/useFacilities';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import {
   ArrowTrendingUpIcon,
@@ -20,7 +20,7 @@ export default function Dashboard() {
   const eventTrends = useEventTrends('daily');
   const overview = useDashboardOverview();
   const complianceSummary = useDashboardComplianceSummary();
-  const facilityName = useFacilityName();
+  const facilityActivity = useFacilityActivitySummary();
 
   const isLoading = overview.isLoading || complianceSummary.isLoading;
 
@@ -33,7 +33,7 @@ export default function Dashboard() {
   const compliance = complianceSummary.data;
 
   const patients = compliance?.patients;
-  const facilities = compliance?.facilities;
+  const practitioners = compliance?.practitioners;
 
   return (
     <>
@@ -67,33 +67,24 @@ export default function Dashboard() {
       </div>
       </div>
 
-      {/* Facility Compliance Metrics */}
+      {/* Facility Activity Metrics */}
       <div className="mt-4 rounded-xl border border-gray-200 p-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard
-          title="Tracked Facilities"
-          description="Total healthcare facilities being tracked across all protocols."
-          value={formatNumber(facilities?.trackedFacilities ?? 0)}
+          title="Total Facilities"
+          description="All in-scope healthcare facilities in the facility reference list."
+          value={facilityActivity.isLoading ? '…' : formatNumber(facilityActivity.data?.totalInScope ?? 0)}
         />
         <MetricCard
-          title="> 90% Compliance"
-          description="Facilities with compliance rate above 90%."
-          value={formatNumber(facilities?.above90 ?? 0)}
-          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+          title="Active Facilities"
+          description="Facilities that transmitted at least one HIE event within the selected period."
+          value={facilityActivity.isLoading ? '…' : formatNumber(facilityActivity.data?.activeFacilities ?? 0)}
           bgColor="bg-green-50"
         />
         <MetricCard
-          title="75–90% Compliance"
-          description="Facilities with compliance rate between 75% and 90%."
-          value={formatNumber(facilities?.between75And90 ?? 0)}
-          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
-          bgColor="bg-amber-50"
-        />
-        <MetricCard
-          title="< 75% Compliance"
-          description="Facilities with compliance rate below 75%."
-          value={formatNumber(facilities?.below75 ?? 0)}
-          denomination={formatNumber(facilities?.trackedFacilities ?? 0)}
+          title="Inactive Facilities"
+          description="In-scope facilities with no HIE events transmitted within the selected period."
+          value={facilityActivity.isLoading ? '…' : formatNumber(facilityActivity.data?.inactiveFacilities ?? 0)}
           bgColor="bg-red-50"
         />
       </div>
@@ -105,7 +96,7 @@ export default function Dashboard() {
           <Card title="Top 3 Facilities" subtitle="by compliance rate">
             <div className="space-y-3">
               {dash.topFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" displayName={facilityName(f.facilityId)} />
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
               ))}
               {(!dash.topFacilities || dash.topFacilities.length === 0) && (
                 <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
@@ -115,7 +106,7 @@ export default function Dashboard() {
           <Card title="Bottom 3 Facilities" subtitle="by compliance rate">
             <div className="space-y-3">
               {dash.bottomFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" displayName={facilityName(f.facilityId)} />
+                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
               ))}
               {(!dash.bottomFacilities || dash.bottomFacilities.length === 0) && (
                 <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
@@ -125,6 +116,37 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Practitioner Compliance Metrics */}
+      <div className="mt-4 rounded-xl border border-gray-200 p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Tracked Practitioners"
+          description="Total practitioners involved in patient care across all protocols."
+          value={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+        />
+        <MetricCard
+          title="> 90% Compliance"
+          description="Practitioners with compliance rate above 90%."
+          value={formatNumber(practitioners?.above90 ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-green-50"
+        />
+        <MetricCard
+          title="75–90% Compliance"
+          description="Practitioners with compliance rate between 75% and 90%."
+          value={formatNumber(practitioners?.between75And90 ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-amber-50"
+        />
+        <MetricCard
+          title="< 75% Compliance"
+          description="Practitioners with compliance rate below 75%."
+          value={formatNumber(practitioners?.below75 ?? 0)}
+          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
+          bgColor="bg-red-50"
+        />
+      </div>
+      </div>
 
       {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -147,11 +169,10 @@ export default function Dashboard() {
   );
 }
 
-function FacilityRow({ facility, index, variant, displayName }: {
+function FacilityRow({ facility, index, variant }: {
   facility: { facilityId: string; facilityName?: string; complianceRate: number; activeDeviations: number; totalEvents: number; totalEnrollments: number };
   index: number;
   variant: 'top' | 'bottom';
-  displayName: string;
 }) {
   const Icon = variant === 'top' ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
   const accentColor = variant === 'top' ? 'text-green-600' : 'text-red-600';
@@ -164,7 +185,7 @@ function FacilityRow({ facility, index, variant, displayName }: {
           {index + 1}
         </span>
         <div>
-          <p className="text-sm font-medium text-gray-800">{facility.facilityName || displayName}</p>
+          <p className="text-sm font-medium text-gray-800">{facility.facilityName || facility.facilityId}</p>
           <p className="text-xs text-gray-500">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
         </div>
       </div>

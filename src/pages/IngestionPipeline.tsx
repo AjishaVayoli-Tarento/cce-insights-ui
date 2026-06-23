@@ -19,15 +19,17 @@ export default function IngestionPipeline() {
 
       {funnel.isLoading ? <LoadingSpinner /> : funnel.error ? <ErrorAlert error={funnel.error} /> : funnel.data ? (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <MetricCard title="Received" value={formatNumber(funnel.data.totalReceived)} description="Total number of clinical events received by the ingestion pipeline from all sources." />
-            <MetricCard title="Accepted" value={formatPercentage(funnel.data.acceptanceRate)} subtitle={formatNumber(funnel.data.accepted)} description="Percentage of received events that passed validation and were accepted for processing." />
-            <MetricCard title="Rejected" value={formatPercentage(funnel.data.rejectionRate)} subtitle={formatNumber(funnel.data.rejected)} description="Percentage of received events that failed validation and were rejected (malformed, missing fields, etc.)." />
+            <MetricCard title="Accepted" value={formatPercentage(funnel.data.acceptanceRate)} subtitle={formatNumber(funnel.data.accepted)} description="Percentage of received events that passed validation and were accepted for processing." bgColor="bg-green-50" />
+            <MetricCard title="Rejected" value={formatPercentage(funnel.data.rejectionRate)} subtitle={formatNumber(funnel.data.rejected)} description="Percentage of received events that failed validation and were rejected (malformed, missing fields, etc.)." bgColor={funnel.data.rejected > 0 ? 'bg-red-50' : undefined} />
+            <MetricCard title="Duplicates" value={formatPercentage(funnel.data.duplicateRate ?? 0)} subtitle={formatNumber(funnel.data.duplicate)} description="Events identified as exact duplicates of a previously received event — not reprocessed." bgColor="bg-purple-50" />
             <MetricCard
               title="Pipeline Loss"
               value={loss.data ? formatPercentage(loss.data.lossRate) : '—'}
               subtitle={loss.data ? `${formatNumber(loss.data.lostEvents)} events` : undefined}
               description="Events accepted by the Collector but not found in the Compliance engine — indicates data loss between pipeline stages."
+              bgColor={loss.data && loss.data.lostEvents > 0 ? 'bg-red-50' : undefined}
             />
           </div>
 
@@ -40,44 +42,56 @@ export default function IngestionPipeline() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Rejection Reasons">
           {rejections.isLoading ? <LoadingSpinner /> : rejections.error ? <ErrorAlert error={rejections.error} /> : rejections.data ? (
-            <div className="space-y-2">
-              {rejections.data.byReason.map((r) => (
-                <div key={r.reason} className="flex items-center gap-3">
-                  <span className="w-40 truncate text-sm text-gray-700">{r.reason}</span>
-                  <div className="flex-1">
-                    <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-                      <div className="h-full rounded-full bg-red-400" style={{ width: `${r.percentage}%` }} />
+            rejections.data.byReason.length > 0 ? (
+              <div className="space-y-2">
+                {rejections.data.byReason.map((r) => (
+                  <div key={r.reason} className="flex items-center gap-3">
+                    <span className="w-40 truncate text-sm text-gray-700">{r.reason}</span>
+                    <div className="flex-1">
+                      <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div className="h-full rounded-full bg-red-400" style={{ width: `${r.percentage}%` }} />
+                      </div>
                     </div>
+                    <span className="w-16 text-right text-xs text-gray-500">{formatPercentage(r.percentage)}</span>
                   </div>
-                  <span className="w-16 text-right text-xs text-gray-500">{formatPercentage(r.percentage)}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-green-600">No rejections — all events accepted</p>
+            )
           ) : null}
         </Card>
 
         <Card title="Source Quality">
           {quality.isLoading ? <LoadingSpinner /> : quality.error ? <ErrorAlert error={quality.error} /> : quality.data ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                    <th className="pb-2 pr-4">Source</th>
-                    <th className="pb-2 pr-4">Accept</th>
-                    <th className="pb-2">Reject</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {quality.data.sources.map((s) => (
-                    <tr key={s.source} className="hover:bg-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{s.source}</td>
-                      <td className="py-2 pr-4 text-green-600">{formatPercentage(s.acceptanceRate)}</td>
-                      <td className="py-2 text-red-600">{formatPercentage(s.rejectionRate)}</td>
+            quality.data.sources.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                      <th className="pb-2 pr-4">Source</th>
+                      <th className="pb-2 pr-4">Total</th>
+                      <th className="pb-2 pr-4">Accept</th>
+                      <th className="pb-2 pr-4">Reject</th>
+                      <th className="pb-2">Duplicate</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {quality.data.sources.map((s) => (
+                      <tr key={s.source} className="hover:bg-gray-50">
+                        <td className="py-2 pr-4 font-medium text-gray-900">{s.source}</td>
+                        <td className="py-2 pr-4 text-gray-600">{formatNumber(s.totalEvents)}</td>
+                        <td className="py-2 pr-4 text-green-600">{formatPercentage(s.acceptanceRate)}</td>
+                        <td className="py-2 pr-4 text-red-600">{formatPercentage(s.rejectionRate)}</td>
+                        <td className="py-2 text-purple-600">{formatPercentage(s.duplicateRate)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-gray-400">No source quality data</p>
+            )
           ) : null}
         </Card>
       </div>

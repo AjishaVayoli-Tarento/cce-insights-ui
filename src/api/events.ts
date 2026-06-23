@@ -2,7 +2,7 @@ import { apiGet, apiGetPaginated } from './client';
 import type {
   EventVolumeSummary, EventVolumeTrend, ResourceTypeCount,
   FacilityEventCount, PractitionerEventCount, SourceSystemCount,
-  SourceComparison, ProcessingQuality,
+  SourceComparison, ProcessingQuality, EventKpis,
 } from './types';
 
 export function getEventSummary(params?: {
@@ -94,6 +94,10 @@ export function compareSourceSystems(params: {
     endDate: params.endDate,
     sampleLimit: params.sampleLimit?.toString(),
   });
+}
+
+export function getEventKpis(): Promise<EventKpis> {
+  return apiGet('/events/kpis');
 }
 
 export function getProcessingQuality(params?: {

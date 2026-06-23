@@ -9,9 +9,9 @@ interface EventTrendChartProps {
 
 export function EventTrendChart({ data, height = 280 }: EventTrendChartProps) {
   const [view, setView] = useState<'combined' | 'byType'>('combined');
-  const resourceTypes = data.length > 0
-    ? Object.keys(data[0].byResourceType ?? {})
-    : [];
+  const resourceTypes = Array.from(
+    new Set(data.flatMap((d) => Object.keys(d.byResourceType ?? {})))
+  );
 
   return (
     <div>

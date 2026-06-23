@@ -10,11 +10,10 @@ import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
 import { ProcessingQualityChart } from '../components/charts/ProcessingQualityChart';
 import {
-  useEventSummary, useEventTrends, useEventsByResourceType,
+  useEventKpis, useEventTrends, useEventsByResourceType,
   useEventsByFacility, useEventsByPractitioner, useEventsBySource, useProcessingQuality,
 } from '../hooks/useEventVolume';
-import { formatNumber, formatPercentage, formatPractitionerName } from '../utils/formatters';
-import { useFacilityName } from '../hooks/useFacilityName';
+import { formatNumber } from '../utils/formatters';
 import { INTERVAL_OPTIONS } from '../config';
 
 type Tab = 'resource-type' | 'facility' | 'practitioner' | 'source' | 'processing-quality';
@@ -27,16 +26,13 @@ export default function EventVolume() {
   const [practCursor, setPractCursor] = useState<string | undefined>();
   const [practPage, setPractPage] = useState(1);
 
-  const summary = useEventSummary();
+  const kpis = useEventKpis();
   const trends = useEventTrends(interval);
   const byResourceType = useEventsByResourceType();
   const byFacility = useEventsByFacility({ cursor: facilityCursor });
   const byPractitioner = useEventsByPractitioner({ cursor: practCursor });
   const bySource = useEventsBySource();
   const quality = useProcessingQuality();
-  const facilityName = useFacilityName();
-
-  const events = summary.data;
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'resource-type', label: 'By Resource Type' },
@@ -50,13 +46,17 @@ export default function EventVolume() {
     <>
       <PageHeader title="Event Volume & Activity" description="Clinical event metrics — volume by resource type, facility, practitioner, source" />
 
-      {summary.isLoading ? <LoadingSpinner /> : summary.error ? <ErrorAlert error={summary.error} /> : events ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <MetricCard title="Total Events" value={formatNumber(events.totalEvents)} description="Total inbound clinical events (FHIR resources) received from all sources." />
-          <MetricCard title="Matched Rate" value={events.processingStatusBreakdown?.matched ? formatPercentage(events.processingStatusBreakdown.matched.percentage) : '—'} description="Percentage of events successfully matched to a protocol step instance." />
-          <MetricCard title="Zero Match" value={events.processingStatusBreakdown?.zeroMatch ? formatPercentage(events.processingStatusBreakdown.zeroMatch.percentage) : '—'} description="Percentage of events that could not be matched to any protocol step (no eligible patient or step found)." />
-          <MetricCard title="Duplicate Rate" value={events.processingStatusBreakdown?.duplicate ? formatPercentage(events.processingStatusBreakdown.duplicate.percentage) : '—'} description="Percentage of events identified as duplicates of previously processed events." />
-        </div>
+      {kpis.isLoading ? <LoadingSpinner /> : kpis.error ? <ErrorAlert error={kpis.error} /> : kpis.data ? (
+        <>
+          <div className="mb-1 text-xs text-gray-400">Today's snapshot — not affected by the date filter above</div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <MetricCard title="Total Events" value={formatNumber(kpis.data.totalEvents)} description="Cumulative inbound clinical events (FHIR resources) accepted by the HIE pipeline." />
+            <MetricCard title="Matched Rate" value={`${Number(kpis.data.matchedRatePct).toFixed(2)}%`} description="Percentage of events successfully matched to a protocol step instance." bgColor="bg-green-50" />
+            <MetricCard title="Zero Match Rate" value={`${Number(kpis.data.zeroMatchRatePct).toFixed(2)}%`} description="Percentage of events that could not be matched to any protocol step (no eligible patient or step found)." bgColor="bg-amber-50" />
+            <MetricCard title="Duplicates" value={formatNumber(kpis.data.duplicateCount)} description="Events identified as duplicates of a previously received event — not processed again." bgColor="bg-purple-50" />
+            <MetricCard title="Pipeline Loss" value={formatNumber(kpis.data.pipelineLossCount)} description="Events accepted by the collector but never reaching the compliance engine — indicates a processing gap." bgColor={kpis.data.pipelineLossCount > 0 ? 'bg-red-50' : undefined} />
+          </div>
+        </>
       ) : null}
 
       <Card title="Volume Trends" className="mt-6"
@@ -76,7 +76,7 @@ export default function EventVolume() {
           </div>
         }
       >
-        {trends.isLoading ? <LoadingSpinner /> : trends.data ? (
+        {trends.isLoading ? <LoadingSpinner /> : trends.error ? <ErrorAlert error={trends.error} /> : trends.data ? (
           <EventTrendChart data={trends.data.trends} />
         ) : null}
       </Card>
@@ -123,7 +123,7 @@ export default function EventVolume() {
                       <tbody className="divide-y divide-gray-100">
                         {byFacility.data.data.map((f) => (
                           <tr key={f.facilityId} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{facilityName(f.facilityId)}</td>
+                            <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityId}</td>
                             <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
                             <td className="py-2 text-gray-600">{f.byResourceType.map((r) => `${r.resourceType}: ${r.count}`).join(', ')}</td>
                           </tr>
@@ -152,7 +152,7 @@ export default function EventVolume() {
                       <thead>
                         <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                           <th className="pb-2 pr-4">Practitioner</th>
-                          <th className="pb-2 pr-4">Reference</th>
+                          <th className="pb-2 pr-4">Display Name</th>
                           <th className="pb-2 pr-4">Facility</th>
                           <th className="pb-2">Total Events</th>
                         </tr>
@@ -160,9 +160,9 @@ export default function EventVolume() {
                       <tbody className="divide-y divide-gray-100">
                         {byPractitioner.data.data.map((p) => (
                           <tr key={p.practitionerRef} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{formatPractitionerName(p.practitionerRef, p.practitionerDisplay)}</td>
-                            <td className="py-2 pr-4 text-gray-600">{p.practitionerRef}</td>
-                            <td className="py-2 pr-4 text-gray-600">{facilityName(p.facilityId)}</td>
+                            <td className="py-2 pr-4 font-medium text-gray-900">{p.practitionerRef}</td>
+                            <td className="py-2 pr-4 text-gray-600">{p.practitionerDisplay || '—'}</td>
+                            <td className="py-2 pr-4 text-gray-600">{p.facilityId}</td>
                             <td className="py-2">{formatNumber(p.totalEvents)}</td>
                           </tr>
                         ))}

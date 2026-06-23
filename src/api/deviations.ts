@@ -1,8 +1,20 @@
 import { apiGet, apiGetPaginated } from './client';
 import type {
   DeviationRecord, DeviationTrend, DeviationByAction,
-  DeviationResolution, IntelligenceSummary,
+  DeviationResolution, IntelligenceSummary, DeviationKpis,
 } from './types';
+
+export function getDeviationKpis(params?: {
+  protocolDefinitionId?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<DeviationKpis> {
+  return apiGet('/deviations/kpis', {
+    protocolDefinitionId: params?.protocolDefinitionId,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+  });
+}
 
 export function getDeviations(params?: {
   deviationType?: string;

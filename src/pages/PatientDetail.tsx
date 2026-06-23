@@ -5,10 +5,10 @@ import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations } from '../hooks/usePatients';
+import { usePatientTimeline, usePatientProtocolTracking, usePatientProtocolTrackingDetail, usePatientDeviations, usePatientIntelligenceDeliveries } from '../hooks/usePatients';
+import { useActionOrder } from '../hooks/useProtocols';
 import { formatDate, formatDateTime } from '../utils/dates';
-import { formatPercentage, formatPractitionerName } from '../utils/formatters';
-import { useFacilityName } from '../hooks/useFacilityName';
+import { formatPercentage } from '../utils/formatters';
 import { STATUS_COLORS, STATE_COLORS } from '../utils/colors';
 import type { ProtocolInstanceStatus, StepState, JourneyStep } from '../api/types';
 
@@ -35,16 +35,58 @@ const JOURNEY_STATUS: Record<JourneyDisplayStatus, { bg: string; text: string; d
   DEVIATION:   { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', label: 'Deviation' },
 };
 
+const SOURCE_COLORS: Record<string, string> = {
+  spice: 'bg-purple-100 text-purple-700',
+  openmrs: 'bg-sky-100 text-sky-700',
+  dhis2: 'bg-teal-100 text-teal-700',
+  fhir: 'bg-indigo-100 text-indigo-700',
+  hl7: 'bg-pink-100 text-pink-700',
+};
+
+function getSourceColor(source: string): string {
+  return SOURCE_COLORS[source.toLowerCase()] ?? 'bg-gray-100 text-gray-700';
+}
+
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = id ?? '';
   const [selectedProtocol, setSelectedProtocol] = useState('');
+  const [activeTab, setActiveTab] = useState<'journey' | 'outbound'>('journey');
 
   const tracking = usePatientProtocolTracking(patientId);
   const timeline = usePatientTimeline(patientId);
   const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
-  const facilityName = useFacilityName();
+  const intelligenceDeliveries = usePatientIntelligenceDeliveries(patientId);
+  const actionOrder = useActionOrder(detail.data?.protocolDefinitionId ?? '');
+
+  const actionNameMap = useMemo(() => {
+    if (!actionOrder.data) return new Map<string, string>();
+    return new Map(actionOrder.data.map((a) => [a.actionId, a.title || a.actionId]));
+  }, [actionOrder.data]);
+
+  const outboundSteps = useMemo(() => {
+    if (!timeline.data) return [];
+    return timeline.data.protocols.flatMap((proto) =>
+      (proto.journey ?? []).filter((step) =>
+        step.actionId?.toLowerCase().includes('referral') &&
+        !step.actionId?.toLowerCase().includes('consultation') &&
+        !step.actionId?.toLowerCase().includes('ack') &&
+        step.status === 'COMPLETED'
+      )
+    );
+  }, [timeline.data]);
+
+  const inboundSteps = useMemo(() => {
+    if (!timeline.data) return [];
+    return timeline.data.protocols.flatMap((proto) =>
+      (proto.journey ?? []).filter((step) =>
+        step.actionId?.toLowerCase().includes('referral') &&
+        step.actionId?.toLowerCase().includes('ack') &&
+        step.status === 'COMPLETED'
+      )
+    );
+  }, [timeline.data]);
 
   // Build set of actionIds that have deviations (incomplete prerequisites from ORDER_VIOLATION)
   const deviationActionIds = useMemo(() => {
@@ -79,17 +121,17 @@ export default function PatientDetail() {
           <div className="space-y-3">
             {tracking.data.map((p) => {
               const docArtifact = p.relatedArtifact?.find(a => a.type === 'documentation');
-              const thumbArtifact = p.relatedArtifact?.find(a => a.type === 'thumbnail');
+              const thumbnailUrl = docArtifact?.extension?.find(e => e.url === 'http://openphc.org/fhir/thumbnail')?.valueCode;
               const displayTitle = p.protocolTitle || p.protocolCanonical;
               return (
               <div key={p.protocolInstanceId} className="rounded-lg border border-gray-200 p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    {thumbArtifact && (
+                    {thumbnailUrl && (
                       <a href={docArtifact?.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                         <img
-                          src={toDirectImageUrl(thumbArtifact.url)}
-                          alt={thumbArtifact.display}
+                          src={toDirectImageUrl(thumbnailUrl)}
+                          alt={docArtifact?.display || 'Protocol thumbnail'}
                           className="h-10 w-10 rounded object-cover border border-gray-200"
                         />
                       </a>
@@ -120,10 +162,16 @@ export default function PatientDetail() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setSelectedProtocol(p.protocolInstanceId)}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                    onClick={() => setSelectedProtocol(
+                      selectedProtocol === p.protocolInstanceId ? '' : p.protocolInstanceId
+                    )}
+                    className={`text-xs font-medium ${
+                      selectedProtocol === p.protocolInstanceId
+                        ? 'text-gray-400 hover:text-gray-500'
+                        : 'text-blue-600 hover:text-blue-700'
+                    }`}
                   >
-                    Details →
+                    {selectedProtocol === p.protocolInstanceId ? 'Hide ←' : 'Details →'}
                   </button>
                 </div>
               </div>
@@ -149,7 +197,14 @@ export default function PatientDetail() {
               <tbody className="divide-y divide-gray-100">
                 {detail.data.steps.map((s) => (
                   <tr key={s.stepInstanceId} className="hover:bg-gray-50">
-                    <td className="py-2 pr-4 font-medium text-gray-900">{s.actionId}</td>
+                    <td className="py-2 pr-4">
+                      <span className="font-medium text-gray-900">
+                        {actionNameMap.get(s.actionId) ?? s.actionId}
+                      </span>
+                      {actionNameMap.has(s.actionId) && (
+                        <span className="ml-1 font-mono text-[10px] text-gray-400">{s.actionId}</span>
+                      )}
+                    </td>
                     <td className="py-2 pr-4">
                       <StatusBadge label={s.state} color={STATE_COLORS[s.state as StepState] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }} />
                     </td>
@@ -165,17 +220,42 @@ export default function PatientDetail() {
       )}
 
       {timeline.data && timeline.data.protocols.length > 0 && (
-        <Card title="Protocol Journey" className="mt-6">
-          <div className="space-y-6">
-            {timeline.data.protocols.map((proto) => (
-              <div key={`journey-${proto.protocolInstanceId}`}>
-                <div className="mb-3 flex items-center gap-2">
-                  <StatusBadge
-                    label={proto.status}
-                    color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
-                  />
-                  <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
-                </div>
+        <div className="mt-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('journey')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'journey'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Protocol Journey
+            </button>
+            <button
+              onClick={() => setActiveTab('outbound')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'outbound'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Referral Events
+            </button>
+          </div>
+
+          {activeTab === 'journey' && (
+            <Card title="Protocol Journey" className="mt-4">
+              <div className="space-y-6">
+                {timeline.data.protocols.map((proto) => (
+                  <div key={`journey-${proto.protocolInstanceId}`}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <StatusBadge
+                        label={proto.status}
+                        color={STATUS_COLORS[proto.status as ProtocolInstanceStatus] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
+                      />
+                      <span className="text-xs font-medium text-gray-600 truncate">{proto.protocolCanonical}</span>
+                    </div>
 
                 {/* Legend */}
                 <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
@@ -195,7 +275,6 @@ export default function PatientDetail() {
                     <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-300 bg-white" />
                     <span className="text-xs text-gray-600">Not started</span>
                   </div>
-
                 </div>
 
                 <div className="space-y-0">
@@ -213,7 +292,7 @@ export default function PatientDetail() {
                       // Root step: hide if any later root step has actually been worked on
                       for (let j = i + 1; j < arr.length; j++) {
                         const s = arr[j];
-                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING') return false;
+                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING' && s.status !== 'DUE') return false;
                       }
                     }
                     return true;
@@ -275,11 +354,16 @@ export default function PatientDetail() {
                                 ON TIME
                               </span>
                             )}
+                            {step.source && (
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                {step.source}
+                              </span>
+                            )}
                             {step.practitioner && (
-                              <span className="text-xs text-gray-500">Practitioner: {formatPractitionerName(step.practitioner)}</span>
+                              <span className="text-xs text-gray-500">Practitioner: {step.practitioner}</span>
                             )}
                             {(step.facilityName || step.facilityId) && (
-                              <span className="text-xs text-gray-500">Facility: {step.facilityName || facilityName(step.facilityId)}</span>
+                              <span className="text-xs text-gray-500">Facility: {step.facilityName || step.facilityId}</span>
                             )}
                           </div>
                           {isDeviation && step.description && (
@@ -293,9 +377,86 @@ export default function PatientDetail() {
               </div>
             ))}
           </div>
-        </Card>
+            </Card>
+          )}
+
+          {activeTab === 'outbound' && (
+            <>
+              <Card title="Outbound Events — Referral Initiated" className="mt-4">
+                {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : outboundSteps.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                          <th className="pb-2 pr-4">Step</th>
+                          <th className="pb-2 pr-4">Source</th>
+                          <th className="pb-2 pr-4">Facility</th>
+                          <th className="pb-2">Initiated On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {outboundSteps.map((step, idx) => (
+                          <tr key={`outbound-${idx}`} className="hover:bg-gray-50">
+                            <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
+                            <td className="py-2 pr-4">
+                              {step.source ? (
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                  {step.source}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
+                            <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-gray-400">No completed referral initiated steps found.</p>
+                )}
+              </Card>
+
+              <Card title="Inbound Events — Referral Closure" className="mt-4">
+                {timeline.isLoading ? <LoadingSpinner /> : timeline.error ? <ErrorAlert error={timeline.error} /> : inboundSteps.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                          <th className="pb-2 pr-4">Step</th>
+                          <th className="pb-2 pr-4">Source</th>
+                          <th className="pb-2 pr-4">Facility</th>
+                          <th className="pb-2">Closed On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {inboundSteps.map((step, idx) => (
+                          <tr key={`inbound-${idx}`} className="hover:bg-gray-50">
+                            <td className="py-2 pr-4 font-medium text-gray-900">{step.stepName}</td>
+                            <td className="py-2 pr-4">
+                              {step.source ? (
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getSourceColor(step.source)}`}>
+                                  {step.source}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-600">{step.facilityName || step.facilityId || '—'}</td>
+                            <td className="py-2 text-gray-600">{step.effectiveDateTime ? formatDateTime(step.effectiveDateTime) : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-gray-400">No completed referral closure steps found.</p>
+                )}
+              </Card>
+            </>
+          )}
+        </div>
       )}
 
+      {activeTab === 'journey' && (
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Deviations">
           {deviations.isLoading ? <LoadingSpinner /> : deviations.error ? <ErrorAlert error={deviations.error} /> : deviations.data && deviations.data.length > 0 ? (
@@ -318,30 +479,57 @@ export default function PatientDetail() {
         </Card>
 
         <Card title="Intelligence Alerts">
-          {deviations.isLoading ? <LoadingSpinner /> : deviations.error ? <ErrorAlert error={deviations.error} /> : deviations.data && deviations.data.length > 0 ? (
+          {intelligenceDeliveries.isLoading ? <LoadingSpinner /> : intelligenceDeliveries.error ? <ErrorAlert error={intelligenceDeliveries.error} /> : intelligenceDeliveries.data && intelligenceDeliveries.data.length > 0 ? (
             <div className="space-y-3">
-              {deviations.data.map((d) => (
-                <div key={`alert-${d.deviationId}`} className="rounded-lg border border-gray-200 p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${d.deviationType === 'OVERDUE' ? 'text-amber-600' : d.deviationType === 'ORDER_VIOLATION' ? 'text-purple-600' : 'text-red-600'}`}>
-                        {d.deviationType === 'OVERDUE' ? '⚠' : d.deviationType === 'ORDER_VIOLATION' ? '🔀' : '🔴'} {d.deviationType}
+              {intelligenceDeliveries.data.map((d) => {
+                const delivered = d.status === 'DELIVERED';
+                const failed = d.status === 'FAILED';
+                return (
+                  <div key={`alert-${d.id}`} className="rounded-lg border border-gray-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {d.severity && (
+                          <span className={`text-xs font-bold ${d.severity === 'CRITICAL' ? 'text-red-600' : d.severity === 'HIGH' ? 'text-orange-600' : d.severity === 'MEDIUM' ? 'text-amber-600' : 'text-blue-600'}`}>
+                            {d.severity}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-500">{d.actionType}</span>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                        delivered ? 'bg-green-50 text-green-700 ring-green-200' :
+                        failed ? 'bg-red-50 text-red-700 ring-red-200' :
+                        'bg-amber-50 text-amber-700 ring-amber-200'
+                      }`}>
+                        {delivered ? '✓ Delivered' : failed ? '✗ Failed' : d.status}
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
-                      ✓ Notification Sent
-                    </span>
+                    {d.actionId && (
+                      <p className="mt-1 text-sm font-medium text-gray-900">
+                        {actionNameMap.get(d.actionId) ?? d.actionId}
+                      </p>
+                    )}
+                    <div className="mt-1 flex flex-wrap gap-3">
+                      {d.destination && (
+                        <span className="text-xs text-gray-500">To: {d.destination}</span>
+                      )}
+                      <span className="text-xs text-gray-500">Sent: {formatDateTime(d.createdAt)}</span>
+                      {d.deliveredAt && (
+                        <span className="text-xs text-gray-500">Delivered: {formatDateTime(d.deliveredAt)}</span>
+                      )}
+                      {d.attemptCount > 1 && (
+                        <span className="text-xs text-amber-600">{d.attemptCount} attempts</span>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-gray-900">{d.description || d.stepName || d.actionId || 'Unknown Step'}</p>
-                  <p className="text-xs text-gray-500">Detected: {formatDate(d.detectedAt)}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <p className="py-4 text-center text-sm text-gray-400">No alerts found.</p>
+            <p className="py-4 text-center text-sm text-gray-400">No intelligence alerts found.</p>
           )}
         </Card>
       </div>
+      )}
     </>
   );
 }

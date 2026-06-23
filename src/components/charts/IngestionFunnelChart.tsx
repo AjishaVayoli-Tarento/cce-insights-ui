@@ -11,16 +11,24 @@ const STATUS_COLORS: Record<string, string> = {
   duplicate: '#9ca3af',
 };
 
+const ALL_STATUSES = ['ACCEPTED', 'DUPLICATE', 'REJECTED'];
+
 export function IngestionFunnelChart({ data, height = 260 }: IngestionFunnelChartProps) {
+  // Always show all 3 bars; statuses with zero events are missing from the API response
+  const normalized = ALL_STATUSES.map((status) => {
+    const found = data.find((d) => d.status.toUpperCase() === status);
+    return found ?? { status, count: 0, percentage: 0 };
+  });
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data}>
+      <BarChart data={normalized}>
         <XAxis dataKey="status" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
         <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={50} />
         <Tooltip formatter={(value: number) => value.toLocaleString()} />
         <Legend />
         <Bar dataKey="count" name="Count" radius={[4, 4, 0, 0]}>
-          {data.map((entry, i) => (
+          {normalized.map((entry, i) => (
             <Cell key={i} fill={STATUS_COLORS[entry.status.toLowerCase()] || '#6366f1'} />
           ))}
         </Bar>

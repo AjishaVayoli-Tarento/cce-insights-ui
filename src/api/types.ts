@@ -142,11 +142,17 @@ export interface TimelineEntry {
   effectiveDateTime?: string;
 }
 
+export interface RelatedArtifactExtension {
+  url: string;
+  valueCode: string;
+}
+
 export interface RelatedArtifact {
   type: string;
   label: string;
   display: string;
   url: string;
+  extension?: RelatedArtifactExtension[];
 }
 
 export interface ProtocolTracking {
@@ -165,11 +171,25 @@ export interface ProtocolTrackingDetail {
   protocolInstanceId: string;
   patientId: string;
   protocolCanonical: string;
+  protocolDefinitionId?: string;
   status: ProtocolInstanceStatus;
   enrolledAt: string;
   complianceRate: number;
   steps: StepInstance[];
   deviations: DeviationRecord[];
+}
+
+export interface PatientIntelligenceDelivery {
+  id: string;
+  actionType: string;
+  status: string;
+  severity: string | null;
+  destination: string | null;
+  protocolCanonical: string | null;
+  actionId: string | null;
+  attemptCount: number;
+  createdAt: string;
+  deliveredAt: string | null;
 }
 
 export interface StepInstance {
@@ -449,6 +469,8 @@ export interface FacilityRanking {
   complianceRate: number;
   activeDeviations: number;
   totalEvents: number;
+  outboundEvents: number;
+  inboundEvents: number;
   patientsFromHIE: number;
 }
 
@@ -462,6 +484,7 @@ export interface PractitionerRanking {
   practitionerRef: string;
   practitionerName: string | null;
   facilityId: string | null;
+  facilityName: string | null;
   totalPatients: number;
   complianceRate: number;
   totalSteps: number;
@@ -528,6 +551,55 @@ export interface RepeatDeviationPatient {
     deviationType: DeviationType;
     detectedAt: string;
   }[];
+}
+
+// ─── Facility Activity Summary ───────────────────────────────
+
+export interface FacilityActivitySummary {
+  totalInScope: number;
+  activeFacilities: number;
+  inactiveFacilities: number;
+  activeFacilityRate: number;
+}
+
+// ─── Facility Reference ──────────────────────────────────────
+
+export interface FacilityReference {
+  facilityId: string;
+  facilityName: string;
+  expectedPatientsPerDay: number;
+}
+
+// ─── Adoption KPIs ───────────────────────────────────────────
+
+export interface AdoptionKpi {
+  facilityId: string;
+  facilityName: string;
+  expectedPatientsPerDay: number;
+  actualPatients: number;
+  adoptionRate: number;
+  reportingGap: number;
+}
+
+// ─── Event KPIs (from mv_daily_event_kpis) ───────────────────
+
+export interface EventKpis {
+  totalEvents: number;
+  matchedCount: number;
+  zeroMatchCount: number;
+  duplicateCount: number;
+  matchedRatePct: number;
+  zeroMatchRatePct: number;
+  pipelineLossCount: number;
+}
+
+// ─── Deviation KPIs (from mv_daily_deviation_kpis) ───────────
+
+export interface DeviationKpis {
+  totalDeviations: number;
+  overdueCount: number;
+  missedCount: number;
+  orderViolationCount: number;
 }
 
 // ─── Ingestion Analytics ─────────────────────────────────────

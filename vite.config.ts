@@ -8,7 +8,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/v1/insights': {
-        target: 'http://localhost:8084',
+        target: 'http://localhost:8093',
         changeOrigin: true,
       },
     },
