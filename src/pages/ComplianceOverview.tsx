@@ -12,11 +12,9 @@ import { formatNumber, formatPercentage } from '../utils/formatters';
 /* Collapsible sub-actions panel for the Service Workflow Compliance timeline */
 function SubActionsPanel({
   children,
-  denominators,
   titleMap,
 }: {
   children: { actionId: string; totalInstances: number; completedCount: number }[];
-  denominators: Map<string, number>;
   titleMap: Map<string, string | null>;
 }) {
   const [open, setOpen] = useState(true);
@@ -46,8 +44,8 @@ function SubActionsPanel({
           {/* Sub-action connector line */}
           <div className="absolute left-[5px] top-2 bottom-2 w-px bg-gray-200" />
           {children.map((child) => {
-            const childDenom = denominators.get(child.actionId) ?? child.totalInstances;
-            const childPct = childDenom > 0 ? Math.min(Math.round((child.completedCount / childDenom) * 100), 100) : 0;
+            const childDenom = child.totalInstances;
+            const childPct = childDenom > 0 ? Math.round((child.completedCount / childDenom) * 100) : 0;
             const childLabel = titleMap.get(child.actionId) || child.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
             const childBarColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
             const childDotColor = childPct >= 80 ? 'bg-green-500' : childPct >= 50 ? 'bg-amber-500' : 'bg-red-400';
@@ -224,35 +222,9 @@ export default function ComplianceOverview() {
                     .filter((s) => s.totalInstances > 0)
                     .sort((a, b) => (orderMap.get(a.actionId) ?? 999) - (orderMap.get(b.actionId) ?? 999));
 
-                  const completedMap = new Map(sortedSteps.map((s) => [s.actionId, s.completedCount]));
-
-                  // Compute denominator for each step
-                  const denominators = new Map<string, number>();
-                  let prevTopLevel: string | null = null;
-                  const prevSiblingByParent = new Map<string, string>();
-
-                  for (const step of sortedSteps) {
-                    const parent = parentMap.get(step.actionId) ?? null;
-                    if (!parent) {
-                      if (prevTopLevel === null) {
-                        denominators.set(step.actionId, data.totalEnrollments);
-                      } else {
-                        denominators.set(step.actionId, completedMap.get(prevTopLevel) ?? step.totalInstances);
-                      }
-                      prevTopLevel = step.actionId;
-                    } else {
-                      const prevSibling = prevSiblingByParent.get(parent);
-                      if (prevSibling) {
-                        denominators.set(step.actionId, completedMap.get(prevSibling) ?? step.totalInstances);
-                      } else {
-                        denominators.set(step.actionId, completedMap.get(parent) ?? step.totalInstances);
-                      }
-                    }
-                    if (parent) {
-                      prevSiblingByParent.set(parent, step.actionId);
-                    }
-                  }
-
+                  // Each step is measured against its own total instances (the API's native
+                  // completionRate), so completed never exceeds the total and we never divide
+                  // by an unrelated upstream count.
                   // Group into top-level and children
                   const topLevel = sortedSteps.filter((s) => !parentMap.get(s.actionId));
                   const childrenOf = (parentId: string) =>
@@ -264,8 +236,8 @@ export default function ComplianceOverview() {
                       <div className="absolute left-[11px] top-6 bottom-6 w-0.5 bg-gray-200" />
 
                       {topLevel.map((step) => {
-                        const denom = denominators.get(step.actionId) ?? step.totalInstances;
-                        const pct = denom > 0 ? Math.min(Math.round((step.completedCount / denom) * 100), 100) : 0;
+                        const denom = step.totalInstances;
+                        const pct = denom > 0 ? Math.round((step.completedCount / denom) * 100) : 0;
                         const missing = Math.max(denom - step.completedCount, 0);
                         const label = titleMap.get(step.actionId) || step.actionId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
                         const children = childrenOf(step.actionId);
@@ -300,7 +272,7 @@ export default function ComplianceOverview() {
 
                               {/* Collapsible child steps as sub-timeline nodes */}
                               {children.length > 0 && (
-                                <SubActionsPanel children={children} denominators={denominators} titleMap={titleMap} />
+                                <SubActionsPanel children={children} titleMap={titleMap} />
                               )}
                             </div>
                           </div>
