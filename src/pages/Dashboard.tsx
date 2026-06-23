@@ -33,7 +33,6 @@ export default function Dashboard() {
   const compliance = complianceSummary.data;
 
   const patients = compliance?.patients;
-  const practitioners = compliance?.practitioners;
 
   return (
     <>
@@ -116,37 +115,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Practitioner Compliance Metrics */}
-      <div className="mt-4 rounded-xl border border-gray-200 p-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Tracked Practitioners"
-          description="Total practitioners involved in patient care across all protocols."
-          value={formatNumber(practitioners?.trackedPractitioners ?? 0)}
-        />
-        <MetricCard
-          title="> 90% Compliance"
-          description="Practitioners with compliance rate above 90%."
-          value={formatNumber(practitioners?.above90 ?? 0)}
-          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
-          bgColor="bg-green-50"
-        />
-        <MetricCard
-          title="75–90% Compliance"
-          description="Practitioners with compliance rate between 75% and 90%."
-          value={formatNumber(practitioners?.between75And90 ?? 0)}
-          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
-          bgColor="bg-amber-50"
-        />
-        <MetricCard
-          title="< 75% Compliance"
-          description="Practitioners with compliance rate below 75%."
-          value={formatNumber(practitioners?.below75 ?? 0)}
-          denomination={formatNumber(practitioners?.trackedPractitioners ?? 0)}
-          bgColor="bg-red-50"
-        />
-      </div>
-      </div>
 
       {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
