@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
-import { CursorPagination } from '../components/shared/CursorPagination';
 import { useFacilityRanking, useFacilityActivitySummary, useAdoptionKpis } from '../hooks/useFacilities';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { getFacilityName } from '../utils/facilityNames';
@@ -13,21 +12,51 @@ import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
 import type { RankBy, SortOrder } from '../api/types';
 
 const ADOPTION_PAGE_SIZE = 20;
+const RANKING_PAGE_SIZE = 20;
 
 export default function FacilityAnalytics() {
   const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
   const [order, setOrder] = useState<SortOrder>('desc');
-  const [cursor, setCursor] = useState<string | undefined>();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [adoptionPage, setAdoptionPage] = useState(1);
 
-  const ranking = useFacilityRanking({ rankBy, order, cursor, protocolDefinitionId: protocolId || undefined });
+  const ranking = useFacilityRanking({
+    rankBy,
+    order,
+    limit: 200,
+    protocolDefinitionId: protocolId || undefined,
+  });
   const activitySummary = useFacilityActivitySummary();
   const adoption = useAdoptionKpis();
 
+  const handleProtocolChange = useCallback((id: string) => {
+    setProtocolId(id);
+    setPage(1);
+  }, []);
+
+  const filteredRows = useMemo(() => {
+    if (!ranking.data?.data) return [];
+    if (!search.trim()) return ranking.data.data;
+    const q = search.toLowerCase();
+    return ranking.data.data.filter((f) => {
+      const name = (f.facilityName ?? getFacilityName(f.facilityId)).toLowerCase();
+      return name.includes(q);
+    });
+  }, [ranking.data, search]);
+
+  const totalRankingPages = Math.max(1, Math.ceil(filteredRows.length / RANKING_PAGE_SIZE));
+  const paginatedRows = useMemo(
+    () => filteredRows.slice((page - 1) * RANKING_PAGE_SIZE, page * RANKING_PAGE_SIZE),
+    [filteredRows, page],
+  );
+
   useEffect(() => { setAdoptionPage(1); }, [adoption.data]);
+  useEffect(() => { setPage(1); }, [rankBy, order, protocolId, search]);
+  useEffect(() => {
+    if (page > totalRankingPages) setPage(totalRankingPages);
+  }, [page, totalRankingPages]);
 
   return (
     <>
@@ -144,13 +173,14 @@ export default function FacilityAnalytics() {
       <div className="mb-4 flex flex-wrap items-end gap-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
-          <ProtocolFilter value={protocolId} onChange={setProtocolId} />
+          <ProtocolFilter value={protocolId} onChange={handleProtocolChange} />
         </div>
         <div className="flex gap-2 items-end">
           {RANK_BY_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => { setRankBy(opt.value as RankBy); setCursor(undefined); setPage(1); }}
+              type="button"
+              onClick={() => setRankBy(opt.value as RankBy)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 rankBy === opt.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -163,7 +193,8 @@ export default function FacilityAnalytics() {
           {SORT_ORDER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => { setOrder(opt.value as SortOrder); setCursor(undefined); setPage(1); }}
+              type="button"
+              onClick={() => setOrder(opt.value as SortOrder)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 order === opt.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -174,7 +205,7 @@ export default function FacilityAnalytics() {
         </div>
         <div className="flex-1" />
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Search Facility <span className="font-normal text-gray-400">(current page)</span></label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">Search Facility</label>
           <input
             type="text"
             placeholder="Enter facility name..."
@@ -186,7 +217,7 @@ export default function FacilityAnalytics() {
       </div>
 
       <Card title="Facility Ranking">
-        {ranking.isLoading ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
+        {ranking.isPending ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -201,14 +232,8 @@ export default function FacilityAnalytics() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {ranking.data.data
-                    .filter((f) => {
-                      if (!search) return true;
-                      const name = (f.facilityName ?? getFacilityName(f.facilityId)).toLowerCase();
-                      return name.includes(search.toLowerCase());
-                    })
-                    .map((f) => (
-                    <tr key={getFacilityName(f.facilityId)} className="hover:bg-gray-50">
+                  {paginatedRows.map((f) => (
+                    <tr key={`${f.facilityId}-${f.rank}`} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
                       <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? getFacilityName(f.facilityId)}</td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
@@ -228,19 +253,41 @@ export default function FacilityAnalytics() {
                 </tbody>
               </table>
             </div>
+            {paginatedRows.length === 0 && (
+              <p className="py-8 text-center text-sm text-gray-500">No facilities match the current filters</p>
+            )}
             <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
               <span className="font-medium">Compliance:</span>
               <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-green-500" /> ≥ 80%</span>
               <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> 50–79%</span>
               <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> &lt; 50%</span>
             </div>
-            <CursorPagination
-              hasMore={ranking.data.pagination.has_more}
-              nextCursor={ranking.data.pagination.next_cursor}
-              onNext={(c) => { setCursor(c); setPage((p) => p + 1); }}
-              onReset={() => { setCursor(undefined); setPage(1); }}
-              currentPage={page}
-            />
+            {totalRankingPages > 1 && (
+              <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
+                <p className="text-sm text-gray-600">
+                  Showing {(page - 1) * RANKING_PAGE_SIZE + 1}–{Math.min(page * RANKING_PAGE_SIZE, filteredRows.length)} of {filteredRows.length} facilities
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600">Page {page} of {totalRankingPages}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalRankingPages, p + 1))}
+                    disabled={page >= totalRankingPages}
+                    className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : null}
       </Card>

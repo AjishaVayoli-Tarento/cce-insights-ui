@@ -36,11 +36,23 @@ export function useFacilityRanking(params?: {
   rankBy?: RankBy;
   order?: SortOrder;
   limit?: number;
-  cursor?: string;
 }) {
   const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['facilities', 'ranking', { ...params, ...filters }],
+    queryKey: [
+      'facilities',
+      'ranking',
+      params?.protocolDefinitionId,
+      params?.rankBy,
+      params?.order,
+      params?.limit,
+      filters,
+    ],
     queryFn: () => getFacilityRanking({ ...params, ...filters }),
+    // Return a shallow copy so cached rows are never mutated in place by the UI.
+    select: (response) => ({
+      ...response,
+      data: [...response.data],
+    }),
   });
 }
