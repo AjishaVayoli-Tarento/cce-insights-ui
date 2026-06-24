@@ -15,13 +15,12 @@
 5. [Patient Detail](#5-patient-detail)
 6. [Deviations](#6-deviations)
 7. [Event Volume](#7-event-volume)
-8. [Source Comparison](#8-source-comparison)
-9. [Facility Analytics](#9-facility-analytics)
-10. [Practitioner Analytics](#10-practitioner-analytics)
-11. [Intelligence](#11-intelligence)
-12. [Ingestion Pipeline](#12-ingestion-pipeline)
-13. [Exports](#13-exports)
-14. [Shared Components](#14-shared-components)
+8. [Facility Analytics](#8-facility-analytics)
+9. [Practitioner Analytics](#9-practitioner-analytics)
+10. [Intelligence](#10-intelligence)
+11. [Ingestion Pipeline](#11-ingestion-pipeline)
+12. [Exports](#12-exports)
+13. [Shared Components](#13-shared-components)
 
 ---
 
@@ -384,19 +383,16 @@
 ## 7. Event Volume
 
 **Route:** `/events`  
-**Purpose:** Clinical event metrics — volume by resource type, facility, practitioner, source, and processing quality.
+**Purpose:** Clinical event metrics — volume by resource type and facility.
 
 ### APIs Used
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /v1/insights/events/summary` | Composite event volume |
+| `GET /v1/insights/events/kpis` | All-time KPI snapshot (header cards) |
 | `GET /v1/insights/events/trends` | Volume over time |
 | `GET /v1/insights/events/by-resource-type` | Resource type breakdown |
 | `GET /v1/insights/events/by-facility` | Facility event counts |
-| `GET /v1/insights/events/by-practitioner` | Practitioner activity |
-| `GET /v1/insights/events/by-source` | Source system counts |
-| `GET /v1/insights/events/processing-quality` | MATCHED/ZERO_MATCH/DUPLICATE per source |
 
 ### Wireframe
 
@@ -421,8 +417,7 @@
 │         │  │  ■ Encounter  ▒ Observation  ▓ Condition  □ Other            │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
 │         │                                                                    │
-│         │  Tabs: [By Resource Type •] [By Facility] [By Practitioner]       │
-│         │        [By Source] [Processing Quality]                            │
+│         │  Tabs: [By Resource Type •] [By Facility]                            │
 │         │                                                                    │
 │         │  ┌─ By Resource Type ────────────────────────────────────────────┐ │
 │         │  │ Resource Type    │ Count │ Percentage │ Bar                   │ │
@@ -434,8 +429,6 @@
 │         │  │ Immunization     │   450 │  3.6%      │ ██                   │ │
 │         │  │ Procedure        │   360 │  2.9%      │ █                    │ │
 │         │  └───────────────────────────────────────────────────────────────┘ │
-│         │                                                                    │
-│         │  [Compare Sources →]                                               │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -445,62 +438,10 @@
 |-----|---------|-----|
 | By Resource Type | Bar chart + table with counts and percentages | `events/by-resource-type` |
 | By Facility | Table: facility, total events, resource type sub-groups | `events/by-facility` |
-| By Practitioner | Table: practitioner ref, display name, facility, event counts | `events/by-practitioner` |
-| By Source | Table: source system, total events, status breakdown | `events/by-source` |
-| Processing Quality | Stacked bar chart per source: MATCHED/ZERO_MATCH/DUPLICATE | `events/processing-quality` |
 
 ---
 
-## 8. Source Comparison
-
-**Route:** `/events/source-comparison`  
-**Purpose:** Compare two source systems for event overlap and unique events.
-
-### APIs Used
-
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /v1/insights/events/source-comparison` | Overlap detection between two sources |
-| `GET /v1/insights/events/by-source` | Source list for selectors |
-
-### Wireframe
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ Sidebar │  Source Comparison                                                 │
-│         │  ← Back to Event Volume                                            │
-│         │                                                                    │
-│         │  Source A: [rhie-mediator       ▼]                                │
-│         │  Source B: [ebuzima/kigali-south▼]                                │
-│         │  Match Window: [300] seconds     [Compare]                        │
-│         │                                                                    │
-│         │  ┌──────────────────┐  ┌──────────┐  ┌──────────────────┐        │
-│         │  │ Source A         │  │ Overlap  │  │ Source B         │        │
-│         │  │ rhie-mediator    │  │          │  │ ebuzima/south    │        │
-│         │  │ Total: 8,400     │  │  3,200   │  │ Total: 4,080     │        │
-│         │  │ Unique: 5,200    │  │ events   │  │ Unique: 880      │        │
-│         │  │ Overlap: 38.1%   │  │          │  │ Overlap: 78.4%   │        │
-│         │  └──────────────────┘  └──────────┘  └──────────────────┘        │
-│         │                                                                    │
-│         │  ┌─ Overlap by Resource Type ────────────────────────────────────┐ │
-│         │  │ Encounter     ████████████  1,100                            │ │
-│         │  │ Observation   ██████████    950                              │ │
-│         │  │ Condition     █████         480                              │ │
-│         │  │ MedicationReq ████          380                              │ │
-│         │  │ ServiceReq    ███           290                              │ │
-│         │  └───────────────────────────────────────────────────────────────┘ │
-│         │                                                                    │
-│         │  ┌─ Sample Pairs ────────────────────────────────────────────────┐ │
-│         │  │ Patient          │ ResourceType │ Time A     │ Time B  │ Diff│ │
-│         │  │ 260225-0002-5501 │ Encounter    │ Jan 20 9:30│ 9:30    │ 0s  │ │
-│         │  │ 260115-0001-7823 │ Observation  │ Jan 22 14:0│ 14:02   │ 120s│ │
-│         │  └───────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 9. Facility Analytics
+## 8. Facility Analytics
 
 **Route:** `/facilities`  
 **Purpose:** Facility leaderboard by compliance rate, deviation count, or event volume. Color-coded compliance column with legend. Non-Compliant Hotspots section (binary: Compliant / Non-Compliant).
@@ -541,7 +482,7 @@
 
 ---
 
-## 10. Practitioner Analytics
+## 9. Practitioner Analytics
 
 **Route:** `/practitioners`  
 **Purpose:** Practitioner compliance table with color-coded compliance percentage and legend.
@@ -573,7 +514,7 @@
 
 ---
 
-## 11. Intelligence
+## 10. Intelligence
 
 **Route:** `/intelligence`  
 **Purpose:** Intelligence delivery analytics — action instances, delivery status donut, destinations, adaptors, and actions table.
@@ -614,7 +555,7 @@
 
 ---
 
-## 12. Ingestion Pipeline
+## 11. Ingestion Pipeline
 
 **Route:** `/ingestion`  
 **Purpose:** Ingestion health monitoring — acceptance/rejection funnel, rejection reasons, source quality, pipeline loss detection.
@@ -670,7 +611,7 @@
 
 ---
 
-## 13. Exports
+## 12. Exports
 
 **Route:** `/exports`  
 **Purpose:** Download compliance data as CSV or JSON with filter options.
@@ -702,7 +643,7 @@
 
 ---
 
-## 14. Shared Components
+## 13. Shared Components
 
 ### MetricCard
 

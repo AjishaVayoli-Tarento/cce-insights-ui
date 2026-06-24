@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
@@ -8,43 +7,33 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { CursorPagination } from '../components/shared/CursorPagination';
 import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
-import { ProcessingQualityChart } from '../components/charts/ProcessingQualityChart';
 import {
-  useEventKpis, useEventTrends, useEventsByResourceType,
-  useEventsByFacility, useEventsByPractitioner, useEventsBySource, useProcessingQuality,
+  useEventKpis, useEventTrends, useEventsByResourceType, useEventsByFacility,
 } from '../hooks/useEventVolume';
 import { formatNumber } from '../utils/formatters';
 import { INTERVAL_OPTIONS } from '../config';
 
-type Tab = 'resource-type' | 'facility' | 'practitioner' | 'source' | 'processing-quality';
+type Tab = 'resource-type' | 'facility';
 
 export default function EventVolume() {
   const [interval, setInterval] = useState('weekly');
   const [activeTab, setActiveTab] = useState<Tab>('resource-type');
   const [facilityCursor, setFacilityCursor] = useState<string | undefined>();
   const [facilityPage, setFacilityPage] = useState(1);
-  const [practCursor, setPractCursor] = useState<string | undefined>();
-  const [practPage, setPractPage] = useState(1);
 
   const kpis = useEventKpis();
   const trends = useEventTrends(interval);
   const byResourceType = useEventsByResourceType();
   const byFacility = useEventsByFacility({ cursor: facilityCursor });
-  const byPractitioner = useEventsByPractitioner({ cursor: practCursor });
-  const bySource = useEventsBySource();
-  const quality = useProcessingQuality();
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'resource-type', label: 'By Resource Type' },
     { key: 'facility', label: 'By Facility' },
-    { key: 'practitioner', label: 'By Practitioner' },
-    { key: 'source', label: 'By Source' },
-    { key: 'processing-quality', label: 'Processing Quality' },
   ];
 
   return (
     <>
-      <PageHeader title="Event Volume & Activity" description="Clinical event metrics — volume by resource type, facility, practitioner, source" />
+      <PageHeader title="Event Volume & Activity" description="Clinical event metrics — volume by resource type and facility" />
 
       {kpis.isLoading ? <LoadingSpinner /> : kpis.error ? <ErrorAlert error={kpis.error} /> : kpis.data ? (
         <>
@@ -142,88 +131,7 @@ export default function EventVolume() {
               ) : null}
             </Card>
           )}
-
-          {activeTab === 'practitioner' && (
-            <Card>
-              {byPractitioner.isLoading ? <LoadingSpinner /> : byPractitioner.error ? <ErrorAlert error={byPractitioner.error} /> : byPractitioner.data ? (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                          <th className="pb-2 pr-4">Practitioner</th>
-                          <th className="pb-2 pr-4">Display Name</th>
-                          <th className="pb-2 pr-4">Facility</th>
-                          <th className="pb-2">Total Events</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {byPractitioner.data.data.map((p) => (
-                          <tr key={p.practitionerRef} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{p.practitionerRef}</td>
-                            <td className="py-2 pr-4 text-gray-600">{p.practitionerDisplay || '—'}</td>
-                            <td className="py-2 pr-4 text-gray-600">{p.facilityId}</td>
-                            <td className="py-2">{formatNumber(p.totalEvents)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <CursorPagination
-                    hasMore={byPractitioner.data.pagination.has_more}
-                    nextCursor={byPractitioner.data.pagination.next_cursor}
-                    onNext={(c) => { setPractCursor(c); setPractPage((p) => p + 1); }}
-                    onReset={() => { setPractCursor(undefined); setPractPage(1); }}
-                    currentPage={practPage}
-                  />
-                </>
-              ) : null}
-            </Card>
-          )}
-
-          {activeTab === 'source' && (
-            <Card>
-              {bySource.isLoading ? <LoadingSpinner /> : bySource.error ? <ErrorAlert error={bySource.error} /> : bySource.data ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
-                        <th className="pb-2 pr-4">Source</th>
-                        <th className="pb-2 pr-4">Total Events</th>
-                        <th className="pb-2">Resource Types</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {bySource.data.map((s) => (
-                        <tr key={s.source} className="hover:bg-gray-50">
-                          <td className="py-2 pr-4 font-medium text-gray-900">{s.source}</td>
-                          <td className="py-2 pr-4">{formatNumber(s.totalEvents)}</td>
-                          <td className="py-2 text-gray-600">{s.byResourceType.map((r) => `${r.resourceType}: ${r.count}`).join(', ')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
-            </Card>
-          )}
-
-          {activeTab === 'processing-quality' && (
-            <Card>
-              {quality.isLoading ? <LoadingSpinner /> : quality.error ? <ErrorAlert error={quality.error} /> : quality.data?.bySource?.length ? (
-                <ProcessingQualityChart data={quality.data.bySource} />
-              ) : quality.data ? (
-                <p className="py-8 text-center text-sm text-gray-500">No processing quality data available</p>
-              ) : null}
-            </Card>
-          )}
         </div>
-      </div>
-
-      <div className="mt-4">
-        <Link to="/events/source-comparison" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-          Compare Sources →
-        </Link>
       </div>
     </>
   );

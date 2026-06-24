@@ -2,6 +2,13 @@
 
 **Release Date:** 2026-06-02
 
+## Unreleased
+
+### Removed
+
+- **Source Comparison** — Removed `/events/source-comparison` page, Compare Sources link on Events, and related API client/types (`compareSourceSystems`, `SourceComparison`, `SourceTimelineChart`).
+- **Events page tabs** — Removed By Practitioner, By Source, and Processing Quality tabs and their API integrations (`/events/by-practitioner`, `/events/by-source`, `/events/processing-quality`).
+
 ## Overview
 
 Major UX refresh focused on binary compliance model (Compliant / Non-Compliant only), new pages (Intelligence, Practitioner Analytics), redesigned Service Workflow Compliance as a vertical timeline, and visual polish across all views.
@@ -78,7 +85,7 @@ Initial release of the CCE Insights UI — an analytics dashboard for the Clinic
 
 ## Features
 
-### Pages (11 routes)
+### Pages (12 routes)
 
 - **Dashboard** — Overview metrics (total events, active deviations, facilities tracked, pipeline loss rate), trend sparklines, quick navigation
 - **Compliance Overview** — Protocol compliance summaries with status breakdown, step metrics, patient list with status filtering
@@ -86,8 +93,7 @@ Initial release of the CCE Insights UI — an analytics dashboard for the Clinic
 - **Patient List** — Patients by compliance status, risk hotspots by facility (stacked bar chart), repeat deviation patients
 - **Patient Detail** — Protocol enrollments with progress bars, step-level detail, compliance timeline, deviation list, event history
 - **Deviation Analytics** — Intelligence summary, deviation trends (daily/weekly/monthly), most-deviated steps, resolution rate, paginated deviation list with type filter
-- **Event Volume** — Tabbed view: by resource type (bar chart), by facility, by practitioner, by source, processing quality chart
-- **Source Comparison** — Compare two source systems for event overlap with sample pairs table
+- **Event Volume** — Tabbed view: by resource type (bar chart) and by facility
 - **Facility Analytics** — Ranked leaderboard (by compliance rate, deviation count, or event volume), at-risk hotspot chart
 - **Ingestion Pipeline** — Acceptance/rejection funnel, rejection reasons (horizontal bars), source quality, pipeline loss alert
 - **Exports** — Download compliance data as CSV or JSON with protocol/facility/date filters
@@ -105,7 +111,7 @@ Initial release of the CCE Insights UI — an analytics dashboard for the Clinic
 
 ### API Integration
 
-- 38 endpoints consumed across 10 API groups (9 analytics + 1 lookups)
+- 34 endpoints consumed across 10 API groups (9 analytics + 1 lookups)
 - Centralized API client with shared URL builder, auth header injection (`VITE_AUTH_TOKEN` or `sessionStorage`), and error handling
 - Lookups API (`/lookups/protocols`, `/lookups/facilities`, `/lookups/practitioners`, `/lookups/sources`, `/lookups/patients`) for populating selectors
 - Relative URL support for Docker (Caddy proxy) and absolute URL support for local development

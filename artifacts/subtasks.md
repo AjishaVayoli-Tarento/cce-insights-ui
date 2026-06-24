@@ -26,9 +26,9 @@
 Create comprehensive technical documentation covering architecture, page wireframes, API integration reference, developer setup, and AI agent instructions for the Insights UI — an analytics dashboard consuming 33 Insights Service endpoints.
 
 **Acceptance Criteria:**
-- [x] `copilot-instructions-insights-ui.md` — AI agent instructions: architecture, tech stack, 11 pages, ~60 file structure, 33 API endpoints, design patterns, global filters, color conventions
-- [x] `architecture-overview.md` — System context, tech stack, application architecture layers, page hierarchy, data flow with TanStack Query + global filter context, state management, routing (11 routes), styling (compliance/step/processing palettes), error handling, performance, deployment
-- [x] `pages-and-wireframes.md` — ASCII wireframes for all 11 pages: Dashboard, Compliance Overview, Protocol Analytics, Patient List, Patient Detail, Deviations, Event Volume, Source Comparison, Facility Analytics, Ingestion Pipeline, Exports; shared component specs (MetricCard, badges, DateRangePicker, IntervalSelector, CursorPagination, DataTable)
+- [x] `copilot-instructions-insights-ui.md` — AI agent instructions: architecture, tech stack, 12 pages, ~60 file structure, 37 API endpoints, design patterns, global filters, color conventions
+- [x] `architecture-overview.md` — System context, tech stack, application architecture layers, page hierarchy, data flow with TanStack Query + global filter context, state management, routing (12 routes), styling (compliance/step/processing palettes), error handling, performance, deployment
+- [x] `pages-and-wireframes.md` — ASCII wireframes for all 12 pages: Dashboard, Compliance Overview, Protocol Analytics, Patient List, Patient Detail, Deviations, Event Volume, Facility Analytics, Practitioner Analytics, Intelligence, Ingestion Pipeline, Exports; shared component specs (MetricCard, badges, DateRangePicker, IntervalSelector, CursorPagination, DataTable)
 - [x] `api-integration.md` — Base API client with envelope unwrapping, ~30 TypeScript interfaces, 10 API modules (compliance, patients, deviations, events, protocols, facilities, ingestion, exports), TanStack Query hooks with global filter integration, error handling, CORS options
 - [x] `developer-setup.md` — Prerequisites, backend dependency chain, quick start, env variables, project initialization, npm scripts, testing (Vitest + MSW), Docker build, demo workflow (10-step sequence)
 
@@ -81,13 +81,13 @@ Initialize the React project with Vite, TypeScript, Tailwind CSS, and all requir
 Implement the typed API client layer — all TypeScript interfaces matching the 33 Insights Service response schemas, base fetch wrapper with `{ data }` envelope unwrapping, per-resource API functions (10 modules), and TanStack Query hooks (10 hooks) with global filter integration.
 
 **Acceptance Criteria:**
-- [x] `src/api/types.ts` — ~30 interfaces covering all 38 endpoint responses: `ProtocolLookup`, `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `PractitionerEventCount`, `SourceSystemCount`, `SourceComparison`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `ProcessingQuality`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
+- [x] `src/api/types.ts` — ~30 interfaces covering all 34 endpoint responses: `ProtocolLookup`, `ComplianceSummary`, `FacilitySummary`, `PatientCompliance`, `PatientTimeline`, `ProtocolTracking`, `ProtocolTrackingDetail`, `StepInstance`, `PatientEvent`, `PatientDeviation`, `DeviationRecord`, `DeviationTrend`, `DeviationByAction`, `DeviationResolution`, `IntelligenceSummary`, `EventVolumeSummary`, `EventVolumeTrend`, `ResourceTypeCount`, `FacilityEventCount`, `StepAnalytics`, `CompletionFunnel`, `OutcomeDistribution`, `EnrollmentTrend`, `FacilityRanking`, `AtRiskHotspot`, `RepeatDeviationPatient`, `IngestionFunnel`, `RejectionAnalytics`, `SourceDataQuality`, `PipelineLoss` + enums + `PaginatedResponse<T>`, `ErrorResponse`, `GlobalFilters`
 - [x] `src/api/client.ts` — `apiGet<T>()` with envelope unwrapping, `apiGetPaginated<T>()` for cursor-based pagination, `ApiError` class, Keycloak OIDC token injection (`VITE_AUTH_TOKEN` → `keycloak.token` → sessionStorage)
 - [x] `src/auth/keycloak.ts` — Keycloak OIDC init with PKCE (`S256`), `login-required` mode, auto-refresh token every 30s
 - [x] `src/api/compliance.ts` — 3 functions: protocol summary, facility summary, protocol patients
 - [x] `src/api/patients.ts` — 7 functions: timeline, tracking list, tracking detail, events, deviations, at-risk hotspots, repeat deviations
 - [x] `src/api/deviations.ts` — 5 functions: list, trends, by-action, resolution-rate, intelligence summary
-- [x] `src/api/events.ts` — 8 functions: summary, trends, by-resource-type, by-facility, by-practitioner, by-source, source-comparison, processing-quality
+- [x] `src/api/events.ts` — 5 functions: summary, trends, by-resource-type, by-facility, kpis
 - [x] `src/api/protocols.ts` — 4 functions: step-analytics, completion-funnel, outcome-distribution, enrollment-trends
 - [x] `src/api/facilities.ts` — 1 function: ranking
 - [x] `src/api/ingestion.ts` — 4 functions: funnel, rejections, source-quality, pipeline-loss
@@ -105,7 +105,7 @@ Implement the typed API client layer — all TypeScript interfaces matching the 
 - `src/hooks/usePatients.ts`, `src/hooks/useDeviations.ts`
 - `src/hooks/useEventVolume.ts`, `src/hooks/useFacilities.ts`
 - `src/hooks/useIngestion.ts`, `src/hooks/useLookups.ts`
-- `src/hooks/useSourceComparison.ts`, `src/hooks/useGlobalFilters.ts`
+- `src/hooks/useGlobalFilters.ts`
 
 ---
 
@@ -146,7 +146,7 @@ Implement pure utility functions, the global filter context (date range + facili
 **Labels:** `ui`, `components`
 
 **Description:**  
-Build the application shell (sidebar with navigation groups, header with global filters, content area) and all shared/reusable components used across the 11 pages.
+Build the application shell (sidebar with navigation groups, header with global filters, content area) and all shared/reusable components used across the 12 pages.
 
 **Acceptance Criteria:**
 - [x] `AppLayout.tsx` — Sidebar + Header + `<Outlet/>`, responsive: sidebar collapsible
@@ -195,11 +195,9 @@ Implement all Recharts wrapper components. Each chart accepts processed data arr
 - [x] `CompletionFunnelChart.tsx` — Funnel/waterfall chart: patient drop-off per step
 - [x] `OutcomeDistributionChart.tsx` — Pie/donut chart: ACTIVE/COMPLETED/WITHDRAWN/EXPIRED
 - [x] `ResourceTypeBarChart.tsx` — Bar chart: event counts by resource type
-- [x] `ProcessingQualityChart.tsx` — Stacked bar chart: MATCHED/ZERO_MATCH/DUPLICATE per source
 - [x] `IngestionFunnelChart.tsx` — Funnel chart: ACCEPTED/REJECTED/DUPLICATE pipeline (with colored Cell components)
 - [x] `RiskHotspotChart.tsx` — Stacked horizontal bar: on_track/at_risk/non_compliant per facility
 - [x] `EnrollmentTrendChart.tsx` — Line chart: enrollments over time
-- [x] `SourceTimelineChart.tsx` — Timeline chart: source system comparison
 - [x] All charts use `CHART_COLORS` from `utils/colors.ts`
 - [x] All charts include tooltips and responsive containers
 - [x] Component tests for at least 3 charts with mock data
@@ -211,11 +209,9 @@ Implement all Recharts wrapper components. Each chart accepts processed data arr
 - `src/components/charts/CompletionFunnelChart.tsx`
 - `src/components/charts/OutcomeDistributionChart.tsx`
 - `src/components/charts/ResourceTypeBarChart.tsx`
-- `src/components/charts/ProcessingQualityChart.tsx`
 - `src/components/charts/IngestionFunnelChart.tsx`
 - `src/components/charts/RiskHotspotChart.tsx`
 - `src/components/charts/EnrollmentTrendChart.tsx`
-- `src/components/charts/SourceTimelineChart.tsx`
 
 ---
 
@@ -298,7 +294,7 @@ Implement the Deviations page — deviation trends, most-deviated steps, resolut
 
 ---
 
-## Subtask S9: Event Volume & Source Comparison Pages
+## Subtask S9: Event Volume Page
 
 **Type:** Story  
 **Priority:** High  
@@ -306,24 +302,18 @@ Implement the Deviations page — deviation trends, most-deviated steps, resolut
 **Labels:** `ui`, `pages`, `events`
 
 **Description:**  
-Implement the Event Volume page (summary, trends, 5 dimension tabs, processing quality) and the Source Comparison page (source selector, overlap analysis, sample pairs).
+Implement the Event Volume page (KPI cards, trends, 2 dimension tabs: by resource type and by facility).
 
 **Acceptance Criteria:**
-- [x] **EventVolumePage.tsx** — 4 metric cards (total events, matched rate, zero-match rate, duplicate rate)
+- [x] **EventVolumePage.tsx** — 5 metric cards (total events, matched rate, zero-match rate, duplicate rate, pipeline loss)
 - [x] EventTrendChart with interval selector
-- [x] 5 sub-tabs: By Resource Type (bar + table), By Facility (table), By Practitioner (table), By Source (table with status breakdown), Processing Quality (stacked bar per source)
+- [x] 2 sub-tabs: By Resource Type (bar + table), By Facility (table)
 - [x] All sub-tabs: cursor pagination where applicable, global filters
-- [x] "Compare Sources →" link to source comparison page
-- [x] **SourceComparisonPage.tsx** — 2 source selector dropdowns, match window input, Compare button
-- [x] Overlap summary cards (Source A unique, Source B unique, overlapping, percentages)
-- [x] Overlap by resource type bar chart
-- [x] Sample pairs table (patient, resource type, time A, time B, diff)
 - [x] Loading, error, and empty states
 - [x] Component tests for EventVolumePage
 
 **Files:**
 - `src/pages/EventVolume.tsx`
-- `src/pages/SourceComparison.tsx`
 
 ---
 

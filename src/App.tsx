@@ -12,7 +12,6 @@ const PatientList = lazy(() => import('./pages/PatientList'));
 const PatientDetail = lazy(() => import('./pages/PatientDetail'));
 const Deviations = lazy(() => import('./pages/Deviations'));
 const EventVolume = lazy(() => import('./pages/EventVolume'));
-const SourceComparison = lazy(() => import('./pages/SourceComparison'));
 const FacilityAnalytics = lazy(() => import('./pages/FacilityAnalytics'));
 const PractitionerAnalytics = lazy(() => import('./pages/PractitionerAnalytics'));
 const IngestionPipeline = lazy(() => import('./pages/IngestionPipeline'));
@@ -48,7 +47,6 @@ export function App() {
               <Route path="/compliance/patients/:id" element={<PatientDetail />} />
               <Route path="/deviations" element={<Deviations />} />
               <Route path="/events" element={<EventVolume />} />
-              <Route path="/events/source-comparison" element={<SourceComparison />} />
               <Route path="/facilities" element={<FacilityAnalytics />} />
               <Route path="/practitioners" element={<PractitionerAnalytics />} />
               <Route path="/ingestion" element={<IngestionPipeline />} />

@@ -396,8 +396,7 @@ Step-by-step sequence for a live demo:
 | Patient at-risk identification | `/compliance/patients` → filter by `non_compliant` |
 | Individual patient journey | `/compliance/patients/{id}` → timeline + events |
 | Deviation trend analysis | `/deviations` → trends chart + by-action table |
-| Event volume by source | `/events` → By Source tab |
-| Source system duplication | `/events/source-comparison` → select two sources |
+| Event volume by resource type | `/events` → By Resource Type tab |
 | Facility performance comparison | `/facilities` → ranking chart |
 | Ingestion health check | `/ingestion` → funnel + rejection reasons |
 | Data export | `/exports` → configure + download |

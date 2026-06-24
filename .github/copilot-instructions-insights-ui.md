@@ -2,7 +2,7 @@
 
 ## What Is This Service?
 
-The **Insights UI** is a React analytics dashboard that consumes the **CCE Insights Service REST APIs** (33 endpoints) to provide compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring. It replaces ad-hoc Grafana dashboards with a purpose-built, operational intelligence interface.
+The **Insights UI** is a React analytics dashboard that consumes the **CCE Insights Service REST APIs** (34 endpoints) to provide compliance analytics, deviation trends, event volume metrics, facility rankings, patient risk analysis, and ingestion pipeline monitoring. It replaces ad-hoc Grafana dashboards with a purpose-built, operational intelligence interface.
 
 This is the **Analytics UI** referenced in the CCE Solution Design §7.2.5. It reads from the Insights Service (port 8084) via the CCE Gateway. The Insights Service is a read-only analytics backend that queries the shared PostgreSQL database.
 
@@ -64,7 +64,7 @@ This is the **Analytics UI** referenced in the CCE Solution Design §7.2.5. It r
 - **Color-coded processing statuses**:
   - `MATCHED` → green, `ZERO_MATCH` → amber, `DUPLICATE` → gray
 
-## Pages (11 routes)
+## Pages (12 routes)
 
 | Route | Page | Primary APIs | Purpose |
 |---|---|---|---|
@@ -74,8 +74,7 @@ This is the **Analytics UI** referenced in the CCE Solution Design §7.2.5. It r
 | `/compliance/patients` | Patient List | `GET /v1/insights/protocols/{id}/patients`, `GET /v1/insights/patients/at-risk-hotspots` | Patient compliance status, risk hotspots |
 | `/compliance/patients/:patientId` | Patient Detail | `GET /v1/insights/patients/{id}/compliance-timeline`, `/protocol-tracking`, `/events`, `/deviations` | Individual patient journey & events |
 | `/deviations` | Deviations | `GET /v1/insights/deviations`, `/trends`, `/by-action`, `/resolution-rate`, `/v1/insights/intelligence/summary` | Deviation analytics & trends |
-| `/events` | Event Volume | `GET /v1/insights/events/summary`, `/trends`, `/by-resource-type`, `/by-facility`, `/by-practitioner`, `/by-source` | Clinical event metrics |
-| `/events/source-comparison` | Source Comparison | `GET /v1/insights/events/source-comparison` | Compare two source systems |
+| `/events` | Event Volume | `GET /v1/insights/events/kpis`, `/trends`, `/by-resource-type`, `/by-facility` | Clinical event metrics |
 | `/facilities` | Facility Analytics | `GET /v1/insights/facilities/ranking`, `GET /v1/insights/patients/at-risk-hotspots` | Facility leaderboard & patient risk |
 | `/ingestion` | Ingestion Pipeline | `GET /v1/insights/ingestion/funnel`, `/rejections`, `/source-quality`, `/pipeline-loss` | Ingestion health monitoring |
 | `/exports` | Exports | `GET /v1/insights/exports/compliance-report` | Data export (CSV/JSON) |
@@ -88,7 +87,7 @@ src/
 │   ├── client.ts                     # Base fetch wrapper (base URL, headers, error handling)
 │   ├── compliance.ts                 # Compliance summary & patient compliance APIs
 │   ├── deviations.ts                 # Deviation analytics APIs
-│   ├── events.ts                     # Event volume & source comparison APIs
+│   ├── events.ts                     # Event volume APIs
 │   ├── facilities.ts                 # Facility ranking API
 │   ├── ingestion.ts                  # Ingestion pipeline analytics APIs
 │   ├── patients.ts                   # Patient risk analytics APIs
@@ -122,7 +121,6 @@ src/
 │   │   ├── CompletionFunnelChart.tsx # Funnel chart — step drop-off
 │   │   ├── OutcomeDistributionChart.tsx # Pie/donut — protocol outcomes
 │   │   ├── FacilityRankingChart.tsx  # Horizontal bar — facility leaderboard
-│   │   ├── ProcessingQualityChart.tsx # Stacked bar — MATCHED/ZERO_MATCH/DUPLICATE
 │   │   ├── IngestionFunnelChart.tsx  # Funnel — accepted/rejected/duplicate
 │   │   ├── RiskHeatmapChart.tsx      # Heatmap — at-risk hotspots by facility
 │   │   └── EnrollmentTrendChart.tsx  # Line chart — enrollments over time
@@ -138,8 +136,7 @@ src/
 │   ├── PatientListPage.tsx           # Patients by compliance status + risk hotspots
 │   ├── PatientDetailPage.tsx         # Timeline, tracking, events, deviations
 │   ├── DeviationsPage.tsx            # Trends, by-action, resolution rate
-│   ├── EventVolumePage.tsx           # Event metrics + source comparison sub-tab
-│   ├── SourceComparisonPage.tsx      # Source comparison detail
+│   ├── EventVolumePage.tsx           # Event metrics
 │   ├── FacilityAnalyticsPage.tsx     # Facility ranking + risk hotspots
 │   ├── IngestionPage.tsx             # Ingestion funnel, rejections, quality, loss
 │   └── ExportsPage.tsx               # Export configuration and download
@@ -267,15 +264,11 @@ Many endpoints support `interval` (daily/weekly/monthly). Use a shared `Interval
 | Event trends | `GET /v1/insights/events/trends` | Volume over time |
 | Events by resource type | `GET /v1/insights/events/by-resource-type` | Resource type breakdown |
 | Events by facility | `GET /v1/insights/events/by-facility` | Facility event counts |
-| Events by practitioner | `GET /v1/insights/events/by-practitioner` | Practitioner activity |
-| Events by source | `GET /v1/insights/events/by-source` | Source system counts |
-| Source comparison | `GET /v1/insights/events/source-comparison` | Overlap detection |
 | Step analytics | `GET /v1/insights/protocols/{id}/step-analytics` | Per-step performance |
 | Completion funnel | `GET /v1/insights/protocols/{id}/completion-funnel` | Drop-off analysis |
 | Outcome distribution | `GET /v1/insights/protocols/{id}/outcome-distribution` | Terminal status breakdown |
 | Enrollment trends | `GET /v1/insights/protocols/{id}/enrollment-trends` | Adoption over time |
 | Facility ranking | `GET /v1/insights/facilities/ranking` | Leaderboard |
-| Processing quality | `GET /v1/insights/events/processing-quality` | MATCHED/ZERO_MATCH/DUPLICATE |
 | At-risk hotspots | `GET /v1/insights/patients/at-risk-hotspots` | Patient risk by facility |
 | Repeat deviations | `GET /v1/insights/patients/repeat-deviations` | High-risk patients |
 | Ingestion funnel | `GET /v1/insights/ingestion/funnel` | Pipeline status |

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getEventSummary, getEventTrends, getEventsByResourceType, getEventsByFacility, getEventsByPractitioner, getEventsBySource, getProcessingQuality, getEventKpis } from '../api/events';
+import { getEventSummary, getEventTrends, getEventsByResourceType, getEventsByFacility, getEventKpis } from '../api/events';
 import { useGlobalFilters } from './useGlobalFilters';
 
 const POLLING_INTERVAL = Number(import.meta.env.VITE_POLLING_INTERVAL || 60000);
@@ -37,43 +37,10 @@ export function useEventsByFacility(params?: { resourceType?: string; limit?: nu
   });
 }
 
-export function useEventsByPractitioner(params?: { resourceType?: string; limit?: number; cursor?: string }) {
-  const filters = useGlobalFilters();
-  return useQuery({
-    queryKey: ['events', 'by-practitioner', { ...params, ...filters }],
-    queryFn: () => getEventsByPractitioner({ ...params, ...filters }),
-  });
-}
-
-export function useEventsBySource() {
-  const filters = useGlobalFilters();
-  return useQuery({
-    queryKey: ['events', 'by-source', filters],
-    queryFn: () => getEventsBySource(filters),
-  });
-}
-
-export function useProcessingQuality() {
-  const filters = useGlobalFilters();
-  return useQuery({
-    queryKey: ['events', 'processing-quality', filters],
-    queryFn: () => getProcessingQuality(filters),
-  });
-}
-
 export function useEventKpis() {
   return useQuery({
     queryKey: ['events', 'kpis'],
     queryFn: () => getEventKpis(),
     refetchInterval: POLLING_INTERVAL,
-  });
-}
-
-export function useEventTrendsBySource(source: string, interval = 'daily') {
-  const filters = useGlobalFilters();
-  return useQuery({
-    queryKey: ['events', 'trends', { interval, source, ...filters }],
-    queryFn: () => getEventTrends({ interval, source, ...filters }),
-    enabled: !!source,
   });
 }

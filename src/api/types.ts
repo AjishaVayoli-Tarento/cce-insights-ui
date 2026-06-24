@@ -346,52 +346,6 @@ export interface FacilityEventCount {
   byResourceType: { resourceType: string; count: number }[];
 }
 
-export interface PractitionerEventCount {
-  practitionerRef: string;
-  practitionerDisplay: string | null;
-  facilityId: string;
-  totalEvents: number;
-  byResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceSystemCount {
-  source: string;
-  totalEvents: number;
-  byResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceComparison {
-  sourceA: string;
-  sourceB: string;
-  matchWindowSeconds: number;
-  sourceASummary: SourceSummary;
-  sourceBSummary: SourceSummary;
-  overlap: {
-    totalOverlappingEvents: number;
-    byResourceType: { resourceType: string; count: number }[];
-  };
-  samples: SourceComparisonSample[];
-}
-
-export interface SourceSummary {
-  source: string;
-  totalEvents: number;
-  uniqueEvents: number;
-  overlappingEvents: number;
-  overlapPercentage: number;
-  uniqueByResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceComparisonSample {
-  eventAId: string;
-  eventBId: string;
-  subject: string;
-  resourceType: string;
-  eventTimeA: string;
-  eventTimeB: string;
-  timeDiffSeconds: number;
-}
-
 // ─── Protocol Analytics ──────────────────────────────────────
 
 export interface StepAnalytics {
@@ -494,31 +448,6 @@ export interface PractitionerRanking {
 }
 
 export type PractitionerRankBy = 'complianceRate' | 'totalPatients' | 'totalEvents';
-
-// ─── Processing Quality ──────────────────────────────────────
-
-export interface ProcessingStatusBucket {
-  count: number;
-  percentage: number;
-}
-
-export interface ProcessingQuality {
-  totalEvents: number;
-  overall: {
-    matched?: ProcessingStatusBucket;
-    zero_match?: ProcessingStatusBucket;
-    duplicate?: ProcessingStatusBucket;
-  };
-  bySource: {
-    source: string;
-    totalEvents: number;
-    breakdown: {
-      matched?: ProcessingStatusBucket;
-      zero_match?: ProcessingStatusBucket;
-      duplicate?: ProcessingStatusBucket;
-    };
-  }[];
-}
 
 // ─── Patient Risk ────────────────────────────────────────────
 

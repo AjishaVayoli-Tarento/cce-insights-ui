@@ -113,7 +113,7 @@ flowchart TD
         app[App.tsx<br/>QueryClientProvider + Router + FilterProvider]
     end
 
-    subgraph "Pages (13)"
+    subgraph "Pages (12)"
         P1[DashboardPage]
         P2[ComplianceOverviewPage]
         P3[ProtocolAnalyticsPage]
@@ -121,7 +121,6 @@ flowchart TD
         P5[PatientDetailPage]
         P6[DeviationsPage]
         P7[EventVolumePage]
-        P8[SourceComparisonPage]
         P9[FacilityAnalyticsPage]
         P10[PractitionerAnalyticsPage]
         P11[IngestionPage]
@@ -149,10 +148,10 @@ flowchart TD
     main --> app
     app --> L
     app --> CTX
-    L --> P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13
+    L --> P1 & P2 & P3 & P4 & P5 & P6 & P7 & P9 & P10 & P11 & P12 & P13
     P1 & P2 & P3 & P6 & P7 & P9 & P12 --> CH
-    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13 --> C
-    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 & P9 & P10 & P11 & P12 & P13 --> H
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P9 & P10 & P11 & P12 & P13 --> C
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 & P9 & P10 & P11 & P12 & P13 --> H
     H --> A
     H --> CTX
     CH --> U
@@ -225,15 +224,6 @@ App (QueryClientProvider + FilterProvider)
 │   ├── EventTrendChart (stacked area by resource type)
 │   ├── ResourceTypeBarChart (bar)
 │   ├── FacilityEventTable (events per facility)
-│   ├── PractitionerEventTable (events per practitioner)
-│   ├── SourceSystemTable (events per source)
-│   └── ProcessingQualityChart (MATCHED/ZERO_MATCH/DUPLICATE per source)
-│
-├── /events/source-comparison → SourceComparison
-│   ├── SourceSelector × 2 (sourceA, sourceB dropdowns via useLookups)
-│   ├── OverlapSummaryCards (unique, overlapping, percentages)
-│   ├── SourceTimelineChart (overlap visualization)
-│   └── SamplePairsTable (sample overlapping events)
 │
 ├── /facilities → FacilityAnalytics
 │   ├── RankingSelector (by: complianceRate, deviationCount, eventVolume)
@@ -355,10 +345,6 @@ useQuery({
 ['events', 'trends', { interval, resourceType, facilityId, source, startDate, endDate }]
 ['events', 'by-resource-type', { facilityId, source, startDate, endDate }]
 ['events', 'by-facility', { resourceType, startDate, endDate, limit, cursor }]
-['events', 'by-practitioner', { facilityId, resourceType, startDate, endDate, limit, cursor }]
-['events', 'by-source', { facilityId, startDate, endDate }]
-['events', 'source-comparison', { sourceA, sourceB, windowSeconds }]
-['events', 'processing-quality', { source, facilityId, startDate, endDate }]
 ['protocols', protocolId, 'step-analytics', { facilityId, startDate, endDate }]
 ['protocols', protocolId, 'completion-funnel', { facilityId, startDate, endDate }]
 ['protocols', protocolId, 'outcome-distribution', { facilityId, startDate, endDate }]
@@ -386,7 +372,6 @@ useQuery({
   <Route path="/compliance/patients/:id" element={<PatientDetail />} />
   <Route path="/deviations" element={<Deviations />} />
   <Route path="/events" element={<EventVolume />} />
-  <Route path="/events/source-comparison" element={<SourceComparison />} />
   <Route path="/facilities" element={<FacilityAnalytics />} />
   <Route path="/practitioners" element={<PractitionerAnalytics />} />
   <Route path="/ingestion" element={<IngestionPipeline />} />

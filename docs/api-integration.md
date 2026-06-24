@@ -386,52 +386,6 @@ export interface FacilityEventCount {
   byResourceType: { resourceType: string; count: number }[];
 }
 
-export interface PractitionerEventCount {
-  practitionerRef: string;
-  practitionerDisplay: string | null;
-  facilityId: string;
-  totalEvents: number;
-  byResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceSystemCount {
-  source: string;
-  totalEvents: number;
-  byResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceComparison {
-  sourceA: string;
-  sourceB: string;
-  matchWindowSeconds: number;
-  sourceASummary: SourceSummary;
-  sourceBSummary: SourceSummary;
-  overlap: {
-    totalOverlappingEvents: number;
-    byResourceType: { resourceType: string; count: number }[];
-  };
-  samples: SourceComparisonSample[];
-}
-
-export interface SourceSummary {
-  source: string;
-  totalEvents: number;
-  uniqueEvents: number;
-  overlappingEvents: number;
-  overlapPercentage: number;
-  uniqueByResourceType: { resourceType: string; count: number }[];
-}
-
-export interface SourceComparisonSample {
-  eventAId: string;
-  eventBId: string;
-  subject: string;
-  resourceType: string;
-  eventTimeA: string;
-  eventTimeB: string;
-  timeDiffSeconds: number;
-}
-
 // ─── Protocol Analytics ──────────────────────────────────────
 
 export interface StepAnalytics {
@@ -504,26 +458,6 @@ export interface FacilityRanking {
 
 export type RankBy = 'complianceRate' | 'deviationCount' | 'eventVolume';
 export type SortOrder = 'asc' | 'desc';
-
-// ─── Processing Quality ──────────────────────────────────────
-
-export interface ProcessingQuality {
-  totalEvents: number;
-  overall: {
-    matched: { count: number; percentage: number };
-    zeroMatch: { count: number; percentage: number };
-    duplicate: { count: number; percentage: number };
-  };
-  bySource: {
-    source: string;
-    totalEvents: number;
-    breakdown: {
-      matched: { count: number; percentage: number };
-      zero_match: { count: number; percentage: number };
-      duplicate: { count: number; percentage: number };
-    };
-  }[];
-}
 
 // ─── Patient Risk ────────────────────────────────────────────
 
@@ -833,8 +767,7 @@ export function getIntelligenceSummary(): Promise<IntelligenceSummary> {
 import { apiGet, apiGetPaginated } from './client';
 import type {
   EventVolumeSummary, EventVolumeTrend, ResourceTypeCount,
-  FacilityEventCount, PractitionerEventCount, SourceSystemCount,
-  SourceComparison, ProcessingQuality,
+  FacilityEventCount, EventKpis,
 } from './types';
 
 export function getEventSummary(params?: {
@@ -882,59 +815,8 @@ export function getEventsByFacility(params?: {
   });
 }
 
-export function getEventsByPractitioner(params?: {
-  facilityId?: string;
-  resourceType?: string;
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  cursor?: string;
-}) {
-  return apiGetPaginated<PractitionerEventCount>('/events/by-practitioner', {
-    facilityId: params?.facilityId,
-    resourceType: params?.resourceType,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
-    limit: params?.limit?.toString(),
-    cursor: params?.cursor,
-  });
-}
-
-export function getEventsBySource(params?: {
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-}): Promise<SourceSystemCount[]> {
-  return apiGet('/events/by-source', params);
-}
-
-export function compareSourceSystems(params: {
-  sourceA: string;
-  sourceB: string;
-  windowSeconds?: number;
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-  sampleLimit?: number;
-}): Promise<SourceComparison> {
-  return apiGet('/events/source-comparison', {
-    sourceA: params.sourceA,
-    sourceB: params.sourceB,
-    windowSeconds: params.windowSeconds?.toString(),
-    facilityId: params.facilityId,
-    startDate: params.startDate,
-    endDate: params.endDate,
-    sampleLimit: params.sampleLimit?.toString(),
-  });
-}
-
-export function getProcessingQuality(params?: {
-  source?: string;
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-}): Promise<ProcessingQuality> {
-  return apiGet('/events/processing-quality', params);
+export function getEventKpis(): Promise<EventKpis> {
+  return apiGet('/events/kpis');
 }
 ```
 
@@ -1300,7 +1182,7 @@ export function useSourcesLookup() {
 ```
 
 > **Note:** Lookup hooks use a 5-minute `staleTime` since this reference data changes infrequently.
-> They power protocol/facility/source selectors in Compliance, Export, Facility, and Source Comparison pages.
+> They power protocol/facility/source selectors in Compliance, Export, and Facility pages.
 
 ### 4.5 Global Filters Hook
 

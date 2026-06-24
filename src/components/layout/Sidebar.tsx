@@ -10,8 +10,8 @@ import {
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: ChartBarIcon },
-  { to: '/compliance', label: 'Compliance', icon: ClipboardDocumentCheckIcon },
   { to: '/facilities', label: 'Facilities', icon: BuildingOffice2Icon },
+  { to: '/compliance', label: 'Compliance', icon: ClipboardDocumentCheckIcon },
   { to: '/deviations', label: 'Deviations', icon: ExclamationTriangleIcon },
   { to: '/compliance/patients', label: 'Patients', icon: ClipboardDocumentCheckIcon },
   { to: '/events', label: 'Events', icon: SignalIcon },

@@ -1,8 +1,7 @@
 import { apiGet, apiGetPaginated } from './client';
 import type {
   EventVolumeSummary, EventVolumeTrend, ResourceTypeCount,
-  FacilityEventCount, PractitionerEventCount, SourceSystemCount,
-  SourceComparison, ProcessingQuality, EventKpis,
+  FacilityEventCount, EventKpis,
 } from './types';
 
 export function getEventSummary(params?: {
@@ -50,61 +49,6 @@ export function getEventsByFacility(params?: {
   });
 }
 
-export function getEventsByPractitioner(params?: {
-  facilityId?: string;
-  resourceType?: string;
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-  cursor?: string;
-}) {
-  return apiGetPaginated<PractitionerEventCount>('/events/by-practitioner', {
-    facilityId: params?.facilityId,
-    resourceType: params?.resourceType,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
-    limit: params?.limit?.toString(),
-    cursor: params?.cursor,
-  });
-}
-
-export function getEventsBySource(params?: {
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-}): Promise<SourceSystemCount[]> {
-  return apiGet('/events/by-source', params);
-}
-
-export function compareSourceSystems(params: {
-  sourceA: string;
-  sourceB: string;
-  windowSeconds?: number;
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-  sampleLimit?: number;
-}): Promise<SourceComparison> {
-  return apiGet('/events/source-comparison', {
-    sourceA: params.sourceA,
-    sourceB: params.sourceB,
-    windowSeconds: params.windowSeconds?.toString(),
-    facilityId: params.facilityId,
-    startDate: params.startDate,
-    endDate: params.endDate,
-    sampleLimit: params.sampleLimit?.toString(),
-  });
-}
-
 export function getEventKpis(): Promise<EventKpis> {
   return apiGet('/events/kpis');
-}
-
-export function getProcessingQuality(params?: {
-  source?: string;
-  facilityId?: string;
-  startDate?: string;
-  endDate?: string;
-}): Promise<ProcessingQuality> {
-  return apiGet('/events/processing-quality', params);
 }

@@ -35,7 +35,7 @@ npm install
 npm run dev          # http://localhost:3001
 ```
 
-## Pages (13 routes)
+## Pages (12 routes)
 
 | Route | Page | Purpose |
 |-------|------|---------|
@@ -45,8 +45,7 @@ npm run dev          # http://localhost:3001
 | `/compliance/patients` | Patient List | Patients by compliance status (Compliant/Non-Compliant only) |
 | `/compliance/patients/:id` | Patient Detail | Timeline, protocol journey with source color-coded pills, events, deviations |
 | `/deviations` | Deviations | Trends, most-deviated steps, resolution rate |
-| `/events` | Event Volume | Volume by resource type, facility, practitioner, source |
-| `/events/source-comparison` | Source Comparison | Compare two source systems for overlap |
+| `/events` | Event Volume | Volume by resource type and facility |
 | `/facilities` | Facility Analytics | Facility rankings, color-coded compliance, non-compliant hotspots |
 | `/practitioners` | Practitioner Analytics | Practitioner compliance table with color-coded legend |
 | `/intelligence` | Intelligence | Action instances, delivery status donut, destinations, adaptors, actions table |
@@ -61,7 +60,7 @@ npm run dev          # http://localhost:3001
 | Compliance Summaries | 3 | `/v1/insights/protocols/`, `/v1/insights/facilities/` |
 | Patient Compliance | 5 | `/v1/insights/patients/` |
 | Deviations & Intelligence | 5 | `/v1/insights/deviations/`, `/v1/insights/intelligence/` |
-| Event Volume | 8 | `/v1/insights/events/` |
+| Event Volume | 5 | `/v1/insights/events/` |
 | Protocol Analytics | 5 | `/v1/insights/protocols/{id}/` |
 | Facility Analytics | 1 | `/v1/insights/facilities/ranking` |
 | Practitioner Analytics | 1 | `/v1/insights/practitioners/` |
@@ -74,7 +73,7 @@ npm run dev          # http://localhost:3001
 | Document | Description |
 |----------|-------------|
 | [Architecture Overview](docs/architecture-overview.md) | System context, tech stack, data flow, routing |
-| [Pages & Wireframes](docs/pages-and-wireframes.md) | ASCII wireframes for all 11 pages |
+| [Pages & Wireframes](docs/pages-and-wireframes.md) | ASCII wireframes for all 12 pages |
 | [API Integration](docs/api-integration.md) | TypeScript types, API modules, TanStack Query hooks |
 | [Developer Setup](docs/developer-setup.md) | Prerequisites, quick start, Docker, testing |
 | [Deployment Guide](docs/deployment-guide.md) | Docker build, Caddy config, network, troubleshooting |
