@@ -70,6 +70,7 @@ export async function apiGetPaginated<T>(
           limit: p.limit ?? 50,
           next_cursor: p.next_cursor ?? p.nextCursor ?? null,
           has_more: p.has_more ?? p.hasMore ?? false,
+          total_count: p.total_count ?? p.totalCount ?? undefined,
         }
       : { limit: 50, next_cursor: null, has_more: false },
   };

@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/shared/PageHeader';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import { CursorPagination } from '../components/shared/CursorPagination';
+import { PagePagination } from '../components/shared/PagePagination';
 import { useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useProtocols } from '../hooks/useLookups';
 import { formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
+import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from '../config';
 import type { ComplianceCategory } from '../api/types';
 
 export default function PatientList() {
   const [protocolId, setProtocolId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [cursorHistory, setCursorHistory] = useState<(string | undefined)[]>([]);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
 
   const protocols = useProtocols();
+  const cursor = page > 1 ? String((page - 1) * pageSize) : undefined;
 
   useEffect(() => {
     if (!protocolId && protocols.data && protocols.data.length > 0) {
@@ -32,9 +33,37 @@ export default function PatientList() {
   const patients = useProtocolPatients(protocolId, {
     status: statusFilter || undefined,
     cursor,
-    limit: 20,
+    limit: pageSize,
     patientId: activeSearch || undefined,
   });
+
+  const totalCount = patients.data?.pagination.total_count;
+  const rowCount = patients.data?.data.length ?? 0;
+  const totalPages = totalCount != null
+    ? Math.max(1, Math.ceil(totalCount / pageSize))
+    : Math.max(page, patients.data?.pagination.has_more ? page + 1 : page);
+
+  const range = useMemo(() => {
+    if (rowCount === 0) {
+      return { start: 0, end: 0 };
+    }
+    const start = (page - 1) * pageSize + 1;
+    const end = totalCount != null
+      ? Math.min(page * pageSize, totalCount)
+      : start + rowCount - 1;
+    return { start, end };
+  }, [rowCount, page, pageSize, totalCount]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const resetPagination = () => setPage(1);
+
+  const canNext = totalCount != null
+    ? page < totalPages
+    : Boolean(patients.data?.pagination.has_more);
+
   return (
     <>
       <PageHeader title="Patient Compliance" description="Browse patients by compliance category" />
@@ -45,7 +74,7 @@ export default function PatientList() {
             <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
             <select
               value={protocolId}
-              onChange={(e) => { setProtocolId(e.target.value); setCursor(undefined); setCursorHistory([]); setPage(1); }}
+              onChange={(e) => { setProtocolId(e.target.value); resetPagination(); }}
               className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select a protocol...</option>
@@ -60,7 +89,8 @@ export default function PatientList() {
             {['', 'on_track', 'non_compliant'].map((s) => (
               <button
                 key={s}
-                onClick={() => { setStatusFilter(s); setCursor(undefined); setCursorHistory([]); setPage(1); }}
+                type="button"
+                onClick={() => { setStatusFilter(s); resetPagination(); }}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   statusFilter === s
                     ? 'bg-blue-600 text-white'
@@ -77,9 +107,7 @@ export default function PatientList() {
             onSubmit={(e) => {
               e.preventDefault();
               setActiveSearch(searchTerm.trim());
-              setCursor(undefined);
-              setCursorHistory([]);
-              setPage(1);
+              resetPagination();
             }}
             className="flex items-end gap-2"
           >
@@ -105,9 +133,7 @@ export default function PatientList() {
                 onClick={() => {
                   setSearchTerm('');
                   setActiveSearch('');
-                  setCursor(undefined);
-                  setCursorHistory([]);
-                  setPage(1);
+                  resetPagination();
                 }}
                 className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -121,10 +147,10 @@ export default function PatientList() {
           <p className="py-4 text-center text-sm text-gray-400">Select a protocol to view patients.</p>
         )}
 
-        {patients.isLoading && <LoadingSpinner />}
+        {protocolId && patients.isPending && <LoadingSpinner />}
         {patients.error && <ErrorAlert error={patients.error} />}
 
-        {patients.data && (
+        {protocolId && patients.data && (
           <>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -159,19 +185,24 @@ export default function PatientList() {
                 </tbody>
               </table>
             </div>
-            <CursorPagination
-              hasMore={patients.data.pagination.has_more}
-              nextCursor={patients.data.pagination.next_cursor}
-              onNext={(c) => { setCursorHistory((h) => [...h, cursor]); setCursor(c); setPage((prev) => prev + 1); }}
-              onPrevious={() => { const prev = [...cursorHistory]; const prevCursor = prev.pop(); setCursorHistory(prev); setCursor(prevCursor); setPage((p) => p - 1); }}
-              onReset={() => { setCursor(undefined); setCursorHistory([]); setPage(1); }}
-              currentPage={page}
+            {rowCount === 0 && (
+              <p className="py-8 text-center text-sm text-gray-500">No patients match the current filters.</p>
+            )}
+            <PagePagination
+              pageSize={pageSize}
+              pageSizeOptions={[...TABLE_PAGE_SIZE_OPTIONS]}
+              onPageSizeChange={(size) => { setPageSize(size); resetPagination(); }}
+              start={range.start}
+              end={range.end}
+              totalCount={totalCount}
+              onPrevious={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => p + 1)}
+              canPrevious={page > 1}
+              canNext={canNext}
             />
           </>
         )}
       </Card>
-
-
     </>
   );
 }

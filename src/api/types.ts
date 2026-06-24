@@ -22,6 +22,7 @@ export interface PaginatedResponse<T> {
     limit: number;
     next_cursor: string | null;
     has_more: boolean;
+    total_count?: number;
   };
 }
 
