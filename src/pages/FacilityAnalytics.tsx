@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
-import { ProtocolFilter } from '../components/shared/ProtocolFilter';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
@@ -16,7 +15,6 @@ const ADOPTION_PAGE_SIZE = 20;
 const RANKING_PAGE_SIZE = 20;
 
 export default function FacilityAnalytics() {
-  const [protocolId, setProtocolId] = useState('');
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
   const [order, setOrder] = useState<SortOrder>('desc');
   const [page, setPage] = useState(1);
@@ -27,15 +25,9 @@ export default function FacilityAnalytics() {
     rankBy,
     order,
     limit: 200,
-    protocolDefinitionId: protocolId || undefined,
   });
   const activitySummary = useFacilityActivitySummary();
   const adoption = useAdoptionKpis();
-
-  const handleProtocolChange = useCallback((id: string) => {
-    setProtocolId(id);
-    setPage(1);
-  }, []);
 
   const filteredRows = useMemo(() => {
     if (!ranking.data?.data) return [];
@@ -64,7 +56,7 @@ export default function FacilityAnalytics() {
   );
 
   useEffect(() => { setAdoptionPage(1); }, [adoption.data]);
-  useEffect(() => { setPage(1); }, [rankBy, order, protocolId, search]);
+  useEffect(() => { setPage(1); }, [rankBy, order, search]);
   useEffect(() => {
     if (page > totalRankingPages) setPage(totalRankingPages);
   }, [page, totalRankingPages]);
@@ -184,10 +176,6 @@ export default function FacilityAnalytics() {
       </Card>
 
       <div className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-500">Protocol</label>
-          <ProtocolFilter value={protocolId} onChange={handleProtocolChange} />
-        </div>
         <div className="flex gap-2 items-end">
           {RANK_BY_OPTIONS.map((opt) => (
             <button
@@ -229,7 +217,7 @@ export default function FacilityAnalytics() {
         </div>
       </div>
 
-      <Card title="Facility Ranking">
+      <Card title="Facility Ranking" description="Cumulative compliance metrics across all protocols per facility">
         {ranking.isPending ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
             <div className="overflow-x-auto">

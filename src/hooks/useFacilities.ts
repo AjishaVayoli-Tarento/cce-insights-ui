@@ -42,7 +42,6 @@ export function useFacilityRanking(params?: {
     queryKey: [
       'facilities',
       'ranking',
-      params?.protocolDefinitionId,
       params?.rankBy,
       params?.order,
       params?.limit,
