@@ -205,7 +205,7 @@ export default function FacilityAnalytics() {
         </div>
       </div>
 
-      <Card title="Facility Ranking" description="Cumulative compliance metrics across all protocols per facility for the selected period">
+      <Card title="Facility Ranking" description="Per-facility compliance at the end of the selected period. Tracked patients are counted per facility and may overlap across facilities — they won't sum to the global cohort total.">
         {ranking.isPending ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
             <div className="overflow-x-auto">
