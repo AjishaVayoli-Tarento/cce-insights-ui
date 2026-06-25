@@ -5,33 +5,24 @@ import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { DeviationTrendChart } from '../components/charts/DeviationTrendChart';
 import { EventTrendChart } from '../components/charts/EventTrendChart';
+import { EbuzimaAdoptionCard } from '../components/facilities/EbuzimaAdoptionCard';
 import { useEventTrends } from '../hooks/useEventVolume';
 import { useDeviationTrends } from '../hooks/useDeviations';
-import { useDashboardOverview, useDashboardComplianceSummary } from '../hooks/useDashboard';
+import { useDashboardComplianceSummary } from '../hooks/useDashboard';
 import { useFacilityActivitySummary } from '../hooks/useFacilities';
 import { formatNumber, formatPercentage } from '../utils/formatters';
-import {
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-} from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
   const deviationTrends = useDeviationTrends('daily');
   const eventTrends = useEventTrends('daily');
-  const overview = useDashboardOverview();
   const complianceSummary = useDashboardComplianceSummary();
   const facilityActivity = useFacilityActivitySummary();
 
-  const isLoading = overview.isLoading || complianceSummary.isLoading;
+  if (complianceSummary.isLoading) return <LoadingSpinner />;
 
-  if (isLoading) return <LoadingSpinner />;
+  if (complianceSummary.error) return <ErrorAlert error={complianceSummary.error} />;
 
-  const firstError = overview.error || complianceSummary.error;
-  if (firstError) return <ErrorAlert error={firstError} />;
-
-  const dash = overview.data;
   const compliance = complianceSummary.data;
-
   const patients = compliance?.patients;
 
   return (
@@ -89,32 +80,7 @@ export default function Dashboard() {
       </div>
       </div>
 
-      {/* Top & Bottom Facilities */}
-      {dash && (dash.topFacilities?.length > 0 || dash.bottomFacilities?.length > 0) && (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title="Top 3 Facilities" subtitle="by compliance rate in the selected period">
-            <div className="space-y-3">
-              {dash.topFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
-              ))}
-              {(!dash.topFacilities || dash.topFacilities.length === 0) && (
-                <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
-              )}
-            </div>
-          </Card>
-          <Card title="Bottom 3 Facilities" subtitle="by compliance rate in the selected period">
-            <div className="space-y-3">
-              {dash.bottomFacilities?.map((f, i) => (
-                <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
-              ))}
-              {(!dash.bottomFacilities || dash.bottomFacilities.length === 0) && (
-                <p className="py-4 text-center text-sm text-gray-500">No facility data available</p>
-              )}
-            </div>
-          </Card>
-        </div>
-      )}
-
+      <EbuzimaAdoptionCard className="mt-6" />
 
       {/* Trend Charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -134,48 +100,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </>
-  );
-}
-
-function FacilityRow({ facility, index, variant }: {
-  facility: { facilityId: string; facilityName?: string; complianceRate: number; activeDeviations: number; totalEvents: number; totalEnrollments: number };
-  index: number;
-  variant: 'top' | 'bottom';
-}) {
-  const Icon = variant === 'top' ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
-  const accentColor = variant === 'top' ? 'text-green-600' : 'text-red-600';
-  const badgeBg = variant === 'top' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700';
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${badgeBg}`}>
-          {index + 1}
-        </span>
-        <div>
-          <p className="text-sm font-medium text-gray-800">{facility.facilityName || facility.facilityId}</p>
-          <p className="text-xs text-gray-500">{formatNumber(facility.totalEvents)} events · {formatNumber(facility.activeDeviations)} deviations</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-4 text-xs">
-        <div className="text-center">
-          <p className="text-gray-500">Enrollments</p>
-          <p className="font-semibold text-gray-700">{formatNumber(facility.totalEnrollments)}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-500">Events</p>
-          <p className="font-semibold text-gray-700">{formatNumber(facility.totalEvents)}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-gray-500">Compliance</p>
-          <div className="flex items-center justify-center gap-1">
-            <Icon className={`h-4 w-4 ${accentColor}`} />
-            <span className={`font-semibold ${accentColor}`}>
-              {formatPercentage(facility.complianceRate)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

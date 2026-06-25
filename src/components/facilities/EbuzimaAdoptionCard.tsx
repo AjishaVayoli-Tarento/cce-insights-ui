@@ -1,0 +1,104 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Card } from '../shared/Card';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { ErrorAlert } from '../shared/ErrorAlert';
+import { TableRangePagination } from '../shared/TableRangePagination';
+import { useAdoptionKpis } from '../../hooks/useFacilities';
+import { formatNumber } from '../../utils/formatters';
+import { findDuplicateFacilityNames, formatFacilityDisplayName } from '../../utils/facilityDisplay';
+
+const TABLE_PAGE_SIZE = 10;
+
+export function EbuzimaAdoptionCard({ className }: { className?: string }) {
+  const adoption = useAdoptionKpis();
+  const [page, setPage] = useState(1);
+
+  const adoptionRows = adoption.data ?? [];
+  const paginatedRows = useMemo(
+    () => adoptionRows.slice((page - 1) * TABLE_PAGE_SIZE, page * TABLE_PAGE_SIZE),
+    [adoptionRows, page],
+  );
+  const totalPages = Math.max(1, Math.ceil(adoptionRows.length / TABLE_PAGE_SIZE));
+
+  const duplicateNames = useMemo(
+    () => findDuplicateFacilityNames(adoption.data ?? []),
+    [adoption.data],
+  );
+
+  useEffect(() => { setPage(1); }, [adoption.data]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  return (
+    <Card
+      title="e-Buzima Adoption"
+      description="Per-facility expected vs. actual patient reporting — sorted by worst under-reporters first"
+      className={className}
+    >
+      {adoption.isLoading ? <LoadingSpinner /> : adoption.error ? <ErrorAlert error={adoption.error} /> : adoption.data ? (
+        adoption.data.length === 0 ? (
+          <p className="py-8 text-center text-sm text-gray-500">No adoption data available for this period</p>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-sm">
+                <colgroup>
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '13%' }} />
+                  <col style={{ width: '13%' }} />
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '14%' }} />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                    <th className="pb-2 pr-4">Facility</th>
+                    <th className="pb-2 pr-4">Expected / Day</th>
+                    <th className="pb-2 pr-4">Actual Patients</th>
+                    <th className="pb-2 pr-4">Adoption Rate</th>
+                    <th className="pb-2 pr-4">Reporting Gap</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedRows.map((f) => {
+                    const rate = f.adoptionRate;
+                    const rateColor = rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-amber-700' : 'text-red-700';
+                    const barColor = rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                    return (
+                      <tr key={f.facilityId} className="hover:bg-gray-50">
+                        <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">
+                          {formatFacilityDisplayName(f, duplicateNames)}
+                        </td>
+                        <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedPatientsPerDay)}</td>
+                        <td className="py-2.5 pr-4">{formatNumber(f.actualPatients)}</td>
+                        <td className="py-2.5 pr-4">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                              <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
+                            </div>
+                            <span className={`w-10 shrink-0 text-xs font-semibold ${rateColor}`}>
+                              {rate}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className={`py-2.5 pr-4 font-medium ${f.reportingGap > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {f.reportingGap > 0 ? `−${formatNumber(f.reportingGap)}` : `+${formatNumber(Math.abs(f.reportingGap))}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <TableRangePagination
+              page={page}
+              pageSize={TABLE_PAGE_SIZE}
+              totalCount={adoptionRows.length}
+              onPageChange={setPage}
+            />
+          </>
+        )
+      ) : null}
+    </Card>
+  );
+}
