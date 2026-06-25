@@ -2,7 +2,7 @@ import { createContext, useState, useCallback, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getDefaultDateRange } from '../utils/dates';
 
-const defaultDays = Number(import.meta.env.VITE_DEFAULT_DATE_RANGE_DAYS || 180);
+const defaultDays = Number(import.meta.env.VITE_DEFAULT_DATE_RANGE_DAYS || 90);
 
 export interface FilterContextValue {
   startDate: string;

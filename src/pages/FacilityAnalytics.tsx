@@ -1,6 +1,7 @@
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
+import { FacilityHighlightsCard } from '../components/facilities/FacilityHighlightsCard';
 import { FacilityRankingCard } from '../components/facilities/FacilityRankingCard';
 import { useFacilityActivitySummary } from '../hooks/useFacilities';
 import { formatNumber } from '../utils/formatters';
@@ -32,6 +33,8 @@ export default function FacilityAnalytics() {
           bgColor="bg-red-50"
         />
       </div>
+
+      <FacilityHighlightsCard className="mb-6" />
 
       <FacilityRankingCard />
     </>
