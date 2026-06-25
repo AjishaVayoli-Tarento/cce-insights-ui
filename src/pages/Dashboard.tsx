@@ -36,31 +36,31 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="High-level operational metrics and trend snapshots" />
+      <PageHeader title="Dashboard" description="High-level operational metrics for the selected period" />
 
       {/* Patient Compliance Metrics */}
       <div className="rounded-xl border border-gray-200 p-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Tracked Cohort"
-          description="Total patients enrolled and tracked across all protocols."
+          description="Patients enrolled during the selected period."
           value={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
           title="Compliant Care Journeys"
-          description="Patients with no active deviations across all protocols."
+          description="Enrolled patients with no deviations detected in the selected period."
           value={formatNumber(patients?.compliantPatients ?? 0)}
           denomination={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
           title="Non-Compliant Care Journeys"
-          description="Patients with at least one active deviation across all protocols."
+          description="Enrolled patients with at least one deviation detected in the selected period."
           value={formatNumber(patients?.nonCompliantPatients ?? 0)}
           denomination={formatNumber(patients?.trackedPatients ?? 0)}
         />
         <MetricCard
           title="Compliance Rate"
-          description="Percentage of compliant patients out of total tracked patients."
+          description="Compliant patients as a percentage of the tracked cohort in the selected period."
           value={formatPercentage(patients?.complianceRate ?? 0)}
         />
       </div>
@@ -92,7 +92,7 @@ export default function Dashboard() {
       {/* Top & Bottom Facilities */}
       {dash && (dash.topFacilities?.length > 0 || dash.bottomFacilities?.length > 0) && (
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title="Top 3 Facilities" subtitle="by compliance rate">
+          <Card title="Top 3 Facilities" subtitle="by compliance rate in the selected period">
             <div className="space-y-3">
               {dash.topFacilities?.map((f, i) => (
                 <FacilityRow key={f.facilityId} facility={f} index={i} variant="top" />
@@ -102,7 +102,7 @@ export default function Dashboard() {
               )}
             </div>
           </Card>
-          <Card title="Bottom 3 Facilities" subtitle="by compliance rate">
+          <Card title="Bottom 3 Facilities" subtitle="by compliance rate in the selected period">
             <div className="space-y-3">
               {dash.bottomFacilities?.map((f, i) => (
                 <FacilityRow key={f.facilityId} facility={f} index={i} variant="bottom" />
