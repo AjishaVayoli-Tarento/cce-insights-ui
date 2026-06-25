@@ -8,6 +8,7 @@ import { ErrorAlert } from '../components/shared/ErrorAlert';
 import { useFacilityRanking, useFacilityActivitySummary, useAdoptionKpis } from '../hooks/useFacilities';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { getFacilityName } from '../utils/facilityNames';
+import { findDuplicateFacilityNames, formatFacilityDisplayName } from '../utils/facilityDisplay';
 import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
 import type { RankBy, SortOrder } from '../api/types';
 
@@ -50,6 +51,16 @@ export default function FacilityAnalytics() {
   const paginatedRows = useMemo(
     () => filteredRows.slice((page - 1) * RANKING_PAGE_SIZE, page * RANKING_PAGE_SIZE),
     [filteredRows, page],
+  );
+
+  const duplicateFacilityNames = useMemo(
+    () => findDuplicateFacilityNames(filteredRows),
+    [filteredRows],
+  );
+
+  const duplicateAdoptionNames = useMemo(
+    () => findDuplicateFacilityNames(adoption.data ?? []),
+    [adoption.data],
   );
 
   useEffect(() => { setAdoptionPage(1); }, [adoption.data]);
@@ -117,8 +128,10 @@ export default function FacilityAnalytics() {
                         const rateColor = rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-amber-700' : 'text-red-700';
                         const barColor = rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
                         return (
-                          <tr key={getFacilityName(f.facilityId)} className="hover:bg-gray-50">
-                            <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">{f.facilityName || getFacilityName(f.facilityId)}</td>
+                          <tr key={f.facilityId} className="hover:bg-gray-50">
+                            <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">
+                              {formatFacilityDisplayName(f, duplicateAdoptionNames)}
+                            </td>
                             <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedPatientsPerDay)}</td>
                             <td className="py-2.5 pr-4">{formatNumber(f.actualPatients)}</td>
                             <td className="py-2.5 pr-4">
@@ -235,7 +248,9 @@ export default function FacilityAnalytics() {
                   {paginatedRows.map((f) => (
                     <tr key={`${f.facilityId}-${f.rank}`} className="hover:bg-gray-50">
                       <td className="py-2 pr-4 font-bold text-gray-400">{f.rank}</td>
-                      <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityName ?? getFacilityName(f.facilityId)}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">
+                        {formatFacilityDisplayName(f, duplicateFacilityNames)}
+                      </td>
                       <td className="py-2 pr-4">{formatNumber(f.totalEnrollments)}</td>
                       <td className="py-2 pr-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
