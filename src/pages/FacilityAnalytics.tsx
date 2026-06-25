@@ -4,6 +4,7 @@ import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
+import { TableRangePagination } from '../components/shared/TableRangePagination';
 import { useFacilityRanking, useFacilityActivitySummary, useAdoptionKpis } from '../hooks/useFacilities';
 import { formatNumber, formatPercentage } from '../utils/formatters';
 import { getFacilityName } from '../utils/facilityNames';
@@ -11,8 +12,7 @@ import { findDuplicateFacilityNames, formatFacilityDisplayName } from '../utils/
 import { RANK_BY_OPTIONS, SORT_ORDER_OPTIONS } from '../config';
 import type { RankBy, SortOrder } from '../api/types';
 
-const ADOPTION_PAGE_SIZE = 20;
-const RANKING_PAGE_SIZE = 20;
+const TABLE_PAGE_SIZE = 10;
 
 export default function FacilityAnalytics() {
   const [rankBy, setRankBy] = useState<RankBy>('complianceRate');
@@ -39,11 +39,18 @@ export default function FacilityAnalytics() {
     });
   }, [ranking.data, search]);
 
-  const totalRankingPages = Math.max(1, Math.ceil(filteredRows.length / RANKING_PAGE_SIZE));
+  const totalRankingPages = Math.max(1, Math.ceil(filteredRows.length / TABLE_PAGE_SIZE));
   const paginatedRows = useMemo(
-    () => filteredRows.slice((page - 1) * RANKING_PAGE_SIZE, page * RANKING_PAGE_SIZE),
+    () => filteredRows.slice((page - 1) * TABLE_PAGE_SIZE, page * TABLE_PAGE_SIZE),
     [filteredRows, page],
   );
+
+  const adoptionRows = adoption.data ?? [];
+  const paginatedAdoptionRows = useMemo(
+    () => adoptionRows.slice((adoptionPage - 1) * TABLE_PAGE_SIZE, adoptionPage * TABLE_PAGE_SIZE),
+    [adoptionRows, adoptionPage],
+  );
+  const totalAdoptionPages = Math.max(1, Math.ceil(adoptionRows.length / TABLE_PAGE_SIZE));
 
   const duplicateFacilityNames = useMemo(
     () => findDuplicateFacilityNames(filteredRows),
@@ -56,6 +63,9 @@ export default function FacilityAnalytics() {
   );
 
   useEffect(() => { setAdoptionPage(1); }, [adoption.data]);
+  useEffect(() => {
+    if (adoptionPage > totalAdoptionPages) setAdoptionPage(totalAdoptionPages);
+  }, [adoptionPage, totalAdoptionPages]);
   useEffect(() => { setPage(1); }, [rankBy, order, search]);
   useEffect(() => {
     if (page > totalRankingPages) setPage(totalRankingPages);
@@ -91,10 +101,7 @@ export default function FacilityAnalytics() {
         {adoption.isLoading ? <LoadingSpinner /> : adoption.error ? <ErrorAlert error={adoption.error} /> : adoption.data ? (
           adoption.data.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-500">No adoption data available for this period</p>
-          ) : (() => {
-            const totalAdoptionPages = Math.max(1, Math.ceil(adoption.data.length / ADOPTION_PAGE_SIZE));
-            const pagedRows = adoption.data.slice((adoptionPage - 1) * ADOPTION_PAGE_SIZE, adoptionPage * ADOPTION_PAGE_SIZE);
-            return (
+          ) : (
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full table-fixed text-sm">
@@ -115,7 +122,7 @@ export default function FacilityAnalytics() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {pagedRows.map((f) => {
+                      {paginatedAdoptionRows.map((f) => {
                         const rate = f.adoptionRate;
                         const rateColor = rate >= 80 ? 'text-green-700' : rate >= 50 ? 'text-amber-700' : 'text-red-700';
                         const barColor = rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
@@ -145,33 +152,14 @@ export default function FacilityAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {totalAdoptionPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
-                    <p className="text-sm text-gray-600">
-                      Showing {(adoptionPage - 1) * ADOPTION_PAGE_SIZE + 1}–{Math.min(adoptionPage * ADOPTION_PAGE_SIZE, adoption.data.length)} of {adoption.data.length} facilities
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setAdoptionPage((p) => Math.max(1, p - 1))}
-                        disabled={adoptionPage === 1}
-                        className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <span className="text-sm text-gray-600">Page {adoptionPage} of {totalAdoptionPages}</span>
-                      <button
-                        onClick={() => setAdoptionPage((p) => Math.min(totalAdoptionPages, p + 1))}
-                        disabled={adoptionPage >= totalAdoptionPages}
-                        className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <TableRangePagination
+                  page={adoptionPage}
+                  pageSize={TABLE_PAGE_SIZE}
+                  totalCount={adoptionRows.length}
+                  onPageChange={setAdoptionPage}
+                />
               </>
-            );
-          })()
+            )
         ) : null}
       </Card>
 
@@ -265,32 +253,12 @@ export default function FacilityAnalytics() {
               <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> 50–79%</span>
               <span className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> &lt; 50%</span>
             </div>
-            {totalRankingPages > 1 && (
-              <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
-                <p className="text-sm text-gray-600">
-                  Showing {(page - 1) * RANKING_PAGE_SIZE + 1}–{Math.min(page * RANKING_PAGE_SIZE, filteredRows.length)} of {filteredRows.length} facilities
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-gray-600">Page {page} of {totalRankingPages}</span>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalRankingPages, p + 1))}
-                    disabled={page >= totalRankingPages}
-                    className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <TableRangePagination
+              page={page}
+              pageSize={TABLE_PAGE_SIZE}
+              totalCount={filteredRows.length}
+              onPageChange={setPage}
+            />
           </>
         ) : null}
       </Card>
