@@ -136,6 +136,9 @@ export default function ComplianceOverview() {
 
         {data && (
           <>
+            <p className="mb-3 text-xs text-gray-400">
+              Compliance metrics reflect the end of the selected date range (snapshot), not a sum across days.
+            </p>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard title="Tracked Patients" value={formatNumber(data.totalEnrollments)} description="Total number of patients enrolled and being tracked under this protocol." />
               <MetricCard title="Compliant Patients" value={formatNumber(data.compliantPatients)} denomination={formatNumber(data.totalEnrollments)} description="Patients with no deviations (overdue, missed, or order violations) under this protocol." />

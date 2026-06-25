@@ -205,7 +205,7 @@ export default function FacilityAnalytics() {
         </div>
       </div>
 
-      <Card title="Facility Ranking" description="Cumulative compliance metrics across all protocols per facility">
+      <Card title="Facility Ranking" description="Cumulative compliance metrics across all protocols per facility for the selected period">
         {ranking.isPending ? <LoadingSpinner /> : ranking.error ? <ErrorAlert error={ranking.error} /> : ranking.data ? (
           <>
             <div className="overflow-x-auto">

@@ -43,8 +43,8 @@ export function getFacilityRanking(params?: {
     protocolDefinitionId: params?.protocolDefinitionId,
     rankBy: params?.rankBy,
     order: params?.order,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
+    startDate: params?.startDate ? params.startDate.substring(0, 10) : undefined,
+    endDate: params?.endDate ? params.endDate.substring(0, 10) : undefined,
     limit: params?.limit?.toString(),
     cursor: params?.cursor,
   });
