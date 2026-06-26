@@ -70,9 +70,9 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
                           {formatFacilityDisplayName(f, duplicateNames)}
                         </td>
                         <td className="py-2.5 pr-4 text-center text-gray-600">{formatNumber(f.expectedVisitsPerDay)}</td>
-                        <td className="py-2.5 pr-4 text-center">{formatNumber(Math.ceil(f.actualVisitsPerDay))}</td>
+                        <td className="py-2.5 pr-4 text-center">{formatNumber(f.actualVisitsPerDay)}</td>
                         <td className={`py-2.5 pr-4 text-center font-medium ${f.reportingGapPerDay > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {f.reportingGapPerDay > 0 ? `−${formatNumber(Math.ceil(f.reportingGapPerDay))}` : `+${formatNumber(Math.ceil(Math.abs(f.reportingGapPerDay)))}`}
+                          {f.reportingGapPerDay > 0 ? `−${formatNumber(f.reportingGapPerDay)}` : `+${formatNumber(Math.abs(f.reportingGapPerDay))}`}
                         </td>
                         <td className="py-2.5 pr-4">
                           <div className="mx-auto flex max-w-[12rem] items-center justify-center gap-2">
