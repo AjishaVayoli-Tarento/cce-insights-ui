@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   ChartBarIcon,
   ClipboardDocumentCheckIcon,
@@ -21,12 +21,16 @@ const NAV_ITEMS = [
 export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col border-r border-gray-200 bg-white">
-      <div className="flex h-14 items-center gap-2 border-b border-gray-100 px-4">
+      <Link
+        to="/"
+        className="flex h-14 items-center gap-2 border-b border-gray-100 px-4 transition-colors hover:bg-gray-50"
+        aria-label="CCE Insights home"
+      >
         <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center">
           <span className="text-xs font-bold text-white">C</span>
         </div>
         <span className="text-sm font-bold text-gray-900">CCE Insights</span>
-      </div>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <ul className="space-y-0.5">
