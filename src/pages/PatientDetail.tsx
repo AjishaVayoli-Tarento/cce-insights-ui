@@ -55,7 +55,7 @@ export default function PatientDetail() {
 
   const tracking = usePatientProtocolTracking(patientId);
   const timeline = usePatientTimeline(patientId);
-  const deviations = usePatientDeviations(patientId, { skipDateFilter: true });
+  const deviations = usePatientDeviations(patientId);
   const detail = usePatientProtocolTrackingDetail(patientId, selectedProtocol);
   const intelligenceDeliveries = usePatientIntelligenceDeliveries(patientId);
   const actionOrder = useActionOrder(detail.data?.protocolDefinitionId ?? '');

@@ -4,6 +4,34 @@
 
 ## Unreleased
 
+### Follow-up Date Range / Filter Audit
+
+Second-pass audit caught five categories of date-range or facility-filter bypass
+that survived the first metric-alignment pass:
+
+- **Facility activity tile** (Dashboard + Facility Analytics): now respects the
+  global facility filter — when one facility is selected, the tile reflects whether
+  that facility transmitted in the period (1 in-scope / 1 active or inactive).
+- **Step analytics, completion funnel, practitioner step completion** now narrow to
+  enrollments enrolled in the selected period (and a selected facility where
+  applicable). Previously the cache key was date-aware but the underlying SQL was
+  not.
+- **Patient compliance timeline** filters events by timestamp within the global
+  date range (Protocol Journey remains the full step list by design).
+- **Patient Detail Deviations** card no longer bypasses the date filter — it now
+  obeys the global range like every other surface.
+- **Event Volume By Facility** table now resolves facility names from the lookup
+  service, includes zero-event facilities, and uses the standard "1-N of M" range
+  pagination.
+- **Event Volume header KPIs** (Total Events / Matched Rate / Zero Match Rate /
+  Duplicates) now reflect the selected date range; Pipeline Loss is explicitly
+  labelled as cumulative.
+- **e-Buzima Adoption** can be narrowed by global facility filter.
+- **Outcome distribution** + **enrollment trends** + **deviation trends** caches
+  now include `facilityId`; trends/outcome respect the facility filter.
+- **At-risk hotspots** and **repeat deviations** caches now include
+  date / facility / protocol so filter changes invalidate stale results.
+
 ### Metric Alignment & Filter Wiring
 
 A workspace-wide audit aligned every KPI surface to a single set of definitions and

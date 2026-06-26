@@ -8,7 +8,7 @@ import { TableRangePagination } from '../components/shared/TableRangePagination'
 import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
 import {
-  useEventKpis, useEventTrends, useEventsByResourceType, useEventsByFacility,
+  useEventKpis, useEventTrends, useEventsByResourceType, useEventsByFacility, useEventSummary,
 } from '../hooks/useEventVolume';
 import { useFacilityLookup } from '../hooks/useLookups';
 import { formatNumber } from '../utils/formatters';
@@ -25,11 +25,22 @@ export default function EventVolume() {
   const [activeTab, setActiveTab] = useState<Tab>('resource-type');
   const [facilityPage, setFacilityPage] = useState(1);
 
+  const summary = useEventSummary();
   const kpis = useEventKpis();
   const trends = useEventTrends(interval);
   const byResourceType = useEventsByResourceType();
   const byFacility = useEventsByFacility();
   const facilities = useFacilityLookup();
+
+  // Header tiles use /events/summary (respects global date filter) for the metrics
+  // that vary with the period. Pipeline Loss has no date-aware equivalent and stays
+  // sourced from /events/kpis (cumulative MV) — disclosed in the disclaimer below.
+  const periodTotalEvents = summary.data?.totalEvents ?? 0;
+  const matchedCount = summary.data?.processingStatusBreakdown?.matched?.count ?? 0;
+  const zeroMatchCount = summary.data?.processingStatusBreakdown?.zeroMatch?.count ?? 0;
+  const duplicateCount = summary.data?.processingStatusBreakdown?.duplicate?.count ?? 0;
+  const matchedRatePct = summary.data?.processingStatusBreakdown?.matched?.percentage ?? 0;
+  const zeroMatchRatePct = summary.data?.processingStatusBreakdown?.zeroMatch?.percentage ?? 0;
 
   // Merge the API rows with the canonical facility reference list so every facility
   // appears in the table — facilities with no events in the period display 0 events
@@ -97,18 +108,45 @@ export default function EventVolume() {
     <>
       <PageHeader title="Event Volume & Activity" description="Clinical event metrics — volume by resource type and facility" />
 
-      {kpis.isLoading ? <LoadingSpinner /> : kpis.error ? <ErrorAlert error={kpis.error} /> : kpis.data ? (
+      {summary.isLoading ? <LoadingSpinner /> : summary.error ? <ErrorAlert error={summary.error} /> : (
         <>
-          <div className="mb-1 text-xs text-gray-400">Today's snapshot — not affected by the date filter above</div>
+          <div className="mb-1 text-xs text-gray-400">
+            Metrics scoped to the selected date range. Pipeline Loss is a cumulative
+            pipeline-health indicator (not date-filtered).
+          </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <MetricCard title="Total Events" value={formatNumber(kpis.data.totalEvents)} description="Cumulative inbound clinical events (FHIR resources) accepted by the HIE pipeline." />
-            <MetricCard title="Matched Rate" value={`${Number(kpis.data.matchedRatePct).toFixed(2)}%`} description="Percentage of events successfully matched to a protocol step instance." bgColor="bg-green-50" />
-            <MetricCard title="Zero Match Rate" value={`${Number(kpis.data.zeroMatchRatePct).toFixed(2)}%`} description="Percentage of events that could not be matched to any protocol step (no eligible patient or step found)." bgColor="bg-amber-50" />
-            <MetricCard title="Duplicates" value={formatNumber(kpis.data.duplicateCount)} description="Events identified as duplicates of a previously received event — not processed again." bgColor="bg-purple-50" />
-            <MetricCard title="Pipeline Loss" value={formatNumber(kpis.data.pipelineLossCount)} description="Events accepted by the collector but never reaching the compliance engine — indicates a processing gap." bgColor={kpis.data.pipelineLossCount > 0 ? 'bg-red-50' : undefined} />
+            <MetricCard
+              title="Total Events"
+              value={formatNumber(periodTotalEvents)}
+              description="Inbound clinical events (FHIR resources) accepted by the HIE pipeline during the selected date range."
+            />
+            <MetricCard
+              title="Matched Rate"
+              value={`${Number(matchedRatePct).toFixed(2)}%`}
+              description={`Percentage of events successfully matched to a protocol step instance in the selected period (${formatNumber(matchedCount)} of ${formatNumber(periodTotalEvents)}).`}
+              bgColor="bg-green-50"
+            />
+            <MetricCard
+              title="Zero Match Rate"
+              value={`${Number(zeroMatchRatePct).toFixed(2)}%`}
+              description={`Percentage of events that could not be matched to any protocol step in the selected period (${formatNumber(zeroMatchCount)} of ${formatNumber(periodTotalEvents)}).`}
+              bgColor="bg-amber-50"
+            />
+            <MetricCard
+              title="Duplicates"
+              value={formatNumber(duplicateCount)}
+              description="Events identified as duplicates of a previously received event during the selected period — not processed again."
+              bgColor="bg-purple-50"
+            />
+            <MetricCard
+              title="Pipeline Loss"
+              value={formatNumber(kpis.data?.pipelineLossCount ?? 0)}
+              description="Cumulative events accepted by the collector but never reaching the compliance engine — pipeline-health indicator (not date-filtered)."
+              bgColor={(kpis.data?.pipelineLossCount ?? 0) > 0 ? 'bg-red-50' : undefined}
+            />
           </div>
         </>
-      ) : null}
+      )}
 
       <Card title="Volume Trends" className="mt-6"
         action={
