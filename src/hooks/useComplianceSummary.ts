@@ -26,9 +26,15 @@ export function useProtocolPatients(
   protocolDefinitionId: string,
   params?: { status?: string; facilityId?: string; limit?: number; cursor?: string; patientId?: string },
 ) {
+  const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['compliance', 'patients', protocolDefinitionId, params],
-    queryFn: () => getProtocolPatients(protocolDefinitionId, params),
+    queryKey: ['compliance', 'patients', protocolDefinitionId, params, filters],
+    queryFn: () => getProtocolPatients(protocolDefinitionId, {
+      ...params,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      facilityId: params?.facilityId ?? filters.facilityId,
+    }),
     enabled: !!protocolDefinitionId,
   });
 }

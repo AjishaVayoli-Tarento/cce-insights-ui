@@ -10,14 +10,14 @@ import { useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useProtocols } from '../hooks/useLookups';
 import { formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
-import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from '../config';
+import { PATIENT_LIST_PAGE_SIZE, PATIENT_LIST_PAGE_SIZE_OPTIONS } from '../config';
 import type { ComplianceCategory } from '../api/types';
 
 export default function PatientList() {
   const [protocolId, setProtocolId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(PATIENT_LIST_PAGE_SIZE);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
 
@@ -66,7 +66,7 @@ export default function PatientList() {
 
   return (
     <>
-      <PageHeader title="Patient Compliance" description="Browse patients by compliance category" />
+      <PageHeader title="Patient Compliance" description="Distinct patients enrolled in the selected protocol during the selected period" />
 
       <Card title="Patient List">
         <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -190,7 +190,7 @@ export default function PatientList() {
             )}
             <PagePagination
               pageSize={pageSize}
-              pageSizeOptions={[...TABLE_PAGE_SIZE_OPTIONS]}
+              pageSizeOptions={[...PATIENT_LIST_PAGE_SIZE_OPTIONS]}
               onPageSizeChange={(size) => { setPageSize(size); resetPagination(); }}
               start={range.start}
               end={range.end}
