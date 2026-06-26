@@ -1,30 +1,92 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/shared/PageHeader';
 import { MetricCard } from '../components/shared/MetricCard';
 import { Card } from '../components/shared/Card';
 import { LoadingSpinner } from '../components/shared/LoadingSpinner';
 import { ErrorAlert } from '../components/shared/ErrorAlert';
-import { CursorPagination } from '../components/shared/CursorPagination';
+import { TableRangePagination } from '../components/shared/TableRangePagination';
 import { EventTrendChart } from '../components/charts/EventTrendChart';
 import { ResourceTypeBarChart } from '../components/charts/ResourceTypeBarChart';
 import {
   useEventKpis, useEventTrends, useEventsByResourceType, useEventsByFacility,
 } from '../hooks/useEventVolume';
+import { useFacilityLookup } from '../hooks/useLookups';
 import { formatNumber } from '../utils/formatters';
+import { findDuplicateFacilityNames, formatFacilityDisplayName } from '../utils/facilityDisplay';
 import { INTERVAL_OPTIONS } from '../config';
+import type { FacilityEventCount } from '../api/types';
 
 type Tab = 'resource-type' | 'facility';
+
+const FACILITY_PAGE_SIZE = 10;
 
 export default function EventVolume() {
   const [interval, setInterval] = useState('weekly');
   const [activeTab, setActiveTab] = useState<Tab>('resource-type');
-  const [facilityCursor, setFacilityCursor] = useState<string | undefined>();
   const [facilityPage, setFacilityPage] = useState(1);
 
   const kpis = useEventKpis();
   const trends = useEventTrends(interval);
   const byResourceType = useEventsByResourceType();
-  const byFacility = useEventsByFacility({ cursor: facilityCursor });
+  const byFacility = useEventsByFacility();
+  const facilities = useFacilityLookup();
+
+  // Merge the API rows with the canonical facility reference list so every facility
+  // appears in the table — facilities with no events in the period display 0 events
+  // and an empty resource-type breakdown. Names are resolved from the lookup table
+  // so the column shows the facility name, not the raw FOSA id.
+  const facilityRows = useMemo<FacilityEventCount[]>(() => {
+    const byId = new Map<string, FacilityEventCount>();
+    for (const row of byFacility.data?.data ?? []) {
+      byId.set(row.facilityId, row);
+    }
+    const merged: FacilityEventCount[] = [];
+    const seen = new Set<string>();
+    for (const fac of facilities.data ?? []) {
+      const row = byId.get(fac.id);
+      merged.push(row ?? { facilityId: fac.id, totalEvents: 0, byResourceType: [] });
+      seen.add(fac.id);
+    }
+    // Defensive: include any API row whose facility id isn't in the reference (rare,
+    // typically only for legacy/test data) so it's still visible.
+    for (const row of byFacility.data?.data ?? []) {
+      if (!seen.has(row.facilityId)) merged.push(row);
+    }
+    return merged.sort((a, b) => b.totalEvents - a.totalEvents);
+  }, [byFacility.data, facilities.data]);
+
+  const facilityNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const f of facilities.data ?? []) map.set(f.id, f.name);
+    return map;
+  }, [facilities.data]);
+
+  const facilityRowsWithName = useMemo(
+    () => facilityRows.map((r) => ({
+      ...r,
+      facilityName: facilityNameById.get(r.facilityId) ?? r.facilityId,
+    })),
+    [facilityRows, facilityNameById],
+  );
+
+  const duplicateFacilityNames = useMemo(
+    () => findDuplicateFacilityNames(facilityRowsWithName),
+    [facilityRowsWithName],
+  );
+
+  const facilityTotalCount = facilityRowsWithName.length;
+  const facilityTotalPages = Math.max(1, Math.ceil(facilityTotalCount / FACILITY_PAGE_SIZE));
+  const paginatedFacilities = useMemo(
+    () => facilityRowsWithName.slice(
+      (facilityPage - 1) * FACILITY_PAGE_SIZE,
+      facilityPage * FACILITY_PAGE_SIZE,
+    ),
+    [facilityRowsWithName, facilityPage],
+  );
+
+  useEffect(() => {
+    if (facilityPage > facilityTotalPages) setFacilityPage(facilityTotalPages);
+  }, [facilityPage, facilityTotalPages]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'resource-type', label: 'By Resource Type' },
@@ -98,7 +160,7 @@ export default function EventVolume() {
 
           {activeTab === 'facility' && (
             <Card>
-              {byFacility.isLoading ? <LoadingSpinner /> : byFacility.error ? <ErrorAlert error={byFacility.error} /> : byFacility.data ? (
+              {byFacility.isLoading || facilities.isLoading ? <LoadingSpinner /> : byFacility.error ? <ErrorAlert error={byFacility.error} /> : (
                 <>
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
@@ -110,25 +172,40 @@ export default function EventVolume() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {byFacility.data.data.map((f) => (
+                        {paginatedFacilities.map((f) => (
                           <tr key={f.facilityId} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4 font-medium text-gray-900">{f.facilityId}</td>
+                            <td className="py-2 pr-4 font-medium text-gray-900">
+                              {formatFacilityDisplayName(
+                                { facilityId: f.facilityId, facilityName: f.facilityName },
+                                duplicateFacilityNames,
+                              )}
+                            </td>
                             <td className="py-2 pr-4">{formatNumber(f.totalEvents)}</td>
-                            <td className="py-2 text-gray-600">{f.byResourceType.map((r) => `${r.resourceType}: ${r.count}`).join(', ')}</td>
+                            <td className="py-2 text-gray-600">
+                              {f.byResourceType.length === 0
+                                ? '—'
+                                : f.byResourceType.map((r) => `${r.resourceType}: ${r.count}`).join(', ')}
+                            </td>
                           </tr>
                         ))}
+                        {paginatedFacilities.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="py-8 text-center text-sm text-gray-500">
+                              No facilities to display.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
-                  <CursorPagination
-                    hasMore={byFacility.data.pagination.has_more}
-                    nextCursor={byFacility.data.pagination.next_cursor}
-                    onNext={(c) => { setFacilityCursor(c); setFacilityPage((p) => p + 1); }}
-                    onReset={() => { setFacilityCursor(undefined); setFacilityPage(1); }}
-                    currentPage={facilityPage}
+                  <TableRangePagination
+                    page={facilityPage}
+                    pageSize={FACILITY_PAGE_SIZE}
+                    totalCount={facilityTotalCount}
+                    onPageChange={setFacilityPage}
                   />
                 </>
-              ) : null}
+              )}
             </Card>
           )}
         </div>
