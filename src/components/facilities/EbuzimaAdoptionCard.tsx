@@ -53,10 +53,10 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Facility</th>
-                    <th className="pb-2 pr-4">Expected Visits / Day</th>
-                    <th className="pb-2 pr-4">Actual Visits / Day</th>
-                    <th className="pb-2 pr-4">Reporting Gap / Day</th>
-                    <th className="pb-2 pr-4">Adoption Rate</th>
+                    <th className="pb-2 pr-4 text-center">Expected Visits / Day</th>
+                    <th className="pb-2 pr-4 text-center">Actual Visits / Day</th>
+                    <th className="pb-2 pr-4 text-center">Reporting Gap / Day</th>
+                    <th className="pb-2 pr-4 text-center">Adoption Rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -69,13 +69,13 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
                         <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">
                           {formatFacilityDisplayName(f, duplicateNames)}
                         </td>
-                        <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedVisitsPerDay)}</td>
-                        <td className="py-2.5 pr-4">{formatNumber(f.actualVisitsPerDay)}</td>
-                        <td className={`py-2.5 pr-4 font-medium ${f.reportingGapPerDay > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <td className="py-2.5 pr-4 text-center text-gray-600">{formatNumber(f.expectedVisitsPerDay)}</td>
+                        <td className="py-2.5 pr-4 text-center">{formatNumber(f.actualVisitsPerDay)}</td>
+                        <td className={`py-2.5 pr-4 text-center font-medium ${f.reportingGapPerDay > 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {f.reportingGapPerDay > 0 ? `−${formatNumber(f.reportingGapPerDay)}` : `+${formatNumber(Math.abs(f.reportingGapPerDay))}`}
                         </td>
                         <td className="py-2.5 pr-4">
-                          <div className="flex items-center gap-2">
+                          <div className="mx-auto flex max-w-[12rem] items-center justify-center gap-2">
                             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
                               <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
                             </div>
