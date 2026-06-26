@@ -17,13 +17,24 @@ export function formatFacilityDisplayName(
   return duplicateNames.has(name) ? `${name} (${f.facilityId})` : name;
 }
 
+/**
+ * Returns names that map to two or more **distinct** facility ids. Rows are first
+ * deduplicated by `facilityId` so a facility appearing in both Top and Bottom 5 lists
+ * is not treated as a name collision with itself.
+ */
 export function findDuplicateFacilityNames(
   rows: ReadonlyArray<Pick<FacilityRanking, 'facilityId' | 'facilityName'>>,
 ): Set<string> {
-  const counts = new Map<string, number>();
+  const idsByName = new Map<string, Set<string>>();
   for (const row of rows) {
     const name = getFacilityLabel(row);
-    counts.set(name, (counts.get(name) ?? 0) + 1);
+    const ids = idsByName.get(name) ?? new Set<string>();
+    ids.add(row.facilityId);
+    idsByName.set(name, ids);
   }
-  return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([name]) => name));
+  return new Set(
+    [...idsByName.entries()]
+      .filter(([, ids]) => ids.size > 1)
+      .map(([name]) => name),
+  );
 }

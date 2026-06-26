@@ -2,6 +2,15 @@ export function formatNumber(n: number | null | undefined): string {
   return n != null ? n.toLocaleString() : '—';
 }
 
+/**
+ * Decimal-aware number formatter. Integer values stay as plain numbers; non-integers
+ * are rendered with one decimal (so a 0.3 daily average does not visually collapse to 0).
+ */
+export function formatDecimal(n: number | null | undefined, decimals = 1): string {
+  if (n == null) return '—';
+  return Number.isInteger(n) ? n.toLocaleString() : n.toFixed(decimals);
+}
+
 export function formatPercentage(n: number | null | undefined, decimals = 1): string {
   return n != null ? `${n.toFixed(decimals)}%` : '—';
 }
