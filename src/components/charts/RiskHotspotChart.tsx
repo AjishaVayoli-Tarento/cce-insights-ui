@@ -15,7 +15,8 @@ export function RiskHotspotChart({ data, height = 250 }: HotspotChartProps) {
   const chartData = data.map((d) => ({
     facility: d.facilityName ?? d.facilityId,
     'Compliant': d.onTrack.count,
-    'Non-Compliant': d.atRisk.count + d.nonCompliant.count,
+    // API may still return atRisk for legacy hotspots; both count as non-compliant (deviation-based).
+    'Non-Compliant': d.nonCompliant.count + d.atRisk.count,
   }));
 
   return (

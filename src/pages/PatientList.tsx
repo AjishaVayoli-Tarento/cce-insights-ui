@@ -10,7 +10,12 @@ import { useProtocolPatients } from '../hooks/useComplianceSummary';
 import { useProtocols } from '../hooks/useLookups';
 import { formatPercentage } from '../utils/formatters';
 import { COMPLIANCE_COLORS } from '../utils/colors';
-import { PATIENT_LIST_PAGE_SIZE, PATIENT_LIST_PAGE_SIZE_OPTIONS } from '../config';
+import {
+  complianceCategoryLabel,
+  COMPLIANCE_CATEGORY_HELP,
+  COMPLIANCE_RATE_HELP,
+} from '../utils/compliance';
+import { PATIENT_LIST_PAGE_SIZE, PATIENT_LIST_PAGE_SIZE_OPTIONS, COMPLIANCE_STATUS_OPTIONS } from '../config';
 import type { ComplianceCategory } from '../api/types';
 
 export default function PatientList() {
@@ -66,7 +71,10 @@ export default function PatientList() {
 
   return (
     <>
-      <PageHeader title="Patient Compliance" description="Distinct patients enrolled in the selected protocol during the selected period" />
+      <PageHeader
+        title="Patient Compliance"
+        description="Distinct patients enrolled in the selected protocol during the selected period. Compliant / Non-Compliant follows the same deviation-based rules as the dashboard."
+      />
 
       <Card title="Patient List">
         <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -86,18 +94,18 @@ export default function PatientList() {
             </select>
           </div>
           <div className="flex gap-2 items-end">
-            {['', 'on_track', 'non_compliant'].map((s) => (
+            {COMPLIANCE_STATUS_OPTIONS.map(({ value, label }) => (
               <button
-                key={s}
+                key={value || 'all'}
                 type="button"
-                onClick={() => { setStatusFilter(s); resetPagination(); }}
+                onClick={() => { setStatusFilter(value); resetPagination(); }}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  statusFilter === s
+                  statusFilter === value
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {s === '' ? 'All' : s === 'on_track' ? 'Compliant' : 'Non-Compliant'}
+                {label}
               </button>
             ))}
           </div>
@@ -143,6 +151,8 @@ export default function PatientList() {
           </form>
         </div>
 
+        <p className="mb-4 text-xs text-gray-500">{COMPLIANCE_CATEGORY_HELP}</p>
+
         {!protocolId && (
           <p className="py-4 text-center text-sm text-gray-400">Select a protocol to view patients.</p>
         )}
@@ -158,7 +168,7 @@ export default function PatientList() {
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Patient ID</th>
                     <th className="pb-2 pr-4">Category</th>
-                    <th className="pb-2 pr-4">Rate</th>
+                    <th className="pb-2 pr-4" title={COMPLIANCE_RATE_HELP}>Rate</th>
                     <th className="pb-2 pr-4">Steps</th>
                     <th className="pb-2">Deviations</th>
                   </tr>
@@ -173,7 +183,7 @@ export default function PatientList() {
                       </td>
                       <td className="py-2 pr-4">
                         <StatusBadge
-                          label={p.complianceCategory === 'on_track' ? 'Compliant' : 'Non-Compliant'}
+                          label={complianceCategoryLabel(p.complianceCategory)}
                           color={COMPLIANCE_COLORS[p.complianceCategory as ComplianceCategory] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }}
                         />
                       </td>

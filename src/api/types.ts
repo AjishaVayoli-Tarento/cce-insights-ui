@@ -88,6 +88,7 @@ export interface PatientCompliance {
   enrolledAt: string;
   status: ProtocolInstanceStatus;
   complianceRate: number;
+  /** `on_track` = no deviations; `non_compliant` = at least one deviation (matches dashboard). */
   complianceCategory: ComplianceCategory;
   stepsCompleted: number;
   totalSteps: number;
