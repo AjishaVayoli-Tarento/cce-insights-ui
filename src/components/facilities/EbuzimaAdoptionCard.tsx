@@ -33,7 +33,7 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
   return (
     <Card
       title="e-Buzima Adoption"
-      description="Per-facility expected vs. actual patient reporting — sorted by worst under-reporters first"
+      description="Average daily reporting vs. expected baseline over the selected period. Each day a patient reports at a facility counts once (not unique patients across days)."
       className={className}
     >
       {adoption.isLoading ? <LoadingSpinner /> : adoption.error ? <ErrorAlert error={adoption.error} /> : adoption.data ? (
@@ -44,19 +44,19 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
             <div className="overflow-x-auto">
               <table className="w-full table-fixed text-sm">
                 <colgroup>
-                  <col style={{ width: '30%' }} />
-                  <col style={{ width: '13%' }} />
-                  <col style={{ width: '13%' }} />
-                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '28%' }} />
                   <col style={{ width: '14%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '30%' }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                     <th className="pb-2 pr-4">Facility</th>
-                    <th className="pb-2 pr-4">Expected / Day</th>
-                    <th className="pb-2 pr-4">Actual Patients</th>
+                    <th className="pb-2 pr-4">Expected Visits / Day</th>
+                    <th className="pb-2 pr-4">Actual Visits / Day</th>
+                    <th className="pb-2 pr-4">Reporting Gap / Day</th>
                     <th className="pb-2 pr-4">Adoption Rate</th>
-                    <th className="pb-2 pr-4">Reporting Gap</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -69,8 +69,11 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
                         <td className="py-2.5 pr-4 font-medium text-gray-900 truncate">
                           {formatFacilityDisplayName(f, duplicateNames)}
                         </td>
-                        <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedPatientsPerDay)}</td>
-                        <td className="py-2.5 pr-4">{formatNumber(f.actualPatients)}</td>
+                        <td className="py-2.5 pr-4 text-gray-600">{formatNumber(f.expectedVisitsPerDay)}</td>
+                        <td className="py-2.5 pr-4">{formatNumber(f.actualVisitsPerDay)}</td>
+                        <td className={`py-2.5 pr-4 font-medium ${f.reportingGapPerDay > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {f.reportingGapPerDay > 0 ? `−${formatNumber(f.reportingGapPerDay)}` : `+${formatNumber(Math.abs(f.reportingGapPerDay))}`}
+                        </td>
                         <td className="py-2.5 pr-4">
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
@@ -80,9 +83,6 @@ export function EbuzimaAdoptionCard({ className }: { className?: string }) {
                               {rate}%
                             </span>
                           </div>
-                        </td>
-                        <td className={`py-2.5 pr-4 font-medium ${f.reportingGap > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {f.reportingGap > 0 ? `−${formatNumber(f.reportingGap)}` : `+${formatNumber(Math.abs(f.reportingGap))}`}
                         </td>
                       </tr>
                     );

@@ -497,7 +497,7 @@ export interface FacilityActivitySummary {
 export interface FacilityReference {
   facilityId: string;
   facilityName: string;
-  expectedPatientsPerDay: number;
+  expectedVisitsPerDay: number;
 }
 
 // ─── Adoption KPIs ───────────────────────────────────────────
@@ -505,10 +505,10 @@ export interface FacilityReference {
 export interface AdoptionKpi {
   facilityId: string;
   facilityName: string;
-  expectedPatientsPerDay: number;
-  actualPatients: number;
+  expectedVisitsPerDay: number;
+  actualVisitsPerDay: number;
   adoptionRate: number;
-  reportingGap: number;
+  reportingGapPerDay: number;
 }
 
 // ─── Event KPIs (from mv_daily_event_kpis) ───────────────────
