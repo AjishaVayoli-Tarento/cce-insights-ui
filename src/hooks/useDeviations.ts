@@ -9,7 +9,12 @@ export function useDeviationKpis(protocolDefinitionId?: string) {
   const filters = useGlobalFilters();
   return useQuery({
     queryKey: ['deviations', 'kpis', { protocolDefinitionId, ...filters }],
-    queryFn: () => getDeviationKpis({ protocolDefinitionId, ...filters }),
+    queryFn: () => getDeviationKpis({
+      protocolDefinitionId,
+      facilityId: filters.facilityId,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    }),
     refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
   });
 }

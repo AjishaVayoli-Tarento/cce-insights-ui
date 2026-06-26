@@ -51,6 +51,7 @@ export function getDashboardOverview(params?: {
 export function getDashboardComplianceSummary(params?: {
   startDate?: string;
   endDate?: string;
+  facilityId?: string;
 }): Promise<DashboardComplianceSummary> {
   return apiGet('/dashboard/compliance-summary', params);
 }

@@ -17,9 +17,11 @@ export interface IntelligenceSummary {
 export function getIntelligenceSummary(params?: {
   startDate?: string;
   endDate?: string;
+  protocolDefinitionId?: string;
 }): Promise<IntelligenceSummary> {
   return apiGet('/intelligence/summary', {
     startDate: params?.startDate,
     endDate: params?.endDate,
+    protocolDefinitionId: params?.protocolDefinitionId,
   });
 }

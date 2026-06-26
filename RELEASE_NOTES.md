@@ -4,6 +4,35 @@
 
 ## Unreleased
 
+### Metric Alignment & Filter Wiring
+
+A workspace-wide audit aligned every KPI surface to a single set of definitions and
+wired the global filters end-to-end. Highlights:
+
+- **Tracked Cohort = enrolled in period** on both the Dashboard and Compliance Overview
+  (previously the two pages used different cohorts and disagreed).
+- **Active Facilities** counts any facility with ≥1 successful HIE submission in the
+  period (matches the requirements doc), so a facility submitting accepted-but-unmatched
+  events is no longer marked inactive.
+- **Facility Ranking events** sourced from inbound events — aligns with the Active tile
+  and the Events → By Facility table.
+- **Deviations header** counts distinct deviations from the base table, not summed
+  daily snapshots; UI copy updated to reflect that.
+- **e-Buzima Adoption** period columns are now **daily averages** (Avg Visits / Day,
+  Gap / Day) so they are comparable to the per-day baseline. API fields renamed to
+  `expectedVisitsPerDay`, `actualVisitsPerDay`, `reportingGapPerDay`. Column order
+  swapped: Gap now sits before Adoption Rate.
+- **Practitioner page** relabelled to make clear the rate is **step completion**, not
+  the deviation-based patient compliance shown on the Dashboard.
+- **Global facility filter** now narrows the Dashboard, Facility Ranking, Event Volume,
+  Patient List, Deviations KPIs, and deviation recent-activity counts. Previously the
+  control changed nothing on those pages.
+- **Patient List** is deduplicated to one row per patient (most recent enrollment in
+  the period) — the total no longer counts re-enrollments separately.
+- **Protocol filter** on Intelligence and Practitioner Analytics now reaches the
+  backend; Practitioner Analytics narrows to practitioners with step rows in that
+  protocol.
+
 ### Removed
 
 - **Source Comparison** — Removed `/events/source-comparison` page, Compare Sources link on Events, and related API client/types (`compareSourceSystems`, `SourceComparison`, `SourceTimelineChart`).

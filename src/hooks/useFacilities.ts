@@ -10,7 +10,11 @@ export function useFacilityActivitySummary() {
   const filters = useGlobalFilters();
   return useQuery({
     queryKey: ['facilities', 'activity-summary', filters],
-    queryFn: () => getFacilityActivitySummary({ startDate: filters.startDate, endDate: filters.endDate }),
+    queryFn: () => getFacilityActivitySummary({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      facilityId: filters.facilityId,
+    }),
     refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
   });
 }
@@ -27,7 +31,11 @@ export function useAdoptionKpis() {
   const filters = useGlobalFilters();
   return useQuery({
     queryKey: ['facilities', 'adoption', filters],
-    queryFn: () => getAdoptionKpis({ startDate: filters.startDate, endDate: filters.endDate }),
+    queryFn: () => getAdoptionKpis({
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      facilityId: filters.facilityId,
+    }),
   });
 }
 

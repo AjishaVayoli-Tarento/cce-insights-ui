@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Intelligence() {
   const [protocolId, setProtocolId] = useState('');
-  const { data, isLoading, error } = useIntelligenceSummary();
+  const { data, isLoading, error } = useIntelligenceSummary(protocolId || undefined);
   const actionOrder = useActionOrder(protocolId);
 
   if (isLoading) return <LoadingSpinner />;

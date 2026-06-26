@@ -6,11 +6,13 @@ import type {
 
 export function getDeviationKpis(params?: {
   protocolDefinitionId?: string;
+  facilityId?: string;
   startDate?: string;
   endDate?: string;
 }): Promise<DeviationKpis> {
   return apiGet('/deviations/kpis', {
     protocolDefinitionId: params?.protocolDefinitionId,
+    facilityId: params?.facilityId,
     startDate: params?.startDate,
     endDate: params?.endDate,
   });

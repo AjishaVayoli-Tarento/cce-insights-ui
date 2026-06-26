@@ -12,7 +12,7 @@ import { formatNumber, formatPercentage, formatPractitionerName } from '../utils
 import type { PractitionerRankBy, SortOrder } from '../api/types';
 
 const RANK_OPTIONS: { value: PractitionerRankBy; label: string }[] = [
-  { value: 'complianceRate', label: 'Compliance Rate' },
+  { value: 'complianceRate', label: 'Step Completion %' },
   { value: 'totalPatients', label: 'Patients Served' },
 ];
 
@@ -29,7 +29,12 @@ export default function PractitionerAnalytics() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 15;
 
-  const ranking = usePractitionerRanking({ rankBy, order, limit: 200 });
+  const ranking = usePractitionerRanking({
+    rankBy,
+    order,
+    limit: 200,
+    protocolDefinitionId: protocolId || undefined,
+  });
   const complianceSummary = useDashboardComplianceSummary();
   const practitionerMetrics = complianceSummary.data?.practitioners;
   const facilityName = useFacilityName();
@@ -49,7 +54,7 @@ export default function PractitionerAnalytics() {
 
   return (
     <>
-      <PageHeader title="Practitioner Analytics" description="Practitioner leaderboard ranked by compliance performance" />
+      <PageHeader title="Practitioner Analytics" description="Practitioner leaderboard ranked by step completion (different metric from the deviation-based patient compliance on the Dashboard)." />
 
       {/* Metric Tiles */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -59,22 +64,22 @@ export default function PractitionerAnalytics() {
           value={formatNumber(practitionerMetrics?.trackedPractitioners ?? 0)}
         />
         <MetricCard
-          title="> 90% Compliance"
-          description="Practitioners with compliance rate above 90%."
+          title="> 90% Step Completion"
+          description="Practitioners completing more than 90% of their assigned protocol steps (this rate is step-completion based, separate from the deviation-based patient compliance shown elsewhere)."
           value={formatNumber(practitionerMetrics?.above90 ?? 0)}
           denomination={formatNumber(practitionerMetrics?.trackedPractitioners ?? 0)}
           bgColor="bg-green-50"
         />
         <MetricCard
-          title="75–90% Compliance"
-          description="Practitioners with compliance rate between 75% and 90%."
+          title="75–90% Step Completion"
+          description="Practitioners completing 75–90% of their assigned protocol steps."
           value={formatNumber(practitionerMetrics?.between75And90 ?? 0)}
           denomination={formatNumber(practitionerMetrics?.trackedPractitioners ?? 0)}
           bgColor="bg-amber-50"
         />
         <MetricCard
-          title="< 75% Compliance"
-          description="Practitioners with compliance rate below 75%."
+          title="< 75% Step Completion"
+          description="Practitioners completing fewer than 75% of their assigned protocol steps."
           value={formatNumber(practitionerMetrics?.below75 ?? 0)}
           denomination={formatNumber(practitionerMetrics?.trackedPractitioners ?? 0)}
           bgColor="bg-red-50"
@@ -137,7 +142,7 @@ export default function PractitionerAnalytics() {
                     <th className="pb-2 pr-4">Practitioner</th>
                     <th className="pb-2 pr-4">Facility</th>
                     <th className="pb-2 pr-4">Patients</th>
-                    <th className="pb-2 pr-4">Compliance</th>
+                    <th className="pb-2 pr-4">Step Completion</th>
                     <th className="pb-2">Steps (Done/Total)</th>
                   </tr>
                 </thead>
