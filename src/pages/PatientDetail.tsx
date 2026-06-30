@@ -278,25 +278,36 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="space-y-0">
-                  {(proto.journey ?? []).filter((step, i, arr) => {
-                    if (step.status !== 'NOT_STARTED') return true;
-                    const depth = step.depth ?? 0;
-                    if (depth > 0) {
-                      // Sub-step: hide if parent is COMPLETED
-                      let parentStatus = '';
+                  {(() => {
+                    const journey = proto.journey ?? [];
+                    // Pre-compute which root (depth=0) steps are visible so sub-steps can inherit.
+                    const visibleRootIdx = new Set<number>();
+                    journey.forEach((step, i) => {
+                      if ((step.depth ?? 0) !== 0) return;
+                      if (step.status !== 'NOT_STARTED') { visibleRootIdx.add(i); return; }
+                      // NOT_STARTED root: hide if a later root step has been worked on
+                      const superseded = journey.slice(i + 1).some(
+                        s => (s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING' && s.status !== 'DUE'
+                      );
+                      if (!superseded) visibleRootIdx.add(i);
+                    });
+
+                    return journey.filter((step, i, arr) => {
+                      if (step.status !== 'NOT_STARTED') return true;
+                      const depth = step.depth ?? 0;
+                      if (depth === 0) return visibleRootIdx.has(i);
+                      // Sub-step: find nearest ancestor
                       for (let j = i - 1; j >= 0; j--) {
-                        if ((arr[j].depth ?? 0) < depth) { parentStatus = arr[j].status; break; }
+                        if ((arr[j].depth ?? 0) < depth) {
+                          // Hide if parent is completed OR parent root was filtered out
+                          if (arr[j].status === 'COMPLETED') return false;
+                          if (arr[j].status === 'NOT_STARTED' && !visibleRootIdx.has(j)) return false;
+                          break;
+                        }
                       }
-                      if (parentStatus === 'COMPLETED') return false;
-                    } else {
-                      // Root step: hide if any later root step has actually been worked on
-                      for (let j = i + 1; j < arr.length; j++) {
-                        const s = arr[j];
-                        if ((s.depth ?? 0) === 0 && s.status !== 'NOT_STARTED' && s.status !== 'PENDING' && s.status !== 'DUE') return false;
-                      }
-                    }
-                    return true;
-                  }).map((step, i, arr) => {
+                      return true;
+                    });
+                  })().map((step, i, arr) => {
                     const hasDeviation = deviationActionIds.has(step.actionId);
                     const displayStatus: JourneyDisplayStatus = hasDeviation && step.status !== 'COMPLETED' && step.status !== 'SKIPPED'
                       ? 'DEVIATION'
@@ -344,7 +355,7 @@ export default function PatientDetail() {
                             {step.effectiveDateTime && (
                               <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
-                            {step.completionStatus && step.completionStatus !== 'ON_TIME' && (
+                            {step.completionStatus === 'LATE' && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100">
                                 LATE
                               </span>
@@ -352,6 +363,11 @@ export default function PatientDetail() {
                             {step.completionStatus === 'ON_TIME' && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
                                 ON TIME
+                              </span>
+                            )}
+                            {step.completionStatus === 'EARLY' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
+                                EARLY
                               </span>
                             )}
                             {step.source && (

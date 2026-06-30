@@ -1,8 +1,10 @@
 # API Integration Reference
 
 > **CCE Insights UI** — Complete mapping of UI features to Insights Service APIs  
-> All endpoints consumed from the Insights Service (`port 8084`) or via the CCE Gateway (`port 8060`).  
+> All endpoints consumed from the Insights Service (`port 8084`) directly (gateway-less/dev), or via the
+> CCE Gateway when auth is enabled (JWT-validated; see `architecture-overview.md`).  
 > Compliance categories are binary: `on_track` (Compliant) and `non_compliant` (Non-Compliant).
+> Deviations have three types: `OVERDUE`, `MISSED`, `ORDER_VIOLATION`.
 
 ---
 
@@ -24,6 +26,7 @@
 ```typescript
 // src/api/client.ts
 import type { ErrorResponse, PaginatedResponse } from './types';
+import { authEnabled, getToken } from '../auth/keycloak';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -49,10 +52,10 @@ function buildUrl(path: string, params?: Record<string, string | undefined>): st
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (import.meta.env.VITE_AUTH_ENABLED === 'true') {
-    const token =
-      import.meta.env.VITE_AUTH_TOKEN ||
-      sessionStorage.getItem('access_token');
+  if (authEnabled) {
+    // Live Keycloak access token (kept fresh by initAuth's refresh loop);
+    // VITE_AUTH_TOKEN is a static fallback for local testing without a login.
+    const token = getToken() || import.meta.env.VITE_AUTH_TOKEN;
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
@@ -98,12 +101,37 @@ export async function apiGetPaginated<T>(
           limit: p.limit ?? 50,
           next_cursor: p.next_cursor ?? p.nextCursor ?? null,
           has_more: p.has_more ?? p.hasMore ?? false,
+          total_count: p.total_count ?? p.totalCount ?? undefined,
         }
       : { limit: 50, next_cursor: null, has_more: false },
   };
 }
 
 export { buildUrl };
+```
+
+### Authentication (`src/auth/keycloak.ts`)
+
+Auth is gated by the build-time flag `authEnabled` (`VITE_AUTH_ENABLED === 'true'`). When enabled:
+
+- `initAuth()` runs in `main.tsx` before render (`onLoad: 'login-required'`, `pkceMethod: 'S256'`),
+  redirecting unauthenticated users to Keycloak (Authorization Code + PKCE).
+- Keycloak URL defaults to `${window.location.origin}/auth` (override: `VITE_KEYCLOAK_URL`); realm
+  default `cce` (`VITE_KEYCLOAK_REALM`), client id `cce-insights-ui` (`VITE_KEYCLOAK_CLIENT_ID`).
+- A 60s interval refreshes the token (`keycloak.updateToken(70)`).
+- `client.ts` reads the live token via `getToken()` and sends `Authorization: Bearer …`. The gateway
+  validates issuer, audience (`gateway-service`), and the `INSIGHTS_READ` role.
+
+When disabled, the auth path is inert (local dev / gateway-less demo). There is **no** `sessionStorage`
+token and **no** `window._env_` runtime config — all config is build-time `import.meta.env.VITE_*`.
+
+```typescript
+// src/auth/keycloak.ts — exports
+export const authEnabled: boolean;          // VITE_AUTH_ENABLED === 'true'
+export async function initAuth(): Promise<void>;
+export function getToken(): string | undefined;
+export function getUsername(): string | undefined;
+export function logout(): void;             // redirect → origin + '/insights'
 ```
 
 ---
@@ -126,6 +154,7 @@ export interface PaginatedResponse<T> {
     limit: number;
     next_cursor: string | null;
     has_more: boolean;
+    total_count?: number;
   };
 }
 
@@ -143,6 +172,7 @@ export interface ComplianceSummary {
   protocolDefinitionId: string;
   protocolCanonical: string;
   totalEnrollments: number;
+  compliantPatients: number;
   statusBreakdown: {
     active: number;
     completed: number;
@@ -156,6 +186,7 @@ export interface ComplianceSummary {
     onTime: number;
     late: number;
     early: number;
+    due: number;
     overdue: number;
     missed: number;
     pending: number;
@@ -164,6 +195,7 @@ export interface ComplianceSummary {
   deviationBreakdown: {
     overdue: number;
     missed: number;
+    orderViolation: number;
   };
 }
 
@@ -279,11 +311,19 @@ export interface PatientDeviation {
   protocolInstanceId: string;
   protocolCanonical: string;
   stepInstanceId: string;
+  actionId?: string;
+  stepName?: string;
   deviationType: DeviationType;
   detectedAt: string;
+  description?: string;
+  metadata?: {
+    completedActionId?: string;
+    incompletePrerequisites?: string[];
+    backfilled?: boolean;
+  };
 }
 
-export type DeviationType = 'OVERDUE' | 'MISSED';
+export type DeviationType = 'OVERDUE' | 'MISSED' | 'ORDER_VIOLATION';
 
 // ─── Deviations & Intelligence ───────────────────────────────
 
@@ -305,6 +345,7 @@ export interface DeviationTrend {
     period: string;
     overdue: number;
     missed: number;
+    orderViolation: number;
     total: number;
   }[];
 }
@@ -316,7 +357,16 @@ export interface DeviationByAction {
   totalDeviations: number;
   overdueCount: number;
   missedCount: number;
+  orderViolationCount: number;
   affectedPatients: number;
+}
+
+// KPI counts for the Deviations page header cards.
+export interface DeviationKpis {
+  totalDeviations: number;
+  overdueCount: number;
+  missedCount: number;
+  orderViolationCount: number;
 }
 
 export interface DeviationResolution {
@@ -340,9 +390,11 @@ export interface DeviationResolution {
   }[];
 }
 
+// NOTE: there are TWO distinct IntelligenceSummary types.
+// (1) types.ts — deviation counts; returned by deviations.ts → getIntelligenceSummary.
 export interface IntelligenceSummary {
   totalDeviations: number;
-  byType: { overdue: number; missed: number };
+  byType: { overdue: number; missed: number; orderViolation: number };
   bySeverity: { warning: number; critical: number };
   recentActivity: {
     last24Hours: number;
@@ -350,16 +402,20 @@ export interface IntelligenceSummary {
     last30Days: number;
   };
 }
+// (2) intelligence.ts declares its OWN IntelligenceSummary (delivery-pipeline shaped:
+//     total, delivered, failed, pending, successRate, avgLatencySeconds, byStatus[],
+//     byActionType[], bySeverity[], byDestination[], activeAdaptors[]). See §3.11.
 
 // ─── Event Volume ────────────────────────────────────────────
 
 export interface EventVolumeSummary {
   totalEvents: number;
+  // Each bucket is an optional { count, percentage } object; the whole field may be null.
   processingStatusBreakdown: {
-    matched: number;
-    zeroMatch: number;
-    duplicate: number;
-  };
+    matched?: { count: number; percentage: number };
+    zeroMatch?: { count: number; percentage: number };
+    duplicate?: { count: number; percentage: number };
+  } | null;
   byResourceType: { resourceType: string; count: number }[];
   byFacility: { facilityId: string; count: number }[];
   bySource: { source: string; count: number }[];
@@ -450,10 +506,14 @@ export interface EnrollmentTrend {
 export interface FacilityRanking {
   rank: number;
   facilityId: string;
+  facilityName?: string;
   totalEnrollments: number;
   complianceRate: number;
   activeDeviations: number;
   totalEvents: number;
+  outboundEvents: number;
+  inboundEvents: number;
+  patientsFromHIE: number;
 }
 
 export type RankBy = 'complianceRate' | 'deviationCount' | 'eventVolume';
@@ -474,6 +534,7 @@ export interface RepeatDeviationPatient {
   totalDeviations: number;
   overdueCount: number;
   missedCount: number;
+  orderViolationCount: number;
   affectedProtocols: number;
   affectedSteps: number;
   facilityId: string;
@@ -551,6 +612,36 @@ export interface PipelineLoss {
   lossRate: number;
   bySource: { source: string; lostEvents: number }[];
 }
+
+// ─── Journey / timeline additions ────────────────────────────
+// PatientTimeline.protocols[] now also carries a journey: JourneyStep[] alongside timeline.
+export interface JourneyStep {
+  actionId: string;
+  stepName?: string;
+  status: StepState | 'NOT_STARTED';
+  depth?: number;            // 0 = root step; >0 = sub-step (used by PatientDetail visibility rules)
+  dueDate?: string | null;
+  completedAt?: string | null;
+  completedBySource?: string | null;
+  effectiveDateTime?: string;
+}
+// TimelineEntry.type now also includes 'step_pending' | 'step_skipped'; entries may carry
+// stepName?, state?: StepState | 'ENROLLED', effectiveDateTime?.
+
+// ─── KPI / analytics additions ───────────────────────────────
+export interface EventKpis { /* cumulative event pipeline KPIs incl. pipeline loss */ }
+export interface AdoptionKpi { /* e-Buzima adoption metrics (facilities/adoption) */ }
+export interface FacilityActivitySummary { totalInScope: number; activeFacilities: number; inactiveFacilities: number; /* … */ }
+export interface FacilityReference { facilityId: string; facilityName: string; /* … */ }
+export interface FacilityLookup { facilityId: string; facilityName: string; }
+export interface ProtocolLookup { protocolDefinitionId: string; protocolCanonical: string; title?: string; }
+export interface PractitionerRanking { rank: number; practitionerId: string; practitionerName?: string; facilityId?: string; patientsServed: number; stepCompletionRate: number; stepsCompleted: number; totalSteps: number; }
+export type PractitionerRankBy = 'stepCompletion' | 'patientsServed';
+export interface PatientIntelligenceDelivery { actionId: string; status: string; destination?: string; deliveredAt?: string; /* … */ }
+export interface ActionOrderEntry { actionId: string; stepOrder: number; title?: string; trigger?: string; parentStep?: string; }
+// FacilityRanking-adjacent: AtRiskHotspot now also has facilityName?; StepAnalytics steps add
+// requiredBehavior?: 'must' | 'could'; ProtocolTracking adds protocolTitle?, relatedArtifact?;
+// ProtocolTrackingDetail adds protocolDefinitionId?.
 ```
 
 ---
@@ -567,6 +658,17 @@ import type {
   PatientTimeline, ProtocolTracking, ProtocolTrackingDetail,
   PatientEvent, PatientDeviation, GlobalFilters,
 } from './types';
+
+// Aggregate across ALL protocols (used when no specific protocol is selected).
+export function getAllProtocolsComplianceSummary(
+  filters?: GlobalFilters,
+): Promise<ComplianceSummary> {
+  return apiGet('/protocols/compliance-summary', {
+    facilityId: filters?.facilityId,
+    startDate: filters?.startDate,
+    endDate: filters?.endDate,
+  });
+}
 
 export function getProtocolComplianceSummary(
   protocolDefinitionId: string,
@@ -597,6 +699,10 @@ export function getProtocolPatients(
     facilityId?: string;
     limit?: number;
     cursor?: string;
+    patientId?: string;
+    startDate?: string;
+    endDate?: string;
+    dateFilterMode?: 'enrollment' | 'activity';
   },
 ) {
   return apiGetPaginated<PatientCompliance>(
@@ -604,8 +710,14 @@ export function getProtocolPatients(
     {
       status: params?.status,
       facilityId: params?.facilityId,
-      limit: params?.limit?.toString(),
+      limit: (params?.limit ?? 15).toString(),
       cursor: params?.cursor,
+      patientId: params?.patientId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
+      // 'enrollment' (default) — cohort = enrolled in period
+      // 'activity'   — cohort = patients with step activity in period
+      dateFilterMode: params?.dateFilterMode ?? 'enrollment',
     },
   );
 }
@@ -673,6 +785,13 @@ export function getPatientDeviations(
     endDate: params?.endDate,
   });
 }
+
+// Intelligence-alert deliveries for the patient (Patient Detail → Intelligence Alerts card).
+export function getPatientIntelligenceDeliveries(
+  patientId: string,
+): Promise<PatientIntelligenceDelivery[]> {
+  return apiGet(`/patients/${encodeURIComponent(patientId)}/intelligence-deliveries`);
+}
 ```
 
 ### 3.3 Deviations & Intelligence
@@ -682,8 +801,23 @@ export function getPatientDeviations(
 import { apiGet, apiGetPaginated } from './client';
 import type {
   DeviationRecord, DeviationTrend, DeviationByAction,
-  DeviationResolution, IntelligenceSummary,
+  DeviationResolution, DeviationKpis, IntelligenceSummary,
 } from './types';
+
+// KPI counts for the Deviations page header cards.
+export function getDeviationKpis(params?: {
+  protocolDefinitionId?: string;
+  facilityId?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<DeviationKpis> {
+  return apiGet('/deviations/kpis', {
+    protocolDefinitionId: params?.protocolDefinitionId,
+    facilityId: params?.facilityId,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+  });
+}
 
 export function getDeviations(params?: {
   deviationType?: string;
@@ -755,8 +889,18 @@ export function getDeviationResolutionRate(params?: {
   });
 }
 
-export function getIntelligenceSummary(): Promise<IntelligenceSummary> {
-  return apiGet('/intelligence/summary');
+// Deviation-count summary. NOTE: path is /deviations/intelligence-summary (not /intelligence/summary),
+// and it now takes filter params. Distinct from the delivery-pipeline summary in §3.13.
+export function getIntelligenceSummary(params?: {
+  startDate?: string;
+  endDate?: string;
+  facilityId?: string;
+}): Promise<IntelligenceSummary> {
+  return apiGet('/deviations/intelligence-summary', {
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+    facilityId: params?.facilityId,
+  });
 }
 ```
 
@@ -873,11 +1017,43 @@ export function getEnrollmentTrends(
 
 ```typescript
 // src/api/facilities.ts
-import { apiGetPaginated } from './client';
-import type { FacilityRanking, RankBy, SortOrder } from './types';
+import { apiGet, apiGetPaginated } from './client';
+import type {
+  FacilityRanking, RankBy, SortOrder,
+  FacilityActivitySummary, FacilityReference, AdoptionKpi,
+} from './types';
 
+// Facility activity cards (total / active / inactive). Dates truncated to YYYY-MM-DD.
+export function getFacilityActivitySummary(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<FacilityActivitySummary> {
+  return apiGet('/facilities/activity-summary', {
+    startDate: params?.startDate?.substring(0, 10),
+    endDate: params?.endDate?.substring(0, 10),
+  });
+}
+
+// Canonical facility list (FOSA id → name). Used to merge with event-by-facility rows.
+export function getFacilityReference(): Promise<FacilityReference[]> {
+  return apiGet('/facilities/reference');
+}
+
+// e-Buzima adoption KPIs (Dashboard EbuzimaAdoptionCard). Dates truncated to LocalDate.
+export function getAdoptionKpis(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<AdoptionKpi> {
+  return apiGet('/facilities/adoption', {
+    startDate: params?.startDate?.substring(0, 10),
+    endDate: params?.endDate?.substring(0, 10),
+  });
+}
+
+// Facility leaderboard. NOTE: now accepts facilityId and truncates dates to YYYY-MM-DD.
 export function getFacilityRanking(params?: {
   protocolDefinitionId?: string;
+  facilityId?: string;
   rankBy?: RankBy;
   order?: SortOrder;
   startDate?: string;
@@ -887,10 +1063,11 @@ export function getFacilityRanking(params?: {
 }) {
   return apiGetPaginated<FacilityRanking>('/facilities/ranking', {
     protocolDefinitionId: params?.protocolDefinitionId,
+    facilityId: params?.facilityId,
     rankBy: params?.rankBy,
     order: params?.order,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
+    startDate: params?.startDate?.substring(0, 10),
+    endDate: params?.endDate?.substring(0, 10),
     limit: params?.limit?.toString(),
     cursor: params?.cursor,
   });
@@ -1038,6 +1215,60 @@ export function getPatients() {
 }
 ```
 
+### 3.11 Dashboard
+
+```typescript
+// src/api/dashboard.ts — declares its own DashboardOverview / DashboardComplianceSummary types.
+import { apiGet } from './client';
+
+export function getDashboardOverview(params?: {
+  startDate?: string; endDate?: string; facilityId?: string;
+}): Promise<DashboardOverview> {
+  return apiGet('/dashboard/overview', params);
+}
+
+export function getDashboardComplianceSummary(params?: {
+  startDate?: string; endDate?: string; facilityId?: string;
+}): Promise<DashboardComplianceSummary> {
+  return apiGet('/dashboard/compliance-summary', params);
+}
+```
+
+### 3.12 Practitioners
+
+```typescript
+// src/api/practitioners.ts
+import { apiGet } from './client';
+import type { PractitionerRanking, PractitionerRankBy } from './types';
+
+export function getPractitionerRanking(params?: {
+  rankBy?: PractitionerRankBy;
+  order?: 'asc' | 'desc';
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  facilityId?: string;
+  protocolDefinitionId?: string;
+}): Promise<PractitionerRanking[]> {
+  return apiGet<PractitionerRanking[]>('/practitioners/ranking', { /* …params… */ });
+}
+```
+
+### 3.13 Intelligence (delivery pipeline)
+
+```typescript
+// src/api/intelligence.ts — NOTE: its IntelligenceSummary is the DELIVERY-PIPELINE shape
+// (total, delivered, failed, pending, successRate, byDestination[], activeAdaptors[], …),
+// distinct from the deviation-count IntelligenceSummary in types.ts (§3.3).
+import { apiGet } from './client';
+
+export function getIntelligenceSummary(params?: {
+  startDate?: string; endDate?: string; protocolDefinitionId?: string;
+}): Promise<IntelligenceSummary /* delivery-pipeline */> {
+  return apiGet('/intelligence/summary', { /* …params… */ });
+}
+```
+
 ---
 
 ## 4. TanStack Query Hooks
@@ -1047,24 +1278,34 @@ export function getPatients() {
 ```typescript
 // src/hooks/useComplianceSummary.ts
 import { useQuery } from '@tanstack/react-query';
-import { getProtocolComplianceSummary, getFacilityComplianceSummary, getProtocolPatients } from '../api/compliance';
+import {
+  getProtocolComplianceSummary, getAllProtocolsComplianceSummary, getProtocolPatients,
+} from '../api/compliance';
 import { useGlobalFilters } from './useGlobalFilters';
 
-export function useProtocolComplianceSummary(protocolDefinitionId: string) {
+// Falls back to the all-protocols aggregate when no protocol id is given.
+// Note: no `enabled` guard — it always runs (id || 'all').
+export function useProtocolComplianceSummary(protocolDefinitionId: string, facilityId?: string) {
   const filters = useGlobalFilters();
+  const effectiveFilters = { ...filters, facilityId: facilityId ?? filters.facilityId };
   return useQuery({
-    queryKey: ['compliance', 'summary', protocolDefinitionId, filters],
-    queryFn: () => getProtocolComplianceSummary(protocolDefinitionId, filters),
-    enabled: !!protocolDefinitionId,
+    queryKey: ['compliance', 'summary', protocolDefinitionId || 'all', effectiveFilters],
+    queryFn: () => protocolDefinitionId
+      ? getProtocolComplianceSummary(protocolDefinitionId, effectiveFilters)
+      : getAllProtocolsComplianceSummary(effectiveFilters),
   });
 }
 
-export function useFacilityComplianceSummary(facilityId: string) {
+// Patient list for a protocol, threading the enrollment-vs-activity dateFilterMode.
+export function useProtocolPatients(
+  protocolDefinitionId: string,
+  params?: { status?: string; patientId?: string; limit?: number; cursor?: string;
+             dateFilterMode?: 'enrollment' | 'activity' },
+) {
   const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['compliance', 'facility', facilityId, filters],
-    queryFn: () => getFacilityComplianceSummary(facilityId, filters),
-    enabled: !!facilityId,
+    queryKey: ['compliance', 'patients', protocolDefinitionId, params, filters],
+    queryFn: () => getProtocolPatients(protocolDefinitionId, { ...params, ...filters }),
   });
 }
 ```
@@ -1075,16 +1316,26 @@ export function useFacilityComplianceSummary(facilityId: string) {
 // src/hooks/useDeviations.ts
 import { useQuery } from '@tanstack/react-query';
 import {
-  getDeviationTrends, getDeviationsByAction,
+  getDeviationKpis, getDeviationTrends, getDeviationsByAction,
   getDeviationResolutionRate, getIntelligenceSummary,
 } from '../api/deviations';
 import { useGlobalFilters } from './useGlobalFilters';
 
-export function useDeviationTrends(interval = 'weekly') {
+// KPI cards for the Deviations page (polls).
+export function useDeviationKpis(protocolDefinitionId?: string) {
   const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['deviations', 'trends', { interval, ...filters }],
-    queryFn: () => getDeviationTrends({ interval, ...filters }),
+    queryKey: ['deviations', 'kpis', { protocolDefinitionId, ...filters }],
+    queryFn: () => getDeviationKpis({ protocolDefinitionId, ...filters }),
+    refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
+  });
+}
+
+export function useDeviationTrends(interval = 'weekly', protocolDefinitionId?: string) {
+  const filters = useGlobalFilters();
+  return useQuery({
+    queryKey: ['deviations', 'trends', { interval, protocolDefinitionId, ...filters }],
+    queryFn: () => getDeviationTrends({ interval, protocolDefinitionId, ...filters }),
   });
 }
 
@@ -1096,18 +1347,12 @@ export function useDeviationsByAction(protocolDefinitionId?: string) {
   });
 }
 
-export function useDeviationResolution() {
+// Deviation-count summary (deviations/intelligence-summary). Distinct from useIntelligence (§4.6).
+export function useIntelligenceSummary() {
   const filters = useGlobalFilters();
   return useQuery({
-    queryKey: ['deviations', 'resolution', filters],
-    queryFn: () => getDeviationResolutionRate(filters),
-  });
-}
-
-export function useIntelligenceSummary() {
-  return useQuery({
-    queryKey: ['intelligence', 'summary'],
-    queryFn: getIntelligenceSummary,
+    queryKey: ['deviations', 'intelligence-summary', filters],
+    queryFn: () => getIntelligenceSummary(filters),
     refetchInterval: Number(import.meta.env.VITE_POLLING_INTERVAL || 60000),
   });
 }
@@ -1118,7 +1363,10 @@ export function useIntelligenceSummary() {
 ```typescript
 // src/hooks/useEventVolume.ts
 import { useQuery } from '@tanstack/react-query';
-import { getEventSummary, getEventTrends, getEventsByResourceType } from '../api/events';
+import {
+  getEventSummary, getEventTrends, getEventsByResourceType,
+  getEventsByFacility, getEventKpis,
+} from '../api/events';
 import { useGlobalFilters } from './useGlobalFilters';
 
 const POLLING_INTERVAL = Number(import.meta.env.VITE_POLLING_INTERVAL || 60000);
@@ -1145,6 +1393,23 @@ export function useEventsByResourceType() {
   return useQuery({
     queryKey: ['events', 'by-resource-type', filters],
     queryFn: () => getEventsByResourceType(filters),
+  });
+}
+
+export function useEventsByFacility(params?: { resourceType?: string }) {
+  const filters = useGlobalFilters();
+  return useQuery({
+    queryKey: ['events', 'by-facility', { ...params, ...filters }],
+    queryFn: () => getEventsByFacility({ ...params, ...filters }),
+  });
+}
+
+// Cumulative pipeline-loss KPI (not date-filtered). Polls.
+export function useEventKpis() {
+  return useQuery({
+    queryKey: ['events', 'kpis'],
+    queryFn: getEventKpis,
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 ```
@@ -1205,6 +1470,23 @@ export function useGlobalFilters(): GlobalFilters {
 
 > **Note:** The hook converts YYYY-MM-DD date strings from the FilterContext to ISO 8601 OffsetDateTime
 > format (`2026-03-01T00:00:00Z` / `2026-03-31T23:59:59Z`) required by the Insights Service.
+>
+> `FilterContext` carries only `startDate`/`endDate`/`facilityId`. The enrollment-vs-activity
+> `dateFilterMode` is **not** a global filter — it is a per-query param on `getProtocolPatients` /
+> `useProtocolPatients` (§3.1, §4.1), driven by a local radio on the Patient List page.
+
+### 4.6 Other hook modules
+
+These hook files exist and follow the same pattern (each reads `useGlobalFilters()` and polls where noted):
+
+| File | Hooks | Query keys |
+|------|-------|-----------|
+| `useDashboard.ts` | `useDashboardOverview`, `useDashboardComplianceSummary` | `['dashboard','overview', filters]`, `['dashboard','compliance-summary', filters]` (poll) |
+| `useFacilities.ts` | `useFacilityActivitySummary`, `useFacilityReference`, `useAdoptionKpis`, `useFacilityRanking` | `['facilities','activity-summary', filters]` (poll), `['facilities','reference']` (1h staleTime), `['facilities','adoption', filters]`, `['facilities','ranking', rankBy, order, limit, filters]` |
+| `useIntelligence.ts` | `useIntelligenceSummary(protocolDefinitionId?)` — delivery-pipeline (`../api/intelligence`); **distinct** from the deviations one in §4.2 | `['intelligence','summary', { ...filters, protocolDefinitionId }]` |
+| `usePractitioners.ts` | `usePractitionerRanking(params)` | `['practitioners','ranking', { ...params, ...filters }]` |
+| `usePatients.ts` | `usePatientTimeline`, `usePatientProtocolTracking`, `usePatientProtocolTrackingDetail`, `usePatientEvents`, `usePatientDeviations`, `usePatientIntelligenceDeliveries`, `useAtRiskHotspots`, `useRepeatDeviations` | `['patients', …]` |
+| `useIngestion.ts`, `useProtocols.ts`, `useFacilityName.ts` | ingestion analytics, protocol analytics, facility-name resolution | — |
 
 ---
 
@@ -1259,7 +1541,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/v1/insights': {
-        target: 'http://localhost:8084',
+        target: 'http://localhost:8088',
         changeOrigin: true,
       },
     },

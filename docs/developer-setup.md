@@ -1,7 +1,7 @@
 # Developer Setup & Configuration
 
 > **CCE Insights UI** — Local development guide  
-> **Version**: 2.0.0 | **Last Updated**: 2026-06-02
+> **Version**: 1.0.0 | **Last Updated**: 2026-06-30
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Tool | Version | Required | Purpose |
 |---|---|---|---|
-| **Node.js** | 20 LTS+ | Yes | JavaScript runtime |
+| **Node.js** | 24 (CI standard; ≥20 works locally) | Yes | JavaScript runtime |
 | **npm** | 10+ | Yes | Package manager (bundled with Node) |
 | **Git** | 2.x | Yes | Version control |
 | **Docker** | 24+ | Recommended | Run backend dependencies |
@@ -63,12 +63,20 @@ npm install
 cp .env.example .env
 ```
 
-Default `.env`:
+Default `.env` (mirrors `.env.example`):
 ```bash
-VITE_API_BASE_URL=http://localhost:8084
+# Leave empty for local dev so the Vite proxy handles /v1/insights/
+VITE_API_BASE_URL=
+
+# Authentication (Keycloak / OIDC) — off for local dev
 VITE_AUTH_ENABLED=false
+VITE_KEYCLOAK_URL=
+VITE_KEYCLOAK_REALM=cce
+VITE_KEYCLOAK_CLIENT_ID=cce-insights-ui
+VITE_AUTH_TOKEN=
+
 VITE_POLLING_INTERVAL=60000
-VITE_DEFAULT_DATE_RANGE_DAYS=180
+VITE_DEFAULT_DATE_RANGE_DAYS=90
 ```
 
 ### 2.4 Start Development Server
@@ -91,13 +99,20 @@ The dashboard should load metrics from the Insights Service. If you see "Cannot 
 
 ## 3. Environment Variables
 
+All config is **build-time** — Vite inlines `VITE_*` into the bundle. For the Docker image these
+are passed as `--build-arg` values (see §8), so the deployed bundle is baked per environment.
+
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_API_BASE_URL` | `http://localhost:8084` | Insights Service URL. Set to empty string `""` when using Vite proxy. |
-| `VITE_AUTH_ENABLED` | `false` | Enable OAuth token injection. `false` for demo mode. |
-| `VITE_AUTH_TOKEN` | _(empty)_ | Static bearer token override. Falls back to `sessionStorage('access_token')`. |
+| `VITE_API_BASE_URL` | _(empty)_ | Insights Service URL. Leave empty for local dev so the Vite proxy handles `/v1/insights/`; same-origin (ingress) in deployed envs. |
+| `VITE_AUTH_ENABLED` | `false` | Enable Keycloak OIDC login (Authorization Code + PKCE). When `false`, the auth path is inert and the app runs unauthenticated. |
+| `VITE_KEYCLOAK_URL` | _(empty)_ | Keycloak base URL. When empty, derived from `window.location.origin + '/auth'`. Set only to point at a remote/fixed Keycloak. |
+| `VITE_KEYCLOAK_REALM` | `cce` | Keycloak realm. |
+| `VITE_KEYCLOAK_CLIENT_ID` | `cce-insights-ui` | Public Keycloak client id. |
+| `VITE_AUTH_TOKEN` | _(empty)_ | Static Bearer token fallback for local testing without an interactive login. |
+| `VITE_ROUTER_BASE` | `/` (dev) | SPA router base path (`src/main.tsx`). The Docker image bakes `/insights`. |
 | `VITE_POLLING_INTERVAL` | `60000` | Auto-refresh interval in milliseconds. `0` to disable. |
-| `VITE_DEFAULT_DATE_RANGE_DAYS` | `180` | Default date range for dashboard (days back from today). |
+| `VITE_DEFAULT_DATE_RANGE_DAYS` | `90` | Default date range for dashboard (days back from today). |
 
 ---
 
@@ -130,7 +145,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/v1/insights': {
-        target: 'http://localhost:8084',
+        target: 'http://localhost:8088',
         changeOrigin: true,
       },
     },
@@ -153,31 +168,36 @@ export default defineConfig({
 cce-insights-ui/
 ├── public/
 ├── src/
-│   ├── api/                    # Typed API client (11 modules)
+│   ├── api/                    # Typed API client (12 endpoint modules + client.ts + types.ts)
 │   │   ├── client.ts           # buildUrl, authHeaders (Keycloak token), handleResponse, apiGet, apiGetPaginated
 │   │   ├── types.ts            # All TypeScript types (incl. ProtocolLookup)
-│   │   ├── compliance.ts       # Protocol/facility compliance + patients
-│   │   ├── deviations.ts       # Deviations + intelligence
-│   │   ├── events.ts           # Event volume, trends, processing quality
+│   │   ├── compliance.ts       # Protocol/facility/all-protocols compliance + patients
+│   │   ├── dashboard.ts        # Dashboard overview + compliance summary
+│   │   ├── deviations.ts       # Deviations, KPIs, trends, by-action, intelligence-summary
+│   │   ├── events.ts           # Event volume, trends, by-facility, KPIs, processing quality
 │   │   ├── exports.ts          # Export URL builder
-│   │   ├── facilities.ts       # Facility ranking
+│   │   ├── facilities.ts       # Facility ranking, activity-summary, reference, adoption KPIs
 │   │   ├── ingestion.ts        # Ingestion funnel, rejections, quality, loss
-│   │   ├── lookups.ts          # Protocol, facility, practitioner, source, patient lookups
-│   │   ├── patients.ts         # Patient timeline, tracking, events, deviations, risk
+│   │   ├── intelligence.ts     # Intelligence delivery-pipeline summary
+│   │   ├── lookups.ts          # Protocol, facility, practitioner, patient lookups
+│   │   ├── patients.ts         # Patient timeline, tracking, events, deviations, risk, intelligence-deliveries
+│   │   ├── practitioners.ts    # Practitioner ranking
 │   │   └── protocols.ts        # Step analytics, funnel, outcomes, enrollment
 │   ├── auth/
 │   │   └── keycloak.ts         # Keycloak OIDC init (PKCE), auto-refresh token
 │   ├── components/
 │   │   ├── layout/             # Sidebar
 │   │   ├── shared/             # Card, MetricCard, StatusBadge, PageHeader, ErrorAlert,
-│   │   │                       # DateRangeFilter, FacilityFilter, CursorPagination,
+│   │   │                       # DateRangeFilter, FacilityFilter, ProtocolFilter,
+│   │   │                       # PagePagination, TableRangePagination, CursorPagination,
 │   │   │                       # EmptyState, LoadingSpinner
-│   │   └── charts/             # 10 Recharts wrapper components
-│   ├── pages/                  # 11 page components (lazy-loaded)
-│   ├── hooks/                  # 10 TanStack Query hooks
+│   │   ├── facilities/         # EbuzimaAdoptionCard, FacilityHighlightsCard, FacilityRankingCard
+│   │   └── charts/             # Recharts wrapper components
+│   ├── pages/                  # 12 page components (lazy-loaded)
+│   ├── hooks/                  # 13 TanStack Query hooks
 │   ├── context/                # FilterContext (global date range + facility)
-│   ├── utils/                  # dates, colors, formatters, compliance, pagination, errors, errors
-│   ├── config.ts               # Constants and defaults
+│   ├── utils/                  # dates, colors, formatters, compliance, pagination, errors, facilityDisplay
+│   ├── config.ts               # UI constants and defaults (page sizes, filter options)
 │   ├── App.tsx                 # Router + layout shell
 │   ├── main.tsx                # Entry point (React 18 + providers)
 │   ├── index.css               # Tailwind imports
@@ -208,7 +228,6 @@ cce-insights-ui/
 | `test` | `vitest` | Run tests in watch mode |
 | `test:run` | `vitest run` | Run tests once (CI) |
 | `lint` | `eslint .` | Lint all files |
-| `format` | `prettier --write .` | Format all files |
 
 ---
 
@@ -294,9 +313,23 @@ src/
 # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 COPY . .
+
+# Build-time config (Vite inlines VITE_* into the bundle). Pass per-environment via --build-arg.
+ARG VITE_API_BASE_URL=""
+ARG VITE_AUTH_ENABLED="false"
+ARG VITE_KEYCLOAK_URL=""
+ARG VITE_KEYCLOAK_REALM="cce"
+ARG VITE_KEYCLOAK_CLIENT_ID="cce-insights-ui"
+ARG VITE_ROUTER_BASE="/insights"
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_AUTH_ENABLED=$VITE_AUTH_ENABLED \
+    VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL \
+    VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
+    VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID \
+    VITE_ROUTER_BASE=$VITE_ROUTER_BASE
 RUN npm run build
 
 # Production stage
@@ -306,6 +339,10 @@ COPY Caddyfile /etc/caddy/Caddyfile
 EXPOSE 3001
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
 ```
+
+> **Auth is baked at build time.** Because Vite inlines `VITE_*` into the bundle, an
+> already-built image cannot be reconfigured via runtime `environment:` vars — you must rebuild
+> with the right `--build-arg` values to produce an auth-enabled image.
 
 ### Caddyfile
 
@@ -347,6 +384,11 @@ services:
       - "3001:3001"
     networks:
       - cce-net
+    environment:
+      - VITE_AUTH_ENABLED=true
+      - VITE_KEYCLOAK_URL=http://keycloak.local:8189/auth
+      - VITE_KEYCLOAK_REALM=cce
+      - VITE_KEYCLOAK_CLIENT_ID=cce-insights-ui
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/"]
@@ -362,11 +404,24 @@ networks:
 
 > **Note:** The UI container joins the existing `deploy-scripts_cce-net` Docker network where
 > `cce-insights-service` is already running. No gateway required for local development.
+>
+> The `environment:` block above is shown for parity with the committed `docker-compose.yml`, but
+> note that `VITE_*` are **build-time** values — they take effect only when the image is built with
+> matching `--build-arg`s (see the Dockerfile), not from runtime container env.
 
 ### Build & Run
 
 ```bash
+# Gateway-less (no auth) — fine for local/demo
 docker build -t cce-insights-ui:latest .
+
+# Auth-enabled image (Keycloak + gateway) — pass build args:
+docker build -t cce-insights-ui:latest \
+  --build-arg VITE_AUTH_ENABLED=true \
+  --build-arg VITE_KEYCLOAK_REALM=cce \
+  --build-arg VITE_KEYCLOAK_CLIENT_ID=cce-insights-ui \
+  .
+
 docker run -p 3001:3001 cce-insights-ui:latest
 ```
 
