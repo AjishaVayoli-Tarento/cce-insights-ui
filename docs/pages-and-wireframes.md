@@ -300,7 +300,7 @@
 │         │  ┌─ Protocol Journey ────────────────┐ ┌─ Deviations ───────────┐ │
 │         │  │ Legend: ● Completed ● Pending     │ │ ⚠ ORDER_VIOLATION      │ │
 │         │  │         ● Deviation ● Not started │ │ anc-visit-2            │ │
-│         │  │  ● anc-visit-1  Completed ON_TIME │ │ Detected: Feb 20       │ │
+│         │  │  ● anc-visit-1  Completed [ON TIME]│ │ Detected: Feb 20       │ │
 │         │  │  ● anc-visit-2  🟣 DEVIATION      │ └─────────────────────────┘ │
 │         │  │  ● anc-visit-3  Pending           │ ┌─ Intelligence Alerts ──┐ │
 │         │  │  (superseded NOT_STARTED hidden)  │ │ overdue-alert · sent   │ │
@@ -313,6 +313,18 @@
 ### Protocol Journey Visibility Rules
 
 Root steps that are `NOT_STARTED` are suppressed when a later root step in the same protocol has already been triggered (i.e., any non-`NOT_STARTED`, non-`PENDING`, non-`DUE` root step exists after them). Sub-steps inherit parent visibility — a sub-step is hidden if its parent root step is hidden, ensuring orphaned sub-step entries never appear (e.g., "Laboratory Results" is not shown unless "Lab Order" is also shown). A step with an associated deviation (`ORDER_VIOLATION`/`OVERDUE`/`MISSED`) and a non-terminal status is rendered with a synthetic **DEVIATION** display status (purple).
+
+### Completion-status badges
+
+Each completed journey step shows a timeliness badge derived from `completionStatus`:
+
+| `completionStatus` | Badge | Color |
+|--------------------|-------|-------|
+| `EARLY` | **EARLY** | green |
+| `ON_TIME` | **ON TIME** | emerald |
+| `LATE` | **LATE** | amber |
+
+The LATE badge renders only for `completionStatus === 'LATE'` (it is no longer shown for any non-`ON_TIME` status), and `EARLY` now has its own distinct badge.
 
 ---
 

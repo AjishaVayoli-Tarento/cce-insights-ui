@@ -355,7 +355,7 @@ export default function PatientDetail() {
                             {step.effectiveDateTime && (
                               <span className="text-xs text-gray-500">{formatDateTime(step.effectiveDateTime)}</span>
                             )}
-                            {step.completionStatus && step.completionStatus !== 'ON_TIME' && (
+                            {step.completionStatus === 'LATE' && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100">
                                 LATE
                               </span>
@@ -363,6 +363,11 @@ export default function PatientDetail() {
                             {step.completionStatus === 'ON_TIME' && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
                                 ON TIME
+                              </span>
+                            )}
+                            {step.completionStatus === 'EARLY' && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-green-700 bg-green-100">
+                                EARLY
                               </span>
                             )}
                             {step.source && (
