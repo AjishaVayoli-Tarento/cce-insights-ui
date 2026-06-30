@@ -24,7 +24,14 @@ export function useFacilityComplianceSummary(facilityId: string) {
 
 export function useProtocolPatients(
   protocolDefinitionId: string,
-  params?: { status?: string; facilityId?: string; limit?: number; cursor?: string; patientId?: string },
+  params?: {
+    status?: string;
+    facilityId?: string;
+    limit?: number;
+    cursor?: string;
+    patientId?: string;
+    dateFilterMode?: 'enrollment' | 'activity';
+  },
 ) {
   const filters = useGlobalFilters();
   return useQuery({
@@ -34,6 +41,7 @@ export function useProtocolPatients(
       startDate: filters.startDate,
       endDate: filters.endDate,
       facilityId: params?.facilityId ?? filters.facilityId,
+      dateFilterMode: params?.dateFilterMode ?? 'enrollment',
     }),
     enabled: !!protocolDefinitionId,
   });
