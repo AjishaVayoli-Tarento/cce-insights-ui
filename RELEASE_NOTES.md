@@ -4,6 +4,19 @@
 
 ## Unreleased
 
+### Patient Compliance — Date Filter Mode Toggle
+
+- **Radio button toggle** added to the Patient Compliance page (`PatientList.tsx`) between the status filter buttons and the search box. Options: **Enrollment Date** (default) / **Activity Date**.
+  - *Enrollment Date* — lists patients enrolled in the selected date range (unchanged behaviour).
+  - *Activity Date* — lists patients who had any step activity (step `updated_at`) in the selected date range, regardless of when they enrolled. Useful for checking "who had a visit this week?" without filtering by enrollment cohort.
+- **Page subtitle** under the "Patient Compliance" heading updates dynamically when the mode is toggled to describe the cohort being shown.
+- Passed through `dateFilterMode` in `useProtocolPatients` hook and `getProtocolPatients` API helper. Defaults to `enrollment` so existing bookmarks and integrations are unaffected.
+
+### Protocol Journey Sub-Step Visibility Fix
+
+- **Bug fixed:** on the Patient Detail page, a root protocol step that was `NOT_STARTED` and suppressed from the Protocol Journey could still have its sub-steps rendered (e.g., "Laboratory Results" appearing without its parent "Lab Order" ever showing).
+- The Protocol Journey section now pre-computes visible root steps first, then inherits that visibility down to sub-steps, preventing orphaned sub-step entries.
+
 ### Follow-up Date Range / Filter Audit
 
 Second-pass audit caught five categories of date-range or facility-filter bypass

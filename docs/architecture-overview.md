@@ -1,7 +1,7 @@
 # Architecture Overview
 
 > **CCE Insights UI** — Analytics dashboard for compliance intelligence  
-> **Version**: 2.0.0 | **Last Updated**: 2026-06-02
+> **Version**: 1.0.0 | **Last Updated**: 2026-06-30
 
 ---
 
@@ -60,11 +60,17 @@ Browser (port 3001) ──REST──▶ Caddy (reverse proxy) ──▶ Insights
 
 In Docker, Caddy serves the SPA and proxies `/v1/insights/*` requests directly to `cce-insights-service:8084` on the shared Docker network.
 
-### Production Flow (With Gateway)
+### Production Flow (With Gateway + Keycloak)
 
 ```
-Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insights Service (port 8084) ──▶ PostgreSQL
+Browser ──login (OIDC + PKCE)──▶ Keycloak ──issues JWT──▶ Browser
+Browser ──REST + Bearer JWT──▶ Caddy ──▶ CCE Gateway (validates issuer/audience/INSIGHTS_READ)
+       ──▶ Insights Service (port 8084) ──▶ PostgreSQL
 ```
+
+The same image works gateway-less (no auth) or behind the gateway — controlled by the
+`VITE_AUTH_ENABLED` build arg. See
+[`artifacts/insights-ui-auth-deployment.md`](../artifacts/insights-ui-auth-deployment.md).
 
 ### Relationship to Compliance UI
 
@@ -85,6 +91,7 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 | **Framework** | React | 18.x | Component-based UI |
 | **Language** | TypeScript | 5.x | Type safety |
 | **Build** | Vite | 6.x | Fast dev server, optimized builds |
+| **Auth** | Keycloak (`keycloak-js`) | 26.x | OIDC Authorization Code + PKCE login (optional, build-time flag) |
 | **Routing** | React Router | 7.x | Client-side page navigation |
 | **Server State** | TanStack Query | 5.x | API data fetching, caching, polling |
 | **Styling** | Tailwind CSS | 4.x | Utility-first CSS |
@@ -109,8 +116,8 @@ Browser (port 3001) ──REST──▶ CCE Gateway (port 8060) ──▶ Insigh
 ```mermaid
 flowchart TD
     subgraph "Entry"
-        main[main.tsx]
-        app[App.tsx<br/>QueryClientProvider + Router + FilterProvider]
+        main[main.tsx<br/>BrowserRouter + QueryClientProvider + FilterProvider<br/>initAuth then render]
+        app[App.tsx<br/>Sidebar + Header + Routes]
     end
 
     subgraph "Pages (12)"
@@ -136,9 +143,10 @@ flowchart TD
     end
 
     subgraph "Data Layer"
+        AUTH[Auth<br/>keycloak.ts<br/>OIDC + PKCE, token refresh]
         CTX[Context<br/>FilterContext]
-        H[Hooks (13)<br/>useComplianceSummary, useDashboard,<br/>useDeviations, useIntelligence,<br/>usePractitioners, useLookups, etc.]
-        A[API Client (14 modules)<br/>compliance, dashboard, deviations,<br/>events, intelligence, practitioners,<br/>ingestion, lookups, etc.]
+        H[Hooks (13)<br/>useComplianceSummary, useDashboard,<br/>useDeviations, useIntelligence,<br/>usePractitioners, useFacilities, etc.]
+        A[API Client (12 endpoint modules)<br/>compliance, dashboard, deviations,<br/>events, intelligence, practitioners,<br/>facilities, ingestion, lookups, etc.]
     end
 
     subgraph "Utilities"
@@ -154,6 +162,7 @@ flowchart TD
     P1 & P2 & P3 & P4 & P5 & P6 & P7 & P9 & P10 & P11 & P12 & P13 --> H
     H --> A
     H --> CTX
+    A --> AUTH
     CH --> U
     C --> U
 ```
@@ -166,34 +175,58 @@ flowchart TD
 | **Components** | Visual rendering; receive data via props | Stateless where possible; no API calls |
 | **Charts** | Recharts wrappers; receive processed data arrays | No data fetching; pure render |
 | **Hooks** | TanStack Query wrappers; return `{ data, isLoading, error }` | One hook per API endpoint group; receive global filters from context |
-| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (14 modules incl. lookups) | No React dependencies; pure TypeScript |
-| **Auth** | Token injection via `VITE_AUTH_TOKEN` or `sessionStorage('access_token')` | Enabled when `VITE_AUTH_ENABLED=true`; no Keycloak dependency in demo mode |
+| **API** | Typed `fetch` wrappers; URL construction, error parsing, envelope unwrapping (12 endpoint modules + `client.ts` + `types.ts`) | No React dependencies; pure TypeScript |
+| **Auth** | `client.ts` injects `Authorization: Bearer <token>` where token = live Keycloak access token (`getToken()`) or `VITE_AUTH_TOKEN` fallback | Applied only when `authEnabled` (`VITE_AUTH_ENABLED==='true'`); `keycloak-js` runs Authorization Code + PKCE login on load |
 | **Context** | Global filter state (date range, facility) shared across pages | Persisted in URL search params for shareability |
 | **Utils** | Pure functions for formatting, computation, color mapping | No side effects |
+
+### Authentication (`src/auth/keycloak.ts`)
+
+Authentication is optional and controlled by a **build-time** flag, `VITE_AUTH_ENABLED` (Vite
+inlines `VITE_*`; for the Docker image it is set via `--build-arg`). When the flag is `'true'`:
+
+1. `initAuth()` runs in `main.tsx` **before** the app renders (`initAuth().then(render)`), so an
+   unauthenticated user is redirected to Keycloak (`onLoad: 'login-required'`, `pkceMethod: 'S256'`).
+2. The Keycloak base URL defaults to `${window.location.origin}/auth` (UI and Keycloak share a
+   domain), overridable via `VITE_KEYCLOAK_URL`. Realm defaults to `cce`, client id to
+   `cce-insights-ui`.
+3. A background interval refreshes the access token (`keycloak.updateToken(70)` every 60s).
+4. `client.ts` reads the live token via `getToken()` and sends it as `Authorization: Bearer …` on
+   every API call; the gateway validates issuer, audience (`gateway-service`) and the
+   `INSIGHTS_READ` role.
+5. `App.tsx` renders a **Sign out** button in the header when `authEnabled`.
+
+When the flag is `false` (local dev / gateway-less demo), the auth path is inert and the app runs
+unauthenticated against the Vite proxy or a direct insights-service. See
+[`artifacts/insights-ui-auth-deployment.md`](../artifacts/insights-ui-auth-deployment.md) for the
+full Keycloak + gateway deployment procedure.
+
+> **No runtime config.** There is no `window._env_` / entrypoint injection in this repo — all
+> config is build-time `import.meta.env.VITE_*`. `src/config.ts` holds only UI constants.
 
 ---
 
 ## 4. Page & Component Hierarchy
 
 ```
-App (QueryClientProvider + FilterProvider)
-├── AppLayout
-│   ├── Sidebar (nav groups: Overview, Compliance, Events, Operations)
-│   ├── Header (global date range picker, facility selector)
-│   └── <Outlet/> (page content)
+App.tsx (Sidebar + Header + Routes; providers live in main.tsx)
+├── Sidebar (flat nav list — 7 links)
+├── Header (global DateRangeFilter + Sign-out button when authEnabled)
+├── <Routes> (inline; pages are React.lazy + Suspense)
 │
 ├── / → DashboardPage
-│   ├── MetricCard × 4 (Tracked Cohort, Compliant Care Journeys, Non-Compliant Care Journeys, Active Protocols)
-│   ├── Facility/Practitioner summary cards
-│   ├── DeviationTrendChart (area — daily)
-│   ├── EventVolumeTrendChart (stacked area — by resource type)
-│   └── Quick navigation links
+│   ├── MetricCard × 4 — Patient compliance (Tracked Cohort, Compliant Care Journeys,
+│   │                    Non-Compliant Care Journeys, Compliance Rate)
+│   ├── MetricCard × 3 — Facility activity (Total / Active / Inactive Facilities)
+│   ├── EbuzimaAdoptionCard (e-Buzima adoption metrics)
+│   ├── DeviationTrendChart (area)
+│   └── EventVolumeTrendChart (stacked area — by resource type)
 │
 ├── /compliance → ComplianceOverviewPage
-│   ├── ProtocolSelector (dropdown)
-│   ├── ComplianceSummaryCards (enrollments, compliance rate, deviations)
-│   ├── Service Workflow Compliance (vertical timeline with light cards, bold dots, sub-action graph nodes)
-│   └── PatientComplianceTable (paginated, Compliant/Non-Compliant filter)
+│   ├── ProtocolSelector + FacilityFilter (dropdowns)
+│   ├── ComplianceSummaryCards (Tracked / Compliant / Non-Compliant Patients, Compliance Rate)
+│   ├── Transactions tiles (Total Steps, Completed, Due, Overdue, Missed, Pending)
+│   └── Service Workflow Compliance (vertical timeline with collapsible sub-actions)
 │
 ├── /compliance/protocols/:id → ProtocolAnalytics
 │   ├── StepAnalyticsTable (per-step rates, timeliness, avg/median)
@@ -202,43 +235,45 @@ App (QueryClientProvider + FilterProvider)
 │   └── EnrollmentTrendChart (line — enrollments over time)
 │
 ├── /compliance/patients → PatientList
-│   ├── ComplianceCategoryFilter (on_track / non_compliant)
-│   ├── PatientComplianceTable (paginated, filterable)
-│   └── RiskHotspotChart (non-compliant hotspots by facility)
+│   ├── Status filter (All / Compliant / Non-Compliant) + patient search
+│   ├── Enrollment Date / Activity Date radio (dateFilterMode — local to this page)
+│   └── PatientComplianceTable (page-size selector + range pagination)
 │
 ├── /compliance/patients/:id → PatientDetail
-│   ├── ComplianceTimeline (chronological events & steps)
-│   ├── ProtocolTrackingCard × N (protocol instances)
-│   ├── Protocol Journey (steps with source color-coded pills)
-│   ├── StepInstanceTable (step details for selected protocol)
-│   └── PatientDeviationList (cross-protocol deviations)
+│   ├── ProtocolTrackingCard × N ("Tracking Since")
+│   ├── Tabs: Protocol Journey | Referral Events
+│   ├── Protocol Journey timeline (legend; hides superseded steps; synthetic DEVIATION status)
+│   ├── Step Details table (Action / State / Due / Completed / Source)
+│   └── Right column: Deviations + Intelligence Alerts cards
 │
 ├── /deviations → Deviations
-│   ├── DeviationTrendChart (area — overdue vs missed over time)
-│   ├── DeviationByActionTable (most-deviated steps)
-│   ├── ResolutionRateCard (resolved vs escalated)
-│   └── DeviationListTable (paginated, filterable)
+│   ├── ProtocolFilter
+│   ├── KPI cards × 4 (Total, Overdue, Missed, Order Violation)
+│   ├── DeviationTrendChart (area)
+│   ├── Most Deviated Steps table (Total / Overdue / Missed / Order Violation)
+│   └── Deviation List (type pills + patient search, page pagination)
 │
 ├── /events → EventVolume
-│   ├── EventSummaryCards (total, by status)
+│   ├── KPI cards × 5 (Total Events, Matched Rate, Zero Match Rate, Duplicates, Pipeline Loss)
 │   ├── EventTrendChart (stacked area by resource type)
-│   ├── ResourceTypeBarChart (bar)
-│   ├── FacilityEventTable (events per facility)
+│   └── Tabs: By Resource Type (chart) | By Facility (table merged with facility
+│            reference list — 0-event facilities included; client-side pagination 10/page)
 │
 ├── /facilities → FacilityAnalytics
-│   ├── RankingSelector (by: complianceRate, deviationCount, eventVolume)
-│   ├── FacilityRankingTable (color-coded compliance column with legend)
-│   └── Non-Compliant Hotspots section
+│   ├── Facility activity cards × 3 (Total / Active / Inactive)
+│   ├── FacilityHighlightsCard (Top 5 / Bottom 5 by compliance)
+│   └── FacilityRankingCard (Rank-By pills + Best/Worst-First toggle + search;
+│            color-coded compliance column with legend)
 │
-├── /practitioners → PractitionerAnalytics
-│   ├── Practitioner table with compliance column (color-coded with legend)
-│   └── Protocol/Facility filter
+├── /practitioners → PractitionerAnalytics  (URL-only; not in sidebar)
+│   ├── Metric tiles + Rank-By pills (Step Completion % / Patients Served) + search
+│   └── Ranking table (Rank / Practitioner / Facility / Patients / Step Completion / Steps)
 │
-├── /intelligence → IntelligencePage
-│   ├── Total Action Instances metric
-│   ├── Donut chart (delivery status)
-│   ├── Destinations table + Adaptors table
-│   └── Intelligence Actions table
+├── /intelligence → IntelligencePage  (URL-only; not in sidebar)
+│   ├── ProtocolFilter + metric cards × 4 (Total Action Instances, Delivered, Failed, Pending)
+│   ├── Success/Failure donut + Deliveries by Destination bars
+│   ├── Active Adaptors & Routing table
+│   └── Intelligence Actions table (# / Action / Trigger / Parent Step)
 │
 ├── /ingestion → IngestionPipeline
 │   ├── IngestionFunnelChart (ACCEPTED/REJECTED/DUPLICATE)
@@ -246,10 +281,13 @@ App (QueryClientProvider + FilterProvider)
 │   ├── SourceQualityTable (per-source acceptance/rejection rates)
 │   └── PipelineLossCard (lost events count & rate)
 │
-└── /exports → Exports
+└── /exports → Exports  (URL-only; not in sidebar)
     ├── ExportConfigForm (format, protocol, facility, date range)
     └── DownloadButton
 ```
+
+> **Sidebar vs routes:** the sidebar links to 7 pages (see §7). `Practitioners`, `Intelligence`,
+> and `Exports` are valid routes but are reachable by direct URL only — they are not in the nav.
 
 ---
 
@@ -328,28 +366,35 @@ useQuery({
 
 ```typescript
 // Hierarchical keys incorporating global filters for automatic invalidation
-['compliance', 'summary', protocolId, { facilityId, startDate, endDate }]
-['compliance', 'facility', facilityId, { startDate, endDate }]
-['compliance', 'patients', protocolId, { status, facilityId, limit, cursor }]
+['dashboard', 'overview', filters]
+['dashboard', 'compliance-summary', filters]
+['compliance', 'summary', protocolId || 'all', effectiveFilters]
+['compliance', 'patients', protocolId, { status, patientId, limit, cursor, dateFilterMode }, filters]
 ['patients', patientId, 'timeline', { startDate, endDate }]
 ['patients', patientId, 'tracking']
 ['patients', patientId, 'tracking', protocolInstanceId]
 ['patients', patientId, 'events', { resourceType, source, limit }]
 ['patients', patientId, 'deviations', { deviationType, startDate, endDate }]
-['deviations', 'list', { deviationType, facilityId, protocolDefinitionId, startDate, endDate, sort, limit, cursor }]
-['deviations', 'trends', { interval, facilityId, protocolDefinitionId, startDate, endDate }]
+['patients', patientId, 'intelligence-deliveries']
+['deviations', 'kpis', { protocolDefinitionId, ...filters }]
+['deviations', 'trends', { interval, protocolDefinitionId, ...filters }]
 ['deviations', 'by-action', { protocolDefinitionId, deviationType, facilityId }]
-['deviations', 'resolution', { protocolDefinitionId, facilityId, startDate, endDate }]
-['intelligence', 'summary']
+['deviations', 'intelligence-summary', filters]
+['intelligence', 'summary', { ...filters, protocolDefinitionId }]
 ['events', 'summary', { facilityId, source, startDate, endDate }]
 ['events', 'trends', { interval, resourceType, facilityId, source, startDate, endDate }]
 ['events', 'by-resource-type', { facilityId, source, startDate, endDate }]
-['events', 'by-facility', { resourceType, startDate, endDate, limit, cursor }]
+['events', 'by-facility', { resourceType, startDate, endDate, ...filters }]
+['events', 'kpis']
 ['protocols', protocolId, 'step-analytics', { facilityId, startDate, endDate }]
 ['protocols', protocolId, 'completion-funnel', { facilityId, startDate, endDate }]
 ['protocols', protocolId, 'outcome-distribution', { facilityId, startDate, endDate }]
 ['protocols', protocolId, 'enrollment-trends', { interval, facilityId, startDate, endDate }]
-['facilities', 'ranking', { protocolDefinitionId, rankBy, order, limit, cursor }]
+['facilities', 'ranking', rankBy, order, limit, filters]
+['facilities', 'activity-summary', filters]
+['facilities', 'reference']        // 1-hour staleTime
+['facilities', 'adoption', filters]
+['practitioners', 'ranking', { ...params, ...filters }]
 ['patients', 'at-risk-hotspots', { protocolDefinitionId, startDate, endDate }]
 ['patients', 'repeat-deviations', { minDeviations, facilityId, protocolDefinitionId }]
 ['ingestion', 'funnel', { facilityId, source, startDate, endDate, interval }]
@@ -361,6 +406,9 @@ useQuery({
 ---
 
 ## 7. Routing
+
+The `BrowserRouter` (with `basename={import.meta.env.VITE_ROUTER_BASE}` — `/` in dev, `/insights`
+in the Docker image) wraps the app in `src/main.tsx`. `App.tsx` declares the routes inline:
 
 ```tsx
 // src/App.tsx — uses Routes/Route from react-router-dom with lazy-loaded pages
@@ -382,22 +430,22 @@ useQuery({
 
 ### Sidebar Navigation
 
-The sidebar uses a flat navigation list (no groups):
+The sidebar uses a flat navigation list (no groups) with **7 links** in this order:
 
 ```
 Dashboard       → /
-Compliance      → /compliance
 Facilities      → /facilities
-Practitioners   → /practitioners
+Compliance      → /compliance
 Deviations      → /deviations
-Intelligence    → /intelligence
 Patients        → /compliance/patients
 Events          → /events
 Ingestion       → /ingestion
-Exports         → /exports
 ```
 
-Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `ExclamationTriangleIcon`, `SignalIcon`, `BuildingOffice2Icon`, `UserGroupIcon`, `CogIcon`, `ArrowDownTrayIcon`, `BoltIcon`.
+`Practitioners`, `Intelligence`, and `Exports` are routed pages but are **not** in the sidebar
+(direct-URL access only).
+
+Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `ExclamationTriangleIcon`, `SignalIcon`, `BuildingOffice2Icon`, `CogIcon`.
 
 ---
 
@@ -420,6 +468,14 @@ Icons from `@heroicons/react`: `ChartBarIcon`, `ClipboardDocumentCheckIcon`, `Ex
 | `MISSED` | red-100 | red-700 | red-500 | `bg-red-100 text-red-700` |
 | `COMPLETED` | green-100 | green-700 | green-500 | `bg-green-100 text-green-700` |
 | `SKIPPED` | slate-100 | slate-500 | slate-400 | `bg-slate-100 text-slate-500` |
+
+### Deviation Type Palette
+
+| Type | Color | Notes |
+|------|-------|-------|
+| `OVERDUE` | amber | Step completed late / still open past due |
+| `MISSED` | red | Step never completed |
+| `ORDER_VIOLATION` | purple | Step done out of required order (third type, added platform-wide) |
 
 ### Processing Status Palette
 
@@ -459,16 +515,17 @@ export const CHART_COLORS = {
 
 ### Error Boundary
 
-Wrap the `<Outlet/>` in an error boundary that catches unhandled errors and renders a full-page error state with a "Return to Dashboard" link.
+_Planned / not yet implemented._ There is currently no React error boundary; routes are rendered
+inline in `App.tsx` (no `<Outlet/>`). Per-query errors surface via `ErrorAlert` in each page.
 
 ### TanStack Query Error Handling
 
 ```typescript
+// src/main.tsx
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      retry: 1,
       staleTime: 30_000,
       refetchOnWindowFocus: false,
     },
@@ -501,12 +558,25 @@ npm run dev    # Vite dev server at http://localhost:3001
 
 ### Docker
 
+The build stage accepts `VITE_*` **build args** (auth + router base are baked into the bundle):
+
 ```dockerfile
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 COPY . .
+# Build-time config — pass per environment via --build-arg
+ARG VITE_AUTH_ENABLED="false"
+ARG VITE_KEYCLOAK_URL=""
+ARG VITE_KEYCLOAK_REALM="cce"
+ARG VITE_KEYCLOAK_CLIENT_ID="cce-insights-ui"
+ARG VITE_ROUTER_BASE="/insights"
+ENV VITE_AUTH_ENABLED=$VITE_AUTH_ENABLED \
+    VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL \
+    VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM \
+    VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID \
+    VITE_ROUTER_BASE=$VITE_ROUTER_BASE
 RUN npm run build
 
 FROM caddy:2-alpine
@@ -514,6 +584,10 @@ COPY --from=build /app/dist /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 EXPOSE 3001
 ```
+
+> The dev Vite proxy targets `http://localhost:8088`; the container Caddyfile proxies to
+> `cce-insights-service:8084`. In authenticated deployments API calls instead route through the
+> gateway (JWT-validated) — see [deployment-guide.md](./deployment-guide.md).
 
 ### Caddy Configuration
 
