@@ -25,6 +25,7 @@ export default function PatientList() {
   const [pageSize, setPageSize] = useState(PATIENT_LIST_PAGE_SIZE);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+  const [dateFilterMode, setDateFilterMode] = useState<'enrollment' | 'activity'>('enrollment');
 
   const protocols = useProtocols();
   const cursor = page > 1 ? String((page - 1) * pageSize) : undefined;
@@ -40,6 +41,7 @@ export default function PatientList() {
     cursor,
     limit: pageSize,
     patientId: activeSearch || undefined,
+    dateFilterMode,
   });
 
   const totalCount = patients.data?.pagination.total_count;
@@ -69,12 +71,14 @@ export default function PatientList() {
     ? page < totalPages
     : Boolean(patients.data?.pagination.has_more);
 
+  const pageDescription = dateFilterMode === 'activity'
+    ? 'Distinct patients with step activity in the selected period. Compliant / Non-Compliant follows the same deviation-based rules as the dashboard.'
+    : 'Distinct patients enrolled in the selected protocol during the selected period. Compliant / Non-Compliant follows the same deviation-based rules as the dashboard.';
+
   return (
     <>
-      <PageHeader
-        title="Patient Compliance"
-        description="Distinct patients enrolled in the selected protocol during the selected period. Compliant / Non-Compliant follows the same deviation-based rules as the dashboard."
-      />
+      <PageHeader title="Patient Compliance" description={pageDescription} />
+
 
       <Card title="Patient List">
         <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -107,6 +111,23 @@ export default function PatientList() {
               >
                 {label}
               </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-gray-500">Filter by:</span>
+            {(['enrollment', 'activity'] as const).map((mode) => (
+              <label key={mode} className="flex cursor-pointer items-center gap-1.5 text-xs text-gray-700">
+                <input
+                  type="radio"
+                  name="dateFilterMode"
+                  value={mode}
+                  checked={dateFilterMode === mode}
+                  onChange={() => { setDateFilterMode(mode); resetPagination(); }}
+                  className="accent-blue-600"
+                />
+                {mode === 'enrollment' ? 'Enrollment Date' : 'Activity Date'}
+              </label>
             ))}
           </div>
 

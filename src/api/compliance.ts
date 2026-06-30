@@ -41,6 +41,7 @@ export function getProtocolPatients(
     patientId?: string;
     startDate?: string;
     endDate?: string;
+    dateFilterMode?: 'enrollment' | 'activity';
   },
 ) {
   return apiGetPaginated<PatientCompliance>(
@@ -53,6 +54,7 @@ export function getProtocolPatients(
       patientId: params?.patientId,
       startDate: params?.startDate,
       endDate: params?.endDate,
+      dateFilterMode: params?.dateFilterMode ?? 'enrollment',
     },
   );
 }
